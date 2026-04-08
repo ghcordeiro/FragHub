@@ -9,6 +9,9 @@ FRAGHUB_STEPS_FILE="${FRAGHUB_STEPS_FILE:-${FRAGHUB_STATE_DIR}/steps.env}"
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 INPUT_FILE="${FRAGHUB_INPUT_FILE:-${INPUT_DIR}/input.env}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
+BOOTSTRAP_MARKER="${FRAGHUB_BOOTSTRAP_MARKER:-${INPUT_DIR}/bootstrap.done}"
+VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
+SUMMARY_MARKER="${FRAGHUB_SUMMARY_MARKER:-${INPUT_DIR}/summary.done}"
 
 fraghub_state_init() {
   mkdir -p "$FRAGHUB_STATE_DIR"
@@ -60,12 +63,32 @@ fraghub_state_verify_secrets() {
   return 0
 }
 
+fraghub_state_verify_bootstrap() {
+  [[ -f "$BOOTSTRAP_MARKER" ]] || return 1
+  dpkg-query -W -f='${Status}' nginx 2>/dev/null | grep -q "install ok installed" || return 1
+  return 0
+}
+
+fraghub_state_verify_verify() {
+  [[ -f "$VERIFY_MARKER" ]] || return 1
+  return 0
+}
+
+fraghub_state_verify_summary() {
+  [[ -f "$SUMMARY_MARKER" ]] || return 1
+  [[ -f "$EFFECTIVE_FILE" ]] || return 1
+  return 0
+}
+
 fraghub_state_verify() {
   local step="$1"
   case "$step" in
     precheck) fraghub_state_verify_precheck ;;
     input) fraghub_state_verify_input ;;
     secrets) fraghub_state_verify_secrets ;;
+    bootstrap) fraghub_state_verify_bootstrap ;;
+    verify) fraghub_state_verify_verify ;;
+    summary) fraghub_state_verify_summary ;;
     *) return 1 ;;
   esac
 }

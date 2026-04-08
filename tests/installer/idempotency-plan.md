@@ -11,6 +11,9 @@ Documentar cenários de reexecução do instalador com **state store** local (`~
 | `precheck` | Pre-checks executados com sucesso | Linux, `/etc/os-release`, `sudo -n` |
 | `input` | Wizard concluído | Existe `~/.fraghub/installer/input.env` |
 | `secrets` | Segredos aplicados | Existe `~/.fraghub/installer/effective.env` não vazio |
+| `bootstrap` | Bootstrap concluído | `bootstrap.done` + pacote `nginx` instalado (`dpkg`) |
+| `verify` | Smoke OK | Ficheiro `verify.passed` |
+| `summary` | Resumo emitido | `summary.done` + `effective.env` presente |
 
 ## Cenários de reexecução
 
@@ -33,7 +36,7 @@ Documentar cenários de reexecução do instalador com **state store** local (`~
 
 - **Variáveis**:
   - `FRAGHUB_FORCE_ALL=1` — no início do `install.sh`, todas as etapas passam a `pending` uma única vez.
-  - `FRAGHUB_FORCE_STEP=precheck|input|secrets` — antes de cada etapa, se coincidir com o nome, força `pending` só nessa etapa.
+  - `FRAGHUB_FORCE_STEP=precheck|input|secrets|bootstrap|verify|summary` — antes de cada etapa, se coincidir com o nome, força `pending` só nessa etapa.
 - **Esperado**: etapa correspondente **não** é pulada mesmo com `done` + verificação OK.
 
 ### 5) Limpar estado manualmente

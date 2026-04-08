@@ -15,6 +15,9 @@ if [[ "${FRAGHUB_FORCE_ALL:-0}" == "1" ]]; then
   fraghub_state_set precheck "pending"
   fraghub_state_set input "pending"
   fraghub_state_set secrets "pending"
+  fraghub_state_set bootstrap "pending"
+  fraghub_state_set verify "pending"
+  fraghub_state_set summary "pending"
 fi
 
 run_step() {
@@ -46,4 +49,13 @@ run_step input "${SCRIPT_DIR}/input.sh" \
 run_step secrets "${SCRIPT_DIR}/secrets.sh" \
   "Segredos e configuracao efetiva" \
   "Segredos e configuracao efetiva aplicados."
-echo "==> Pipeline atual concluido. Proximas etapas serao adicionadas nas proximas tasks."
+run_step bootstrap "${SCRIPT_DIR}/bootstrap.sh" \
+  "Bootstrap de dependencias base" \
+  "Bootstrap finalizado."
+run_step verify "${SCRIPT_DIR}/verify.sh" \
+  "Verificacoes de saude (smoke)" \
+  "Verificacoes concluidas."
+run_step summary "${SCRIPT_DIR}/summary.sh" \
+  "Resumo final e proximos passos" \
+  "Resumo finalizado."
+echo "==> Pipeline v0.1 do installer concluido."
