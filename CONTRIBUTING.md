@@ -21,10 +21,13 @@ First off, thanks for taking the time to contribute! 🎉
 
 ### Branches and merge requests
 
-- Use **one branch per deliverable unit** (feature slice or Linear issue), not one giant branch for unrelated work.
-- Prefer names aligned with Linear when applicable: `feature/fra-123-short-slug` (GitHub shows this as a Pull Request; GitLab calls it Merge Request — same idea).
-- Open **one PR/MR per branch**; keep diffs reviewable and easy to revert.
+- Use **one branch per deliverable unit** — prefer **pacotes completos** (várias tasks Linear no mesmo PR) quando formarem um fluxo ou marco coerente, em vez de um PR por mudança mínima.
+- O pacote deve ter **um objetivo claro** (ex.: “installer: wizard + segredos + estado”) e um diff ainda **revisável** (se estiver enorme, dividir por marco vertical, não por ficheiro).
+- Prefer names aligned with Linear when applicable: `feature/fra-123-short-slug` — podes usar o ID da **issue principal** ou do **marco**; no corpo do PR lista `Refs` / `Closes` para todas as issues cobertas.
+- Open **one PR/MR per branch**; use **commits atómicos** dentro do branch para facilitar leitura e eventual cherry-pick.
 - Rebase or merge `main` into your branch before opening the PR if `main` moved forward.
+
+**Quando um PR pequeno ainda faz sentido:** hotfix urgente, mudança de alto risco (segurança) que deve isolar rollback, ou contribuição externa mínima.
 
 ### Pull Requests
 
@@ -32,9 +35,9 @@ First off, thanks for taking the time to contribute! 🎉
 2. Create a branch: `git checkout -b feature/my-feature`
 3. Make your changes
 4. Run tests (when available)
-5. Commit: `git commit -m "feat: add my feature"`
+5. Commit: `git commit -m "feat: add my feature"` (vários commits por etapa são bem-vindos em pacotes grandes)
 6. Push: `git push -u origin feature/my-feature`
-7. Open a Pull Request and link the related Linear/GitHub issue in the description
+7. Open a Pull Request: descreve o **objetivo do pacote**, checklist do que entra, e liga **todas** as Linear/GitHub issues relevantes (`Refs FRA-10, FRA-11` ou `Closes …` quando aplicável)
 
 ## Commit Messages
 
