@@ -35,6 +35,7 @@ coverage/
 .nyc_output/
 
 # IDE
+.cursor/
 .idea/
 .vscode/
 *.swp

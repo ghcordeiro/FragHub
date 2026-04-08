@@ -19,15 +19,22 @@ First off, thanks for taking the time to contribute! 🎉
 - Describe the feature and why it would be useful
 - Include mockups/examples if possible
 
+### Branches and merge requests
+
+- Use **one branch per deliverable unit** (feature slice or Linear issue), not one giant branch for unrelated work.
+- Prefer names aligned with Linear when applicable: `feature/fra-123-short-slug` (GitHub shows this as a Pull Request; GitLab calls it Merge Request — same idea).
+- Open **one PR/MR per branch**; keep diffs reviewable and easy to revert.
+- Rebase or merge `main` into your branch before opening the PR if `main` moved forward.
+
 ### Pull Requests
 
-1. Fork the repo
+1. Fork the repo (or work from a clone with push access)
 2. Create a branch: `git checkout -b feature/my-feature`
 3. Make your changes
 4. Run tests (when available)
 5. Commit: `git commit -m "feat: add my feature"`
-6. Push: `git push origin feature/my-feature`
-7. Open a Pull Request
+6. Push: `git push -u origin feature/my-feature`
+7. Open a Pull Request and link the related Linear/GitHub issue in the description
 
 ## Commit Messages
 
