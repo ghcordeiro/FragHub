@@ -6,6 +6,8 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "==> FragHub Installer (v0.1 prechecks)"
+echo "==> FragHub Installer (v0.1)"
 bash "$SCRIPT_DIR/precheck.sh"
-echo "==> Pre-checks finalizados. Proximas etapas de instalacao serao adicionadas nas proximas tasks."
+echo "==> Pre-checks finalizados."
+bash "$SCRIPT_DIR/input.sh"
+echo "==> Wizard de configuracao finalizado. Proximas etapas serao adicionadas nas proximas tasks."
