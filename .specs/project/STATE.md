@@ -64,6 +64,15 @@
 
 ## Histórico de sessões
 
+### 2026-04-09 — Specs completos v0.2→v1.0 (planejamento antecipado)
+
+- Criado `.specs/planning/PLANNING.md` com mapa completo de 28 features (v0.2→v1.0): scope, pipeline SDD, ADRs esperadas, dependências e riscos por feature.
+- 6 subagentes executados em paralelo, um por milestone (v0.2 a v1.0).
+- 28 arquivos `spec.md` criados em `.specs/features/{slug}/` — todos com requisitos funcionais/NFRs, ACs verificáveis, Out of Scope e riscos.
+- ROADMAP.md atualizado com granularidade de features (slug por item, marcação [~] para database-baseline em curso).
+- Gate de Specify pendente feature a feature — specs são drafts prontos para revisão humana antes de avançar para Plan.
+- Features com maior criticidade identificadas: `auth-api`, `matchmaking-queue`, `fraghub-tags-plugin`, `server-management-ui`.
+
 ### 2026-04-09 — Specify iniciado (database-baseline)
 
 - Commit `feat(installer): entrega game-stack-baseline` registrado no `main` (game stack + tasks/validation + planos de teste).
