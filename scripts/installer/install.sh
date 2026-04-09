@@ -16,6 +16,13 @@ if [[ "${FRAGHUB_FORCE_ALL:-0}" == "1" ]]; then
   fraghub_state_set input "pending"
   fraghub_state_set secrets "pending"
   fraghub_state_set bootstrap "pending"
+  fraghub_state_set game_precheck "pending"
+  fraghub_state_set game_bootstrap "pending"
+  fraghub_state_set plugins_cs2 "pending"
+  fraghub_state_set plugins_csgo "pending"
+  fraghub_state_set game_services "pending"
+  fraghub_state_set game_verify "pending"
+  fraghub_state_set game_summary "pending"
   fraghub_state_set verify "pending"
   fraghub_state_set summary "pending"
 fi
@@ -52,6 +59,31 @@ run_step secrets "${SCRIPT_DIR}/secrets.sh" \
 run_step bootstrap "${SCRIPT_DIR}/bootstrap.sh" \
   "Bootstrap de dependencias base" \
   "Bootstrap finalizado."
+if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
+  run_step game_precheck "${SCRIPT_DIR}/game-precheck.sh" \
+    "Pre-check da stack de jogo" \
+    "Pre-check da stack de jogo finalizado."
+  run_step game_bootstrap "${SCRIPT_DIR}/game-bootstrap.sh" \
+    "Provisionamento baseline CS2/CS:GO" \
+    "Provisionamento baseline de jogo finalizado."
+  run_step plugins_cs2 "${SCRIPT_DIR}/plugins-cs2.sh" \
+    "Instalacao de plugins base CS2" \
+    "Plugins base CS2 finalizados."
+  run_step plugins_csgo "${SCRIPT_DIR}/plugins-csgo.sh" \
+    "Instalacao de plugins base CS:GO" \
+    "Plugins base CS:GO finalizados."
+  run_step game_services "${SCRIPT_DIR}/game-services.sh" \
+    "Configuracao de servicos de jogo" \
+    "Servicos de jogo configurados."
+  run_step game_verify "${SCRIPT_DIR}/game-verify.sh" \
+    "Verificacao da stack de jogo" \
+    "Verificacao da stack de jogo concluida."
+  run_step game_summary "${SCRIPT_DIR}/game-summary.sh" \
+    "Resumo da stack de jogo" \
+    "Resumo da stack de jogo finalizado."
+else
+  echo "==> Stack de jogo desabilitada (FRAGHUB_ENABLE_GAME_STACK=0)."
+fi
 run_step verify "${SCRIPT_DIR}/verify.sh" \
   "Verificacoes de saude (smoke)" \
   "Verificacoes concluidas."

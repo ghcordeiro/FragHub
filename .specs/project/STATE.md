@@ -64,6 +64,80 @@
 
 ## Histórico de sessões
 
+### 2026-04-09 — Validate concluido (game-stack-baseline)
+
+- Skill executada: `.cursor/skills/ssh-ubuntu-e2e/scripts/run-e2e-remote.sh --remote-dir /home/ranch/FragHub --game-stack --rerun`.
+- E2E remoto em Ubuntu 24.04 executado com evidencias reais de provisionamento LinuxGSM/SteamCMD.
+- Falha real encontrada em `game_verify`:
+  - `systemctl status` retornava erro para unit `loaded` porém `inactive`, causando falso negativo no AC de servicos.
+- Correcao aplicada em `scripts/installer/game-verify.sh`:
+  - validacao de unit alterada para `systemctl show --property=LoadState --value` (`loaded`).
+- Revalidacao remota concluida:
+  - `primeiro run E2E` finalizado com sucesso;
+  - `rerun E2E (idempotencia)` finalizado com sucesso.
+- `validation.md` atualizado e gate de Validate da feature `game-stack-baseline` fechado como **APROVADO**.
+
+### 2026-04-09 — Validate iniciado (game-stack-baseline)
+
+- Executada bateria de validacao local em simulacao controlada Linux:
+  - sintaxe `bash -n` para todos os scripts do installer;
+  - caminho feliz por etapas (`game_precheck` -> `game_summary`);
+  - operacoes basicas de servico (`systemctl start/stop/status`) em harness de systemd.
+- Validacoes negativas executadas com diagnostico acionavel:
+  - falha por pre-condicao ausente no `game-precheck`;
+  - falha por dependencia ausente no `plugins-cs2`;
+  - ambas com causa + referencia de log + comando de recuperacao.
+- Relatorio registrado em `.specs/features/game-stack-baseline/validation.md`:
+  - AC-001..AC-004 e AC-006 em PASS (simulado);
+  - AC-005 em PASS parcial (simulado).
+- Gate de Validate permanece pendente de E2E em Ubuntu real para fechamento definitivo.
+- Risco tecnico identificado: `fraghub_state_verify_game_services` valida caminho fixo `/etc/systemd/system`, reduzindo flexibilidade para ambiente de teste com `FRAGHUB_SYSTEMD_DIR` custom.
+
+### 2026-04-09 — Implement concluido (game-stack-baseline, pacotes 3-6)
+
+- T-03/T-04 concluidas com planos:
+  - `tests/installer/plugins-cs2-plan.md`
+  - `tests/installer/plugins-csgo-plan.md`
+- I-03/I-04 concluidas com modulos:
+  - `scripts/installer/plugins-cs2.sh`
+  - `scripts/installer/plugins-csgo.sh`
+- T-05 concluida com plano `tests/installer/game-services-plan.md`
+- I-05 concluida com modulo `scripts/installer/game-services.sh`
+- T-06 concluida com plano `tests/installer/game-e2e-plan.md`
+- I-06 concluida com modulos:
+  - `scripts/installer/game-verify.sh`
+  - `scripts/installer/game-summary.sh`
+- Pipeline integrado em `scripts/installer/install.sh` com etapas de game stack:
+  - `game_precheck` -> `game_bootstrap` -> `plugins_cs2` -> `plugins_csgo` -> `game_services` -> `game_verify` -> `game_summary`
+- Idempotencia expandida em `scripts/installer/state.sh` para etapas da game stack
+- `tasks.md` atualizado com T-01..T-06 e I-01..I-06 marcados como concluidos
+
+### 2026-04-09 — Implement avancou (game-stack-baseline, pacote 2)
+
+- T-02 concluida com plano em `tests/installer/game-bootstrap-plan.md`
+- I-02 concluida com modulo `scripts/installer/game-bootstrap.sh`
+- Integracoes aplicadas:
+  - `scripts/installer/install.sh` com etapa `game_bootstrap`
+  - gate `FRAGHUB_ENABLE_GAME_STACK` para preservar fluxo legado do `cli-installer`
+  - `scripts/installer/state.sh` com verificacao e checkpoint da etapa `game_bootstrap`
+- `tasks.md` atualizado com T-02 e I-02 como concluidas
+
+### 2026-04-09 — Implement iniciado (game-stack-baseline, pacote 1)
+
+- T-01 concluida com plano em `tests/installer/game-precheck-plan.md`
+- I-01 concluida com modulo `scripts/installer/game-precheck.sh`
+- Integracoes aplicadas:
+  - `scripts/installer/install.sh` com etapa `game_precheck`
+  - `scripts/installer/state.sh` com verificacao e checkpoint da etapa `game_precheck`
+- `tasks.md` atualizado com T-01 e I-01 como concluidas
+
+### 2026-04-09 — Tasks criado (game-stack-baseline)
+
+- `tasks.md` TDAD criado em `.specs/features/game-stack-baseline/tasks.md`
+- Backlog definido em 6 pares teste+implementacao (T-01..T-06, I-01..I-06)
+- Mapeamento Linear definido para issue pai `FRA-13`
+- Gate pendente: aprovacao humana do Tasks para avancar a fase Implement
+
 ### 2026-04-09 — Plan concluido (game-stack-baseline)
 
 - Linear ajustado: `FRA-5` marcado como Done e `FRA-13` criado para nova feature
@@ -116,9 +190,9 @@
 
 ## Próximos passos
 
-1. **Gate de Plan**: revisar e aprovar `game-stack-baseline/plan.md`
-2. **Tasks phase**: quebrar backlog em TDAD (`tasks.md`) para `game-stack-baseline`
-3. **Coverage opcional**: repetir bateria do `cli-installer` em Ubuntu 22.04
+1. **Hardening de idempotencia**: alinhar `fraghub_state_verify_game_services` ao `FRAGHUB_SYSTEMD_DIR` para suportar validacao controlada sem falso negativo.
+2. **Cobertura cruzada opcional**: repetir E2E completo em Ubuntu 22.04 LTS para ampliar confianca.
+3. **Linear sync**: tentar novamente hook pos-Tasks quando MCP Linear estiver disponivel.
 
 ---
 
