@@ -64,6 +64,13 @@
 
 ## Histórico de sessões
 
+### 2026-04-09 — Specify iniciado (database-baseline)
+
+- Commit `feat(installer): entrega game-stack-baseline` registrado no `main` (game stack + tasks/validation + planos de teste).
+- ROADMAP v0.1 atualizado: itens de plugins base e servicos systemd marcados como entregues via `game-stack-baseline`.
+- Draft de especificacao criado em `.specs/features/database-baseline/spec.md` (MariaDB + schema inicial + migracoes).
+- Gate pendente: aprovacao humana do Specify para avancar a fase Plan.
+
 ### 2026-04-09 — Validate concluido (game-stack-baseline)
 
 - Skill executada: `.cursor/skills/ssh-ubuntu-e2e/scripts/run-e2e-remote.sh --remote-dir /home/ranch/FragHub --game-stack --rerun`.
@@ -190,9 +197,10 @@
 
 ## Próximos passos
 
-1. **Hardening de idempotencia**: alinhar `fraghub_state_verify_game_services` ao `FRAGHUB_SYSTEMD_DIR` para suportar validacao controlada sem falso negativo.
-2. **Cobertura cruzada opcional**: repetir E2E completo em Ubuntu 22.04 LTS para ampliar confianca.
-3. **Linear sync**: tentar novamente hook pos-Tasks quando MCP Linear estiver disponivel.
+1. **Feature `database-baseline`**: revisar e aprovar `.specs/features/database-baseline/spec.md`; em seguida Plan (ADR + C4) e Tasks conforme SDD.
+2. **Hardening de idempotencia**: alinhar `fraghub_state_verify_game_services` ao `FRAGHUB_SYSTEMD_DIR` para suportar validacao controlada sem falso negativo.
+3. **Cobertura cruzada opcional**: repetir E2E completo em Ubuntu 22.04 LTS para ampliar confianca.
+4. **Linear sync**: tentar novamente hook pos-Tasks quando MCP Linear estiver disponivel.
 
 ---
 

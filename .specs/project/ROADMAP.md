@@ -8,9 +8,9 @@
 - [x] Script de instalação interativo (bash)
 - [x] Detecção de OS, RAM, disco
 - [x] Instalação LinuxGSM
-- [ ] CS2: MetaMod + CounterStrikeSharp + MatchZy
-- [ ] CS:GO: MetaMod + SourceMod + Get5
-- [ ] Serviços systemd básicos
+- [x] CS2: MetaMod + CounterStrikeSharp + MatchZy
+- [x] CS:GO: MetaMod + SourceMod + Get5
+- [x] Serviços systemd básicos
 - [x] UFW configurado automaticamente
 
 **Critério de conclusão**: servidor CS2 e CS:GO rodando, partidas funcionando
