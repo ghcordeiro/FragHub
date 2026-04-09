@@ -64,7 +64,48 @@
 
 ## Histórico de sessões
 
+### 2026-04-09 — Plan concluido (game-stack-baseline)
+
+- Linear ajustado: `FRA-5` marcado como Done e `FRA-13` criado para nova feature
+- `plan.md` criado em `.specs/features/game-stack-baseline/plan.md`
+- ADRs criadas:
+  - `docs/adr/0003-game-stack-provisionamento-dual.md`
+  - `docs/adr/0004-systemd-operacao-servidores-jogo.md`
+- C4 publicados:
+  - `docs/architecture/game-stack-baseline-context-l1.md`
+  - `docs/architecture/game-stack-baseline-container-l2.md`
+- Gate pendente: aprovacao humana do Plan para avancar a `tasks.md`
+
+### 2026-04-09 — Specify iniciado (game-stack-baseline)
+
+- Pre-Specify hook do Linear validado (MCP autenticado)
+- Criado draft de especificacao em `.specs/features/game-stack-baseline/spec.md`
+- Gate pendente: aprovacao humana do Specify para avancar a fase Plan
+
+### 2026-04-09 — Gate fechado (cli-installer)
+
+- Gate humano de Validate da feature `cli-installer` aprovado
+- Feature `cli-installer` encerrada com AC-001..AC-006 em PASS
+- Milestone v0.1 atualizada com entregáveis do installer baseline
+- Próxima frente sugerida: iniciar escopo de plugins/serviços de jogo (MetaMod, CounterStrikeSharp, MatchZy, SourceMod, Get5)
+
+### 2026-04-09 — Validate da feature CLI Installer
+
+- Executada validacao tecnica dos ACs da feature `cli-installer`
+- Relatorio registrado em `.specs/features/cli-installer/validation.md`
+- AC-002, AC-003, AC-004 aprovados em validacao local
+- AC-005 aprovado de forma parcial (idempotencia por etapa validada; falta E2E Ubuntu)
+- AC-006 corrigido e revalidado: mensagens de erro agora incluem caminho de log e acao de recuperacao
+- UAT remota em Ubuntu 24.04 executada via SSH; bloqueios encontrados:
+  - rerun apos upgrade para 15GB RAM: pre-check de RAM aprovado
+  - download LinuxGSM na URL primaria segue retornando HTTP 403 no bootstrap
+- Correcao aplicada em `bootstrap.sh`: download LinuxGSM com URL oficial (`https://linuxgsm.sh`) + fallback (`raw.githubusercontent.com`) + retries
+- Revalidacao remota concluida:
+  - `FIRST_INSTALL_RC=0` (installer completo)
+  - `SECOND_INSTALL_RC=0` (rerun idempotente, etapas puladas com verificacao)
+
 ### 2026-04-08 — Sessão inicial
+
 - Definido stack completo CS2 + CS:GO
 - Sistema de auth (Google/Email + Steam)
 - Sistema de níveis 1-10 baseado na Faceit
@@ -75,9 +116,15 @@
 
 ## Próximos passos
 
-1. **Specify**: Feature "CLI Installer" (wizard interativo)
-2. **Plan**: Arquitetura detalhada do installer
-3. **Implement**: Começar v0.1
+1. **Gate de Plan**: revisar e aprovar `game-stack-baseline/plan.md`
+2. **Tasks phase**: quebrar backlog em TDAD (`tasks.md`) para `game-stack-baseline`
+3. **Coverage opcional**: repetir bateria do `cli-installer` em Ubuntu 22.04
+
+---
+
+## Preferences
+
+- Para tarefas leves de documentação/estado (como fechar gates e atualizar specs), preferência por modelo mais rápido para reduzir latência/custo.
 
 ---
 

@@ -5,13 +5,13 @@
 ### v0.1 — Instalador básico
 > Servidor funcionando com plugins essenciais
 
-- [ ] Script de instalação interativo (bash)
-- [ ] Detecção de OS, RAM, disco
-- [ ] Instalação LinuxGSM
+- [x] Script de instalação interativo (bash)
+- [x] Detecção de OS, RAM, disco
+- [x] Instalação LinuxGSM
 - [ ] CS2: MetaMod + CounterStrikeSharp + MatchZy
 - [ ] CS:GO: MetaMod + SourceMod + Get5
 - [ ] Serviços systemd básicos
-- [ ] UFW configurado automaticamente
+- [x] UFW configurado automaticamente
 
 **Critério de conclusão**: servidor CS2 e CS:GO rodando, partidas funcionando
 
