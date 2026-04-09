@@ -11,6 +11,8 @@ source "${SCRIPT_DIR}/logging.sh"
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 PLUGINS_CS2_MARKER="${FRAGHUB_PLUGINS_CS2_MARKER:-${INPUT_DIR}/plugins-cs2.done}"
 PLUGINS_CSGO_MARKER="${FRAGHUB_PLUGINS_CSGO_MARKER:-${INPUT_DIR}/plugins-csgo.done}"
+PLUGINS_EXTENDED_CS2_MARKER="${FRAGHUB_PLUGINS_EXTENDED_CS2_MARKER:-${INPUT_DIR}/plugins-extended-cs2.done}"
+PLUGINS_EXTENDED_CSGO_MARKER="${FRAGHUB_PLUGINS_EXTENDED_CSGO_MARKER:-${INPUT_DIR}/plugins-extended-csgo.done}"
 GAME_SERVICES_MARKER="${FRAGHUB_GAME_SERVICES_MARKER:-${INPUT_DIR}/game-services.done}"
 FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
 
@@ -28,6 +30,8 @@ fail() {
 require_plugins() {
   [[ -f "$PLUGINS_CS2_MARKER" ]] || fail "Dependencia ausente: plugins CS2 nao concluidos."
   [[ -f "$PLUGINS_CSGO_MARKER" ]] || fail "Dependencia ausente: plugins CS:GO nao concluidos."
+  [[ -f "$PLUGINS_EXTENDED_CS2_MARKER" ]] || fail "Dependencia ausente: plugins estendidos CS2 nao concluidos."
+  [[ -f "$PLUGINS_EXTENDED_CSGO_MARKER" ]] || fail "Dependencia ausente: plugins estendidos CS:GO nao concluidos."
 }
 
 write_unit_file() {

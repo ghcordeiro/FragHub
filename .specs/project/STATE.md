@@ -204,12 +204,45 @@
 
 ---
 
+### 2026-04-09 — Implement concluido (lote v0.2: database + plugins estendidos + backup)
+
+- Lote v0.2 implementado no installer em ordem definida:
+  1) `database-baseline`
+  2) `plugins-extended-cs2` e `plugins-extended-csgo`
+  3) `database-backup`
+- Novos modulos de instalacao:
+  - `scripts/installer/database-baseline.sh`
+  - `scripts/installer/plugins-extended-cs2.sh`
+  - `scripts/installer/plugins-extended-csgo.sh`
+  - `scripts/installer/database-backup.sh`
+- Integracao no pipeline principal (`install.sh`) com checkpoints dedicados em `state.sh`.
+- `database-baseline`:
+  - pre-check de porta/disco/SO;
+  - bind local MariaDB em `/etc/mysql/conf.d/fraghub.cnf`;
+  - provisionamento de `fraghub_db` + `fraghub_app@127.0.0.1`;
+  - `schema_migrations` + migracoes base (`users`, `matches`, `stats`);
+  - verificacoes de login e charset/collation.
+- `plugins-extended-cs2`:
+  - instalacao idempotente de CS2-SimpleAdmin e WeaponPaints com manifests;
+  - schemas pluginados registrados em `schema_migrations` com prefixos `plgcs2_*`;
+  - configuracao de demos em `/opt/fraghub/demos/cs2/` e manifesto `/opt/fraghub/state/plugins-cs2.json`.
+- `plugins-extended-csgo`:
+  - instalacao idempotente de SourceBans++, Weapons & Knives e RankMe com manifests;
+  - schemas pluginados com prefixos `plgcsgo_*` e configuracao DB com permissao 600;
+  - backend de stats do RankMe forçado para MySQL.
+- `database-backup`:
+  - usuario `fraghub_backup@127.0.0.1` (SELECT, LOCK TABLES);
+  - `~/.my.cnf` dedicado (600);
+  - script `/opt/fraghub/scripts/db-backup.sh` (700), log e rotacao de 7 dias;
+  - cron diario 03:00 idempotente + execucao manual de validacao.
+- Artefatos SDD criados para as 4 features v0.2:
+  - `plan.md`, `tasks.md`, `validation.md`.
+
 ## Próximos passos
 
-1. **Feature `database-baseline`**: revisar e aprovar `.specs/features/database-baseline/spec.md`; em seguida Plan (ADR + C4) e Tasks conforme SDD.
-2. **Hardening de idempotencia**: alinhar `fraghub_state_verify_game_services` ao `FRAGHUB_SYSTEMD_DIR` para suportar validacao controlada sem falso negativo.
-3. **Cobertura cruzada opcional**: repetir E2E completo em Ubuntu 22.04 LTS para ampliar confianca.
-4. **Linear sync**: tentar novamente hook pos-Tasks quando MCP Linear estiver disponivel.
+1. Executar E2E remoto Ubuntu real para fechamento final do gate Validate do lote v0.2.
+2. Revisar periodicamente schemas oficiais dos plugins de terceiros e alinhar migracoes locais quando houver mudancas upstream.
+3. Avancar roadmap para `v0.3` (API backend) com base no schema e backups ja estabelecidos.
 
 ---
 

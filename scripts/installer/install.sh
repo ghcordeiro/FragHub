@@ -16,13 +16,17 @@ if [[ "${FRAGHUB_FORCE_ALL:-0}" == "1" ]]; then
   fraghub_state_set input "pending"
   fraghub_state_set secrets "pending"
   fraghub_state_set bootstrap "pending"
+  fraghub_state_set database_baseline "pending"
   fraghub_state_set game_precheck "pending"
   fraghub_state_set game_bootstrap "pending"
   fraghub_state_set plugins_cs2 "pending"
   fraghub_state_set plugins_csgo "pending"
+  fraghub_state_set plugins_extended_cs2 "pending"
+  fraghub_state_set plugins_extended_csgo "pending"
   fraghub_state_set game_services "pending"
   fraghub_state_set game_verify "pending"
   fraghub_state_set game_summary "pending"
+  fraghub_state_set database_backup "pending"
   fraghub_state_set verify "pending"
   fraghub_state_set summary "pending"
 fi
@@ -46,7 +50,7 @@ run_step() {
   echo "==> ${done_msg}"
 }
 
-echo "==> FragHub Installer (v0.1)"
+echo "==> FragHub Installer (v0.2)"
 run_step precheck "${SCRIPT_DIR}/precheck.sh" \
   "Pre-checks do ambiente" \
   "Pre-checks finalizados."
@@ -59,6 +63,9 @@ run_step secrets "${SCRIPT_DIR}/secrets.sh" \
 run_step bootstrap "${SCRIPT_DIR}/bootstrap.sh" \
   "Bootstrap de dependencias base" \
   "Bootstrap finalizado."
+run_step database_baseline "${SCRIPT_DIR}/database-baseline.sh" \
+  "Provisionamento baseline de banco (MariaDB + schema)" \
+  "Database baseline finalizado."
 if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
   run_step game_precheck "${SCRIPT_DIR}/game-precheck.sh" \
     "Pre-check da stack de jogo" \
@@ -72,6 +79,12 @@ if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
   run_step plugins_csgo "${SCRIPT_DIR}/plugins-csgo.sh" \
     "Instalacao de plugins base CS:GO" \
     "Plugins base CS:GO finalizados."
+  run_step plugins_extended_cs2 "${SCRIPT_DIR}/plugins-extended-cs2.sh" \
+    "Instalacao de plugins estendidos CS2" \
+    "Plugins estendidos CS2 finalizados."
+  run_step plugins_extended_csgo "${SCRIPT_DIR}/plugins-extended-csgo.sh" \
+    "Instalacao de plugins estendidos CS:GO" \
+    "Plugins estendidos CS:GO finalizados."
   run_step game_services "${SCRIPT_DIR}/game-services.sh" \
     "Configuracao de servicos de jogo" \
     "Servicos de jogo configurados."
@@ -84,10 +97,13 @@ if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
 else
   echo "==> Stack de jogo desabilitada (FRAGHUB_ENABLE_GAME_STACK=0)."
 fi
+run_step database_backup "${SCRIPT_DIR}/database-backup.sh" \
+  "Configuracao de backup diario do banco" \
+  "Database backup finalizado."
 run_step verify "${SCRIPT_DIR}/verify.sh" \
   "Verificacoes de saude (smoke)" \
   "Verificacoes concluidas."
 run_step summary "${SCRIPT_DIR}/summary.sh" \
   "Resumo final e proximos passos" \
   "Resumo finalizado."
-echo "==> Pipeline v0.1 do installer concluido."
+echo "==> Pipeline v0.2 do installer concluido."

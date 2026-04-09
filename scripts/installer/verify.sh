@@ -11,8 +11,13 @@ source "${SCRIPT_DIR}/logging.sh"
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
 BOOTSTRAP_MARKER="${FRAGHUB_BOOTSTRAP_MARKER:-${INPUT_DIR}/bootstrap.done}"
+DATABASE_BASELINE_MARKER="${FRAGHUB_DATABASE_BASELINE_MARKER:-${INPUT_DIR}/database-baseline.done}"
+DATABASE_BACKUP_MARKER="${FRAGHUB_DATABASE_BACKUP_MARKER:-${INPUT_DIR}/database-backup.done}"
 VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
 FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
+FRAGHUB_DB_APP_DEFAULTS="${FRAGHUB_DB_APP_DEFAULTS:-${INPUT_DIR}/mysql-app.cnf}"
+FRAGHUB_DB_NAME="${FRAGHUB_DB_NAME:-fraghub_db}"
+FRAGHUB_BACKUP_SCRIPT="${FRAGHUB_BACKUP_SCRIPT:-/opt/fraghub/scripts/db-backup.sh}"
 
 fail() {
   fraghub_fail_actionable "$1" "bash scripts/installer/install.sh"
@@ -33,11 +38,15 @@ run_verify() {
   [[ "$(uname -s)" == "Linux" ]] || fail "Verificacao suportada apenas em Linux."
   [[ -f "$EFFECTIVE_FILE" ]] || fail "Ficheiro efetivo em falta: ${EFFECTIVE_FILE}"
   [[ -f "$BOOTSTRAP_MARKER" ]] || fail "Bootstrap nao concluido (marcador em falta: ${BOOTSTRAP_MARKER})."
+  [[ -f "$DATABASE_BASELINE_MARKER" ]] || fail "database-baseline nao concluido (${DATABASE_BASELINE_MARKER})."
+  [[ -f "$DATABASE_BACKUP_MARKER" ]] || fail "database-backup nao concluido (${DATABASE_BACKUP_MARKER})."
 
   fraghub_log "INFO" "Inicio das verificacoes de saude (smoke)."
 
   service_active nginx || fail "Nginx nao esta ativo."
   service_active mariadb || fail "MariaDB nao esta ativo."
+  [[ -f "$FRAGHUB_DB_APP_DEFAULTS" ]] || fail "Ficheiro de credenciais app DB ausente: ${FRAGHUB_DB_APP_DEFAULTS}."
+  mysql --defaults-extra-file="$FRAGHUB_DB_APP_DEFAULTS" --batch --skip-column-names -e "USE \`${FRAGHUB_DB_NAME}\`; SELECT COUNT(*) FROM schema_migrations;" >/dev/null || fail "Schema baseline do banco nao validado."
 
   command -v node >/dev/null 2>&1 || fail "Node.js nao encontrado no PATH."
   node -v | grep -qE '^v20\.' || fail "Node.js 20 LTS esperado (obtido: $(node -v))."
@@ -47,6 +56,7 @@ run_verify() {
   [[ -x "${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh" ]] || fail "linuxgsm.sh nao encontrado ou nao executavel em ${FRAGHUB_LINUXGSM_DIR}."
 
   id fraghub >/dev/null 2>&1 || fail "Utilizador fraghub nao existe."
+  [[ -x "$FRAGHUB_BACKUP_SCRIPT" ]] || fail "Script de backup nao encontrado/executavel: ${FRAGHUB_BACKUP_SCRIPT}."
 
   mkdir -p "$INPUT_DIR"
   umask 077
@@ -56,7 +66,7 @@ run_verify() {
   fraghub_log "INFO" "Verificacoes de saude OK. Marcador: ${VERIFY_MARKER}"
 
   echo ""
-  echo "==> Verify: nginx, mariadb, node v20, UFW, LinuxGSM e utilizador fraghub OK."
+  echo "==> Verify: nginx, mariadb+schema, node v20, UFW, LinuxGSM, backup DB e utilizador fraghub OK."
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
