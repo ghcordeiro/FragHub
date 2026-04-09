@@ -47,7 +47,7 @@ run_summary() {
 
   echo ""
   echo "=========================================="
-  echo "  FragHub — resumo da instalacao (v0.1)"
+  echo "  FragHub — resumo da instalacao (v0.2)"
   echo "=========================================="
   echo ""
   echo "## Configuracao (valores sensiveis mascarados)"
@@ -64,10 +64,14 @@ run_summary() {
   echo "  - UFW (22, 80, 443, 27015/tcp+udp, 27005/udp)"
   echo "  - LinuxGSM: ${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh"
   echo "  - Utilizador sistema: fraghub"
+  echo "  - Banco: fraghub_db + fraghub_app + schema_migrations/users/matches/stats"
+  echo "  - Backup DB: /opt/fraghub/scripts/db-backup.sh (cron diario 03:00, retencao 7 dias)"
+  if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
+    echo "  - Plugins estendidos CS2: CS2-SimpleAdmin, WeaponPaints, demo-recorder"
+    echo "  - Plugins estendidos CS:GO: SourceBans++, Weapons & Knives, RankMe"
+  fi
   echo ""
   echo "## Pendente / proximas milestones"
-  echo "  - Instalar e configurar servidor CS2/CS:GO via LinuxGSM + SteamCMD"
-  echo "  - Schema MariaDB e utilizador DB (fraghub) com FRAGHUB_DB_PASSWORD"
   echo "  - Aplicacao Node portal + Nginx reverse proxy"
   echo "  - SSL (certbot) se FRAGHUB_DOMAIN definido"
   echo ""
@@ -86,7 +90,7 @@ run_summary() {
   echo ""
   echo "## Proximos comandos sugeridos"
   echo "  1) cd ${FRAGHUB_LINUXGSM_DIR} && ./linuxgsm.sh install (seguir documentacao LinuxGSM para o jogo alvo)"
-  echo "  2) Configurar MariaDB e criar base fraghub_db (migrations em milestone seguinte)"
+  echo "  2) Testar backup manual: /opt/fraghub/scripts/db-backup.sh && ls -lh /opt/fraghub/backups/db"
   echo "  3) Reexecutar installer apos falha: bash scripts/installer/install.sh (etapas concluidas podem ser ignoradas)"
   echo ""
 

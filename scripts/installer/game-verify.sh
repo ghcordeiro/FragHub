@@ -30,9 +30,14 @@ check_plugin_markers() {
   [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/metamod/.installed" ]] || fail "MetaMod CS2 nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/counterstrikesharp/.installed" ]] || fail "CounterStrikeSharp nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/matchzy/.installed" ]] || fail "MatchZy nao detectado."
+  [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/extended/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || fail "CS2-SimpleAdmin nao detectado."
+  [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/extended/WeaponPaints/WeaponPaints.dll" ]] || fail "WeaponPaints nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/metamod/.installed" ]] || fail "MetaMod CS:GO nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/sourcemod/.installed" ]] || fail "SourceMod nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/get5/.installed" ]] || fail "Get5 nao detectado."
+  [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/extended/SourceBans++/sourcebans.smx" ]] || fail "SourceBans++ nao detectado."
+  [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/extended/WeaponsKnives/weaponsknives.smx" ]] || fail "Weapons & Knives nao detectado."
+  [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/extended/RankMe/rankme.smx" ]] || fail "RankMe nao detectado."
 }
 
 run_game_verify() {

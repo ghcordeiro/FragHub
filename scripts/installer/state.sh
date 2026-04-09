@@ -10,13 +10,17 @@ INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 INPUT_FILE="${FRAGHUB_INPUT_FILE:-${INPUT_DIR}/input.env}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
 BOOTSTRAP_MARKER="${FRAGHUB_BOOTSTRAP_MARKER:-${INPUT_DIR}/bootstrap.done}"
+DATABASE_BASELINE_MARKER="${FRAGHUB_DATABASE_BASELINE_MARKER:-${INPUT_DIR}/database-baseline.done}"
 GAME_PRECHECK_MARKER="${FRAGHUB_GAME_PRECHECK_MARKER:-${INPUT_DIR}/game-precheck.done}"
 GAME_BOOTSTRAP_MARKER="${FRAGHUB_GAME_BOOTSTRAP_MARKER:-${INPUT_DIR}/game-bootstrap.done}"
 PLUGINS_CS2_MARKER="${FRAGHUB_PLUGINS_CS2_MARKER:-${INPUT_DIR}/plugins-cs2.done}"
 PLUGINS_CSGO_MARKER="${FRAGHUB_PLUGINS_CSGO_MARKER:-${INPUT_DIR}/plugins-csgo.done}"
+PLUGINS_EXTENDED_CS2_MARKER="${FRAGHUB_PLUGINS_EXTENDED_CS2_MARKER:-${INPUT_DIR}/plugins-extended-cs2.done}"
+PLUGINS_EXTENDED_CSGO_MARKER="${FRAGHUB_PLUGINS_EXTENDED_CSGO_MARKER:-${INPUT_DIR}/plugins-extended-csgo.done}"
 GAME_SERVICES_MARKER="${FRAGHUB_GAME_SERVICES_MARKER:-${INPUT_DIR}/game-services.done}"
 GAME_VERIFY_MARKER="${FRAGHUB_GAME_VERIFY_MARKER:-${INPUT_DIR}/game-verify.done}"
 GAME_SUMMARY_MARKER="${FRAGHUB_GAME_SUMMARY_MARKER:-${INPUT_DIR}/game-summary.done}"
+DATABASE_BACKUP_MARKER="${FRAGHUB_DATABASE_BACKUP_MARKER:-${INPUT_DIR}/database-backup.done}"
 VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
 SUMMARY_MARKER="${FRAGHUB_SUMMARY_MARKER:-${INPUT_DIR}/summary.done}"
 
@@ -76,6 +80,12 @@ fraghub_state_verify_bootstrap() {
   return 0
 }
 
+fraghub_state_verify_database_baseline() {
+  [[ -f "$DATABASE_BASELINE_MARKER" ]] || return 1
+  [[ -f "${FRAGHUB_DB_APP_DEFAULTS:-${INPUT_DIR}/mysql-app.cnf}" ]] || return 1
+  return 0
+}
+
 fraghub_state_verify_game_precheck() {
   [[ -f "$GAME_PRECHECK_MARKER" ]] || return 1
   [[ -x "${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}/linuxgsm.sh" ]] || return 1
@@ -105,6 +115,21 @@ fraghub_state_verify_plugins_csgo() {
   return 0
 }
 
+fraghub_state_verify_plugins_extended_cs2() {
+  [[ -f "$PLUGINS_EXTENDED_CS2_MARKER" ]] || return 1
+  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/extended/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || return 1
+  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/extended/WeaponPaints/WeaponPaints.dll" ]] || return 1
+  return 0
+}
+
+fraghub_state_verify_plugins_extended_csgo() {
+  [[ -f "$PLUGINS_EXTENDED_CSGO_MARKER" ]] || return 1
+  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/csgo/plugins/extended/SourceBans++/sourcebans.smx" ]] || return 1
+  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/csgo/plugins/extended/WeaponsKnives/weaponsknives.smx" ]] || return 1
+  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/csgo/plugins/extended/RankMe/rankme.smx" ]] || return 1
+  return 0
+}
+
 fraghub_state_verify_game_services() {
   [[ -f "$GAME_SERVICES_MARKER" ]] || return 1
   [[ -f "/etc/systemd/system/fraghub-cs2.service" ]] || return 1
@@ -119,6 +144,12 @@ fraghub_state_verify_game_verify() {
 
 fraghub_state_verify_game_summary() {
   [[ -f "$GAME_SUMMARY_MARKER" ]] || return 1
+  return 0
+}
+
+fraghub_state_verify_database_backup() {
+  [[ -f "$DATABASE_BACKUP_MARKER" ]] || return 1
+  [[ -x "${FRAGHUB_BACKUP_SCRIPT:-/opt/fraghub/scripts/db-backup.sh}" ]] || return 1
   return 0
 }
 
@@ -140,13 +171,17 @@ fraghub_state_verify() {
     input) fraghub_state_verify_input ;;
     secrets) fraghub_state_verify_secrets ;;
     bootstrap) fraghub_state_verify_bootstrap ;;
+    database_baseline) fraghub_state_verify_database_baseline ;;
     game_precheck) fraghub_state_verify_game_precheck ;;
     game_bootstrap) fraghub_state_verify_game_bootstrap ;;
     plugins_cs2) fraghub_state_verify_plugins_cs2 ;;
     plugins_csgo) fraghub_state_verify_plugins_csgo ;;
+    plugins_extended_cs2) fraghub_state_verify_plugins_extended_cs2 ;;
+    plugins_extended_csgo) fraghub_state_verify_plugins_extended_csgo ;;
     game_services) fraghub_state_verify_game_services ;;
     game_verify) fraghub_state_verify_game_verify ;;
     game_summary) fraghub_state_verify_game_summary ;;
+    database_backup) fraghub_state_verify_database_backup ;;
     verify) fraghub_state_verify_verify ;;
     summary) fraghub_state_verify_summary ;;
     *) return 1 ;;

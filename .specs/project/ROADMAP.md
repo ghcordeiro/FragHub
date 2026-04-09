@@ -15,10 +15,10 @@
 ### v0.2 — Banco de dados e plugins
 > Persistência de dados e plugins completos
 
-- [~] `database-baseline` — MariaDB, banco fraghub_db, schema inicial (users, matches, stats, migrations), utf8mb4
-- [ ] `plugins-extended-cs2` — CS2-SimpleAdmin, WeaponPaints, demo-recorder automático
-- [ ] `plugins-extended-csgo` — SourceBans++, Weapons & Knives, RankMe
-- [ ] `database-backup` — backup diário via cron, rotação 7 dias, .my.cnf seguro
+- [x] `database-baseline` — MariaDB, banco fraghub_db, schema inicial (users, matches, stats, migrations), utf8mb4
+- [x] `plugins-extended-cs2` — CS2-SimpleAdmin, WeaponPaints, demo-recorder automático
+- [x] `plugins-extended-csgo` — SourceBans++, Weapons & Knives, RankMe
+- [x] `database-backup` — backup diário via cron, rotação 7 dias, .my.cnf seguro
 
 **Critério de conclusão**: stats salvando no banco, bans sincronizados
 
