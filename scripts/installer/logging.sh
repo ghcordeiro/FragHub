@@ -36,3 +36,17 @@ fraghub_log() {
   masked="$(fraghub_mask_secrets "$message")"
   printf '[%s] [%s] %s\n' "$ts" "$level" "$masked" | tee -a "$LOG_FILE"
 }
+
+fraghub_fail_actionable() {
+  local message="$1"
+  local recovery_cmd="${2:-bash scripts/installer/install.sh}"
+
+  fraghub_log "ERROR" "$message"
+  {
+    printf '\n'
+    printf 'Recuperacao sugerida:\n'
+    printf '  1) Verifique o log detalhado: %s\n' "$LOG_FILE"
+    printf '  2) Corrija a causa raiz indicada acima.\n'
+    printf '  3) Reexecute o installer: %s\n' "$recovery_cmd"
+  } >&2
+}

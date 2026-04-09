@@ -15,7 +15,7 @@ VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
 FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
 
 fail() {
-  fraghub_log "ERROR" "$1"
+  fraghub_fail_actionable "$1" "bash scripts/installer/install.sh"
   rm -f "$VERIFY_MARKER"
   exit 1
 }

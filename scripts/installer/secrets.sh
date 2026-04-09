@@ -17,7 +17,7 @@ is_blank() {
 }
 
 fail() {
-  fraghub_log "ERROR" "$1"
+  fraghub_fail_actionable "$1" "bash scripts/installer/install.sh"
   exit 1
 }
 

@@ -12,9 +12,11 @@ INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
 BOOTSTRAP_MARKER="${FRAGHUB_BOOTSTRAP_MARKER:-${INPUT_DIR}/bootstrap.done}"
 FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
+LINUXGSM_URL_PRIMARY="${LINUXGSM_URL_PRIMARY:-https://linuxgsm.sh}"
+LINUXGSM_URL_FALLBACK="${LINUXGSM_URL_FALLBACK:-https://raw.githubusercontent.com/GameServerManagers/LinuxGSM/master/linuxgsm.sh}"
 
 fail() {
-  fraghub_log "ERROR" "$1"
+  fraghub_fail_actionable "$1" "bash scripts/installer/install.sh"
   exit 1
 }
 
@@ -33,6 +35,22 @@ load_effective_env() {
   # shellcheck source=/dev/null
   source "$EFFECTIVE_FILE"
   set +a
+}
+
+download_linuxgsm() {
+  local dest="$1"
+  local url
+  local urls=("$LINUXGSM_URL_PRIMARY" "$LINUXGSM_URL_FALLBACK")
+
+  for url in "${urls[@]}"; do
+    fraghub_log "INFO" "Tentando download do LinuxGSM em: ${url}"
+    if curl -fsSL --retry 3 --retry-delay 2 --retry-connrefused -o "$dest" "$url"; then
+      return 0
+    fi
+    fraghub_log "WARN" "Falha no download do LinuxGSM em: ${url}"
+  done
+
+  fail "Nao foi possivel baixar LinuxGSM (URL primaria e fallback falharam)."
 }
 
 run_bootstrap() {
@@ -89,7 +107,7 @@ run_bootstrap() {
 
   fraghub_log "INFO" "Download do LinuxGSM para ${FRAGHUB_LINUXGSM_DIR}."
   mkdir -p "$FRAGHUB_LINUXGSM_DIR"
-  curl -fsSL -o "${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh" https://linuxgsm.sh/linuxgsm.sh
+  download_linuxgsm "${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh"
   chmod +x "${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh"
 
   fraghub_log "INFO" "Configuracao minima UFW (CLI-REQ-005) — SSH/HTTP/HTTPS e portas de jogo."

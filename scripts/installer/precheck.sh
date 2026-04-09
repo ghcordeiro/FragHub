@@ -26,6 +26,13 @@ log() {
 fail() {
   local message="$1"
   log "ERROR" "$message"
+  {
+    printf '\n'
+    printf 'Recuperacao sugerida:\n'
+    printf '  1) Verifique o log detalhado: %s\n' "$LOG_FILE"
+    printf '  2) Corrija a causa raiz indicada acima.\n'
+    printf '  3) Reexecute o installer: bash scripts/installer/install.sh\n'
+  } >&2
   exit 1
 }
 
