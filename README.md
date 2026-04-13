@@ -4,55 +4,56 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-## 🎯 What is FragHub?
+## What is FragHub?
 
-FragHub is an open source toolkit that lets you create a complete CS2/CS:GO community server with matchmaking, web portal, and ELO ranking system in minutes.
+FragHub is an open source toolkit that aims to provide a complete CS2/CS:GO community stack: game servers, matchmaking, web portal, and an ELO-style ranking system, driven by an **interactive installer** on Ubuntu LTS.
 
-**One command, full stack.**
+**Target workflow:** clone the repo on the server (or sync it), run the installer once, iterate with idempotent re-runs.
 
-## ✨ Features
+## Features
 
-- 🎮 **Dual game support** — CS2 and CS:GO Legacy simultaneously
-- 🔧 **Interactive installer** — Wizard-based setup, no manual configuration
-- 🌐 **Web portal** — Player profiles, leaderboards, match history
-- 📊 **ELO system** — Faceit-style levels 1-10 with skill-based matchmaking
-- 🏷️ **In-game tags** — Show player level or admin role on scoreboard
-- 🛡️ **Admin panel** — Manage players, bans, servers via web
-- 🔗 **Steam integration** — Login with Steam, link accounts
-- 📱 **Discord webhooks** — Match notifications
+- **Dual game support** — CS2 and CS:GO Legacy (optional game stack in the installer)
+- **Interactive installer** — Wizard-based setup (`scripts/installer/install.sh`)
+- **MariaDB baseline** — Versioned SQL migrations and app user provisioning
+- **HTTP API** — `services/fraghub-api`: Express, TypeScript, JWT auth (email/password + Google OAuth hooks), refresh rotation, rate limits (see `docs/adr/0006-auth-api-jwt-oauth-refresh.md`)
+- **Web portal** — Planned (frontend not in this repo yet)
+- **ELO-style levels** — Specified in `.specs/project/`; matchmaking milestones ahead
+- **In-game tags** — Planned plugins integration
+- **Steam / Discord** — Partially specified; Steam linking and webhooks are roadmap items
 
-## 🚀 Quick Start
+## Quick start (installer)
+
+The installer expects a **full clone** (it resolves paths relative to `scripts/installer/`). Piping a raw script from `curl` without a checkout is not supported.
 
 ```bash
-# Download and run installer
-curl -sSL https://raw.githubusercontent.com/ghcordeiro/FragHub/main/install.sh | bash
+git clone https://github.com/ghcordeiro/FragHub.git
+cd FragHub
+bash scripts/installer/install.sh
 ```
 
-> ⚠️ **Requirements**: Ubuntu 22.04/24.04 LTS, 8GB RAM, 100GB disk
+> **Requirements:** Ubuntu 22.04 or 24.04 LTS, `sudo`, network access. Game stack and resource sizing: see `.specs/project/ROADMAP.md` and installer pre-checks.
 
-## 📋 Requirements
+## Requirements (typical lab server)
 
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
 | OS | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
-| RAM | 4 GB | 8-16 GB |
+| RAM | 4 GB (DB + API only) | 8–16 GB with game servers |
 | Disk | 65 GB | 100 GB |
-| CPU | 2 cores | 4 cores |
+| CPU | 2 cores | 4+ cores |
 
-## 🏗️ Tech Stack
+## Tech stack
 
-| Layer | CS2 | CS:GO |
-|-------|-----|-------|
-| Framework | CounterStrikeSharp | SourceMod |
-| Match system | MatchZy | Get5 |
-| Admin | CS2-SimpleAdmin | SourceBans++ |
-| Skins | WeaponPaints | Weapons & Knives |
+| Area | Choice |
+|------|--------|
+| Installer | Bash, systemd, MariaDB, UFW (see installer scripts) |
+| API | Node.js 20, Express, TypeScript, Knex, `services/fraghub-api` |
+| Database | MariaDB, `fraghub_db`, utf8mb4 |
+| CS2 / CS:GO | CounterStrikeSharp / SourceMod, MatchZy / Get5 (when game stack is enabled) |
 
-**Portal**: Node.js + Express + React + TypeScript + MariaDB
+## Level system (vision)
 
-## 📊 Level System
-
-Faceit-style ranking with 10 levels:
+Faceit-style ranking with 10 levels (detail in `.specs/project/LEVELS.md`):
 
 | Level | ELO Range | Level | ELO Range |
 |-------|-----------|-------|-----------|
@@ -62,38 +63,43 @@ Faceit-style ranking with 10 levels:
 | 4 | 901-1050 | 9 | 1751-2000 |
 | 5 | 1051-1200 | 10 | 2001+ |
 
-## 📖 Documentation
+## Documentation
 
-- [Installation Guide](docs/installation.md)
-- [Configuration](docs/configuration.md)
-- [API Reference](docs/api-reference.md)
-- [Troubleshooting](docs/troubleshooting.md)
+| Doc | Purpose |
+|-----|---------|
+| [STRUCTURE.md](STRUCTURE.md) | Repository layout (source of truth for folders) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [AGENTS.md](AGENTS.md) | Agent / automation contract for this repo |
+| [docs/adr/](docs/adr/) | Architecture Decision Records |
+| [docs/architecture/](docs/architecture/) | C4-style context/container notes |
+| [.specs/project/ROADMAP.md](.specs/project/ROADMAP.md) | Milestones and feature order |
 
-## 🗺️ Roadmap
+End-user guides (`docs/installation.md`, etc.) are not present yet; installation is defined by the installer and feature specs.
 
-- [x] Project specification
-- [ ] v0.1 — Basic installer + game servers
-- [ ] v0.2 — Database + plugins
-- [ ] v0.3 — API backend
+## Roadmap (high level)
+
+- [x] v0.1 — Basic installer + optional game stack baseline
+- [x] v0.2 — Database baseline, extended plugins, backup
+- [x] v0.3 (in progress) — API bootstrap (`api-setup`) + auth API in repo; validate/extend per `.specs/features/auth-api/`
 - [ ] v0.4 — Web frontend
 - [ ] v0.5 — Matchmaking system
 - [ ] v0.6 — Admin panel
-- [ ] v1.0 — Production release
+- [ ] v1.0 — Production-hardening release
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting PRs.
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening PRs.
 
-## 📄 License
+## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+GNU General Public License v3.0 — see [LICENSE](LICENSE).
 
-## 👤 Author
+## Author
 
 **Guilherme Cordeiro** ([@ghcordeiro](https://github.com/ghcordeiro))
 
 ---
 
 <p align="center">
-  Made with ❤️ for the CS community
+  Made with care for the CS community
 </p>
