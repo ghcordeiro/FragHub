@@ -86,8 +86,12 @@ check_architecture() {
 
 check_sudo_access() {
   check_command sudo
-  if ! sudo -n true 2>/dev/null; then
-    fail "Permissao sudo sem prompt nao disponivel. Execute 'sudo -v' e tente novamente."
+  if [[ -n "${FRAGHUB_SUDO_PASSWORD:-}" ]]; then
+    if ! echo "${FRAGHUB_SUDO_PASSWORD}" | sudo -S -p '' true 2>/dev/null; then
+      fail "sudo com FRAGHUB_SUDO_PASSWORD falhou."
+    fi
+  elif ! sudo -n true 2>/dev/null; then
+    fail "Permissao sudo sem prompt nao disponivel. Execute 'sudo -v' ou defina FRAGHUB_SUDO_PASSWORD (apenas ambientes controlados)."
   fi
   log "INFO" "Sudo validado."
 }

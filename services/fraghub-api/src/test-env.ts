@@ -1,0 +1,14 @@
+process.env.PORT = '3001';
+process.env.NODE_ENV = 'test';
+process.env.LOG_LEVEL = 'error';
+process.env.DB_HOST = '127.0.0.1';
+process.env.DB_PORT = '3306';
+process.env.DB_NAME = 'fraghub_db';
+process.env.DB_USER = 'test';
+process.env.DB_PASSWORD = 'test';
+process.env.JWT_SECRET = '01234567890123456789012345678901';
+process.env.JWT_REFRESH_SECRET = '01234567890123456789012345678902';
+process.env.GOOGLE_CLIENT_ID = 'test-google-client-id.apps.googleusercontent.com';
+process.env.GOOGLE_CLIENT_SECRET = 'test-google-secret';
+process.env.GOOGLE_REDIRECT_URI = 'http://127.0.0.1:3001/auth/google/callback';
+process.env.FRONTEND_URL = 'http://127.0.0.1:5173';

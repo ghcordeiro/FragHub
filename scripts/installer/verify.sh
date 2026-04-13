@@ -13,11 +13,14 @@ EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
 BOOTSTRAP_MARKER="${FRAGHUB_BOOTSTRAP_MARKER:-${INPUT_DIR}/bootstrap.done}"
 DATABASE_BASELINE_MARKER="${FRAGHUB_DATABASE_BASELINE_MARKER:-${INPUT_DIR}/database-baseline.done}"
 DATABASE_BACKUP_MARKER="${FRAGHUB_DATABASE_BACKUP_MARKER:-${INPUT_DIR}/database-backup.done}"
+API_SETUP_MARKER="${FRAGHUB_API_SETUP_MARKER:-${INPUT_DIR}/api-setup.done}"
 VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
 FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
 FRAGHUB_DB_APP_DEFAULTS="${FRAGHUB_DB_APP_DEFAULTS:-${INPUT_DIR}/mysql-app.cnf}"
 FRAGHUB_DB_NAME="${FRAGHUB_DB_NAME:-fraghub_db}"
 FRAGHUB_BACKUP_SCRIPT="${FRAGHUB_BACKUP_SCRIPT:-/opt/fraghub/scripts/db-backup.sh}"
+FRAGHUB_API_SERVICE_NAME="${FRAGHUB_API_SERVICE_NAME:-fraghub-api.service}"
+FRAGHUB_API_PORT="${FRAGHUB_API_PORT:-3001}"
 
 fail() {
   fraghub_fail_actionable "$1" "bash scripts/installer/install.sh"
@@ -40,6 +43,7 @@ run_verify() {
   [[ -f "$BOOTSTRAP_MARKER" ]] || fail "Bootstrap nao concluido (marcador em falta: ${BOOTSTRAP_MARKER})."
   [[ -f "$DATABASE_BASELINE_MARKER" ]] || fail "database-baseline nao concluido (${DATABASE_BASELINE_MARKER})."
   [[ -f "$DATABASE_BACKUP_MARKER" ]] || fail "database-backup nao concluido (${DATABASE_BACKUP_MARKER})."
+  [[ -f "$API_SETUP_MARKER" ]] || fail "api-setup nao concluido (${API_SETUP_MARKER})."
 
   fraghub_log "INFO" "Inicio das verificacoes de saude (smoke)."
 
@@ -53,10 +57,14 @@ run_verify() {
 
   sudo ufw status | head -n 5 >/dev/null || fail "Nao foi possivel ler estado do UFW."
 
-  [[ -x "${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh" ]] || fail "linuxgsm.sh nao encontrado ou nao executavel em ${FRAGHUB_LINUXGSM_DIR}."
+  if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
+    [[ -x "${FRAGHUB_LINUXGSM_DIR}/linuxgsm.sh" ]] || fail "linuxgsm.sh nao encontrado ou nao executavel em ${FRAGHUB_LINUXGSM_DIR}."
+  fi
 
   id fraghub >/dev/null 2>&1 || fail "Utilizador fraghub nao existe."
   [[ -x "$FRAGHUB_BACKUP_SCRIPT" ]] || fail "Script de backup nao encontrado/executavel: ${FRAGHUB_BACKUP_SCRIPT}."
+  service_active "$FRAGHUB_API_SERVICE_NAME" || fail "Servico da API nao esta ativo (${FRAGHUB_API_SERVICE_NAME})."
+  curl -fsS "http://127.0.0.1:${FRAGHUB_API_PORT}/health" >/dev/null || fail "Endpoint /health da API nao respondeu com sucesso."
 
   mkdir -p "$INPUT_DIR"
   umask 077
@@ -66,7 +74,10 @@ run_verify() {
   fraghub_log "INFO" "Verificacoes de saude OK. Marcador: ${VERIFY_MARKER}"
 
   echo ""
-  echo "==> Verify: nginx, mariadb+schema, node v20, UFW, LinuxGSM, backup DB e utilizador fraghub OK."
+  echo "==> Verify: nginx, mariadb+schema, node v20, UFW, backup DB, API /health e utilizador fraghub OK."
+  if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
+    echo "    (stack de jogo: LinuxGSM verificado.)"
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

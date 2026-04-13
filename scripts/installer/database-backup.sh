@@ -67,7 +67,7 @@ precheck() {
   command -v gzip >/dev/null 2>&1 || fail "gzip nao encontrado."
   command -v crontab >/dev/null 2>&1 || fail "crontab nao encontrado."
   command -v sudo >/dev/null 2>&1 || fail "sudo necessario para database-backup."
-  sudo -n true 2>/dev/null || fail "sudo sem password nao disponivel. Execute sudo -v antes."
+  fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel. Execute sudo -v ou defina FRAGHUB_SUDO_PASSWORD (ambientes controlados)."
 
   if command -v systemctl >/dev/null 2>&1; then
     systemctl is-active --quiet mariadb || fail "MariaDB inativo."

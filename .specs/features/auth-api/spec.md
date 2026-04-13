@@ -82,6 +82,12 @@ Os endpoints `POST /auth/login`, `POST /auth/register` e `POST /auth/refresh` de
 ### AUTHAPI-REQ-012 - Logout
 `POST /auth/logout` deve aceitar o cookie de refresh token, marcar o token como revogado na tabela `refresh_tokens` via `revoked_at = NOW()`, limpar o cookie e retornar HTTP 204. Endpoint nao requer access token valido (permite logout mesmo com access token expirado).
 
+### AUTHAPI-REQ-013 - Migracoes de schema (users + refresh_tokens)
+O schema atual de `users` (migration `001_create_users.sql`) expoe `steam_id` e **nao** expoe `google_id`. Esta feature deve incluir migracao(oes) versionada(s) em `scripts/installer/sql/database/` que: (1) adicionem coluna `google_id VARCHAR(255) NULL` com indice unico (nullable) para contas Google; (2) criem a tabela `refresh_tokens` conforme **AUTHAPI-REQ-001**. Utilizadores criados apenas via Google OAuth devem receber `password_hash` = bcrypt de segredo aleatorio opaco (nunca texto previsivel ou vazio em resposta).
+
+### AUTHAPI-REQ-014 - Protecao CSRF no OAuth
+O fluxo `GET /auth/google` → Google → `GET /auth/google/callback` deve usar parametro `state` nao previsivel (e.g. aleatorio armazenado em cookie httpOnly de curta duracao ou equivalente) validado no callback antes de trocar o codigo por tokens.
+
 ## Requisitos Nao Funcionais
 
 ### AUTHAPI-NFR-001 - Seguranca de Senhas
@@ -110,6 +116,8 @@ Os middlewares `authMiddleware` e `requireRole` devem ter testes unitarios cobri
 - **AC-007**: `POST /auth/logout` revoga o refresh token; chamada subsequente a `POST /auth/refresh` com o mesmo token retorna HTTP 401
 - **AC-008**: Fluxo Google OAuth completo redireciona para `FRONTEND_URL` com access token apos autenticacao bem-sucedida
 - **AC-009**: Admin pode criar usuario via `POST /auth/admin/create-user`; jogador comum recebe HTTP 403 na mesma rota
+- **AC-010**: Migracoes **AUTHAPI-REQ-013** aplicadas e registadas em `schema_migrations` sem regressao em `users` existentes
+- **AC-011**: Requisicao OAuth callback sem `state` valido retorna HTTP 400 ou redireciona para `FRONTEND_URL` com erro controlado (sem vazar secrets)
 
 ## Out of Scope (esta feature)
 - Vinculacao de conta Steam (responsabilidade da feature `steam-integration`)
@@ -121,7 +129,7 @@ Os middlewares `authMiddleware` e `requireRole` devem ter testes unitarios cobri
 
 ## Dependencias
 - `api-setup`: projeto Node.js + Express + TypeScript scaffoldado, conexao Knex configurada, servico systemd ativo
-- `database-baseline` (v0.2): tabela `users` existente com colunas `id`, `email`, `password_hash`, `display_name`, `role`, `google_id`, `created_at`, `updated_at`; migration versionada disponivel para adicionar tabela `refresh_tokens`
+- `database-baseline` (v0.2): tabela `users` com `id`, `email`, `password_hash`, `display_name`, `role`, `steam_id`, `created_at`, `updated_at` — **AUTHAPI-REQ-013** adiciona `google_id` e `refresh_tokens`
 
 ## Riscos Iniciais
 - **CSRF em OAuth redirect**: o state parameter do OAuth deve ser validado para evitar ataques CSRF — implementar com token de estado aleatorio em sessao ou cookie temporario

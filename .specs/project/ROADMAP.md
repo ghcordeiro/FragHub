@@ -27,7 +27,7 @@
 ### v0.3 — API backend
 > API REST para o portal
 
-- [ ] `api-setup` — Node.js 20 + Express + TypeScript, Knex, systemd, health check
+- [x] `api-setup` — Node.js 20 + Express + TypeScript, Knex, systemd, health check *(Validate CTO 2026-04-13)*
 - [ ] `auth-api` — Google OAuth, email/senha, JWT access+refresh, roles, rate limiting
 - [ ] `steam-integration` — Steam OpenID vinculação, /api/player/{steamid}
 - [ ] `players-api` — CRUD jogadores, perfil, endpoint público por steamid

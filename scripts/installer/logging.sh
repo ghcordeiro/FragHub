@@ -12,7 +12,18 @@ FRAGHUB_LOG_SECRET_VARS=(
   FRAGHUB_ADMIN_PASSWORD
   FRAGHUB_GOOGLE_CLIENT_SECRET
   FRAGHUB_GOOGLE_CLIENT_ID
+  FRAGHUB_SUDO_PASSWORD
 )
+
+# Automação (E2E/CI): se definido, autentica sudo via stdin em vez de exigir cache `sudo -n`.
+# Não usar em produção exposta (password visível em ambientes inseguros).
+fraghub_sudo_noninteractive_ok() {
+  if [[ -n "${FRAGHUB_SUDO_PASSWORD:-}" ]]; then
+    echo "${FRAGHUB_SUDO_PASSWORD}" | sudo -S -p '' true >/dev/null 2>&1
+  else
+    sudo -n true 2>/dev/null
+  fi
+}
 
 fraghub_mask_secrets() {
   local text="$1"

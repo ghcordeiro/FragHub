@@ -27,6 +27,7 @@ if [[ "${FRAGHUB_FORCE_ALL:-0}" == "1" ]]; then
   fraghub_state_set game_verify "pending"
   fraghub_state_set game_summary "pending"
   fraghub_state_set database_backup "pending"
+  fraghub_state_set api_setup "pending"
   fraghub_state_set verify "pending"
   fraghub_state_set summary "pending"
 fi
@@ -50,7 +51,7 @@ run_step() {
   echo "==> ${done_msg}"
 }
 
-echo "==> FragHub Installer (v0.2)"
+echo "==> FragHub Installer (v0.3)"
 run_step precheck "${SCRIPT_DIR}/precheck.sh" \
   "Pre-checks do ambiente" \
   "Pre-checks finalizados."
@@ -100,10 +101,13 @@ fi
 run_step database_backup "${SCRIPT_DIR}/database-backup.sh" \
   "Configuracao de backup diario do banco" \
   "Database backup finalizado."
+run_step api_setup "${SCRIPT_DIR}/api-setup.sh" \
+  "Bootstrap da API backend (Node.js + TypeScript + systemd)" \
+  "API setup finalizado."
 run_step verify "${SCRIPT_DIR}/verify.sh" \
   "Verificacoes de saude (smoke)" \
   "Verificacoes concluidas."
 run_step summary "${SCRIPT_DIR}/summary.sh" \
   "Resumo final e proximos passos" \
   "Resumo finalizado."
-echo "==> Pipeline v0.2 do installer concluido."
+echo "==> Pipeline v0.3 do installer concluido."

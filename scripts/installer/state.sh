@@ -3,6 +3,10 @@
 # Uso: `source` a partir de install.sh, ou `bash state.sh status|reset`.
 
 : "${HOME:?HOME nao definido}"
+STATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=logging.sh
+source "${STATE_SCRIPT_DIR}/logging.sh"
+
 : "${FRAGHUB_STATE_DIR:=${HOME}/.fraghub/installer/state}"
 FRAGHUB_STEPS_FILE="${FRAGHUB_STEPS_FILE:-${FRAGHUB_STATE_DIR}/steps.env}"
 
@@ -21,6 +25,7 @@ GAME_SERVICES_MARKER="${FRAGHUB_GAME_SERVICES_MARKER:-${INPUT_DIR}/game-services
 GAME_VERIFY_MARKER="${FRAGHUB_GAME_VERIFY_MARKER:-${INPUT_DIR}/game-verify.done}"
 GAME_SUMMARY_MARKER="${FRAGHUB_GAME_SUMMARY_MARKER:-${INPUT_DIR}/game-summary.done}"
 DATABASE_BACKUP_MARKER="${FRAGHUB_DATABASE_BACKUP_MARKER:-${INPUT_DIR}/database-backup.done}"
+API_SETUP_MARKER="${FRAGHUB_API_SETUP_MARKER:-${INPUT_DIR}/api-setup.done}"
 VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
 SUMMARY_MARKER="${FRAGHUB_SUMMARY_MARKER:-${INPUT_DIR}/summary.done}"
 
@@ -59,7 +64,7 @@ fraghub_state_verify_precheck() {
   [[ "$(uname -s)" == "Linux" ]] || return 1
   [[ -f /etc/os-release ]] || return 1
   command -v sudo >/dev/null 2>&1 || return 1
-  sudo -n true 2>/dev/null || return 1
+  fraghub_sudo_noninteractive_ok || return 1
   return 0
 }
 
@@ -153,6 +158,15 @@ fraghub_state_verify_database_backup() {
   return 0
 }
 
+fraghub_state_verify_api_setup() {
+  [[ -f "$API_SETUP_MARKER" ]] || return 1
+  [[ -f "/etc/systemd/system/${FRAGHUB_API_SERVICE_NAME:-fraghub-api.service}" ]] || return 1
+  [[ -f "${FRAGHUB_API_DIR:-/opt/fraghub/api}/package.json" ]] || return 1
+  [[ -f "${FRAGHUB_API_DIR:-/opt/fraghub/api}/dist/index.js" ]] || return 1
+  [[ -f "${FRAGHUB_API_DIR:-/opt/fraghub/api}/.env" ]] || return 1
+  return 0
+}
+
 fraghub_state_verify_verify() {
   [[ -f "$VERIFY_MARKER" ]] || return 1
   return 0
@@ -182,6 +196,7 @@ fraghub_state_verify() {
     game_verify) fraghub_state_verify_game_verify ;;
     game_summary) fraghub_state_verify_game_summary ;;
     database_backup) fraghub_state_verify_database_backup ;;
+    api_setup) fraghub_state_verify_api_setup ;;
     verify) fraghub_state_verify_verify ;;
     summary) fraghub_state_verify_summary ;;
     *) return 1 ;;

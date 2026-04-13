@@ -1,38 +1,96 @@
-<!-- code-review-graph MCP tools -->
-## MCP Tools: code-review-graph
+# FragHub Agent Contract
 
-**IMPORTANT: This project has a knowledge graph. ALWAYS use the
-code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
-the codebase.** The graph is faster, cheaper (fewer tokens), and gives
-you structural context (callers, dependents, test coverage) that file
-scanning cannot.
+This file is the source of truth for autonomous agents working on FragHub.
 
-### When to use graph tools FIRST
+## Project Scope (Hard Constraint)
 
-- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
-- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
-- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
-- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
-- **Architecture questions**: `get_architecture_overview` + `list_communities`
+- Work ONLY inside: `/Users/guilhermecordeiro/www/pessoal/FragHub`
+- Never act on other repositories or system paths.
+- If context is missing, stop and report blocker instead of improvising.
 
-Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+## Required Project Context
 
-### Key Tools
+Load and follow these docs in this order:
 
-| Tool | Use when |
-|------|----------|
-| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
-| `get_review_context` | Need source snippets for review — token-efficient |
-| `get_impact_radius` | Understanding blast radius of a change |
-| `get_affected_flows` | Finding which execution paths are impacted |
-| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
-| `semantic_search_nodes` | Finding functions/classes by name or keyword |
-| `get_architecture_overview` | Understanding high-level codebase structure |
-| `refactor_tool` | Planning renames, finding dead code |
+1. `.specs/project/CONSTITUTION.md` (immutable rules)
+2. `.specs/project/ROADMAP.md` (milestones and feature sequence)
+3. `.specs/project/STATE.md` (decisions, history, current status)
+4. `.specs/planning/PLANNING.md` (cross-feature dependencies and scope)
 
-### Workflow
+## Mandatory Delivery Format (SDD)
 
-1. The graph auto-updates on file changes (via hooks).
-2. Use `detect_changes` for code review.
-3. Use `get_affected_flows` to understand impact.
-4. Use `query_graph` pattern="tests_for" to check coverage.
+All non-trivial work must follow Spec-Driven Development phases:
+
+1. Specify
+2. Plan
+3. Tasks
+4. Implement
+5. Validate
+
+Rules:
+
+- Do not jump directly to implementation.
+- Do not implement without approved tasks for Large/Complex work.
+- Keep artifacts under `.specs/features/<feature-slug>/`.
+- Respect gates: phase advances only after explicit approval.
+
+## Artifact Locations
+
+For each feature `<slug>`, use:
+
+- `.specs/features/<slug>/spec.md`
+- `.specs/features/<slug>/plan.md` (when required by scope)
+- `.specs/features/<slug>/tasks.md` (TDAD-style where applicable)
+- `.specs/features/<slug>/validation.md` (evidence and AC status)
+
+Architecture outputs:
+
+- ADRs in `docs/adr/`
+- C4 diagrams in `docs/architecture/`
+
+## Linear Is Mandatory
+
+Linear must be used as operational tracker for every feature flow:
+
+- Pre-Specify: fetch and use parent issue context.
+- Post-Tasks: sync spec/plan/tasks summary back to parent issue.
+- Create/update sub-issues from approved tasks.
+- If Linear is unavailable, stop and mark the work as blocked.
+
+## code-review-graph Is Mandatory First
+
+Use code-review-graph MCP tools BEFORE fallback file scanning:
+
+- `semantic_search_nodes_tool`
+- `query_graph_tool`
+- `get_impact_radius_tool`
+- `detect_changes_tool`
+- `get_review_context_tool`
+- `get_affected_flows_tool`
+
+Fallback to file scans only when graph coverage is insufficient.
+
+## Execution Guardrails
+
+- Honor roadmap order and dependency gates from `.specs/project/ROADMAP.md` and `.specs/planning/PLANNING.md`.
+- Prefer smallest safe increment that preserves project architecture.
+- Keep logs/action notes concise and actionable.
+- If requirements conflict, `CONSTITUTION.md` wins.
+
+## Autonomous Execution Policy
+
+Use this policy to keep work progressing without manual babysitting:
+
+- Treat assigned issues as end-to-end responsibilities, not only delegation triggers.
+- If delegating to a child issue, keep the parent issue in `in_progress` until:
+  - child outcomes are reviewed,
+  - parent summary is updated,
+  - next action is assigned.
+- Never mark a parent issue as `done` immediately after creating child tasks.
+- On each heartbeat, always do one concrete advancement:
+  - produce artifact update,
+  - create or refine executable subtasks,
+  - implement approved task slice,
+  - or explicitly mark blocker with owner and unblock condition.
+- If blocked, set status `blocked` with actionable unblock instructions; retry only after new context appears.
+- Keep continuity across heartbeats using the latest issue comments and artifact diffs.

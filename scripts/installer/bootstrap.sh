@@ -63,7 +63,7 @@ run_bootstrap() {
   fi
 
   command -v sudo >/dev/null 2>&1 || fail "sudo necessario para bootstrap."
-  sudo -n true 2>/dev/null || fail "sudo sem password nao disponivel. Execute sudo -v antes do bootstrap."
+  fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel. Execute sudo -v ou defina FRAGHUB_SUDO_PASSWORD (ambientes controlados)."
 
   fraghub_log "INFO" "Inicio do bootstrap de dependencias base (CLI-REQ-004)."
 

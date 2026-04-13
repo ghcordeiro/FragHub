@@ -93,7 +93,7 @@ configure_mariadb_local_bind() {
 install_mariadb() {
   fraghub_log "INFO" "Instalando/configurando MariaDB (DBASE-REQ-002)."
   command -v sudo >/dev/null 2>&1 || fail "sudo necessario para database-baseline."
-  sudo -n true 2>/dev/null || fail "sudo sem password nao disponivel. Execute sudo -v antes."
+  fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel. Execute sudo -v ou defina FRAGHUB_SUDO_PASSWORD (ambientes controlados)."
 
   export DEBIAN_FRONTEND=noninteractive
   sudo apt-get update -qq
@@ -190,6 +190,7 @@ apply_migrations() {
 001|create_users|${FRAGHUB_DB_MIGRATIONS_DIR}/001_create_users.sql
 002|create_matches|${FRAGHUB_DB_MIGRATIONS_DIR}/002_create_matches.sql
 003|create_stats|${FRAGHUB_DB_MIGRATIONS_DIR}/003_create_stats.sql
+004|auth_google_refresh|${FRAGHUB_DB_MIGRATIONS_DIR}/004_auth_google_id_refresh_tokens.sql
 EOF
 }
 
@@ -198,13 +199,13 @@ verify_post_install() {
   mysql_app_exec "SELECT 1;" >/dev/null
 
   local table_name count
-  for table_name in schema_migrations users matches stats; do
+  for table_name in schema_migrations users matches stats refresh_tokens; do
     count="$(mysql_app_exec "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${FRAGHUB_DB_NAME}' AND table_name='${table_name}';")"
     [[ "$count" == "1" ]] || fail "Tabela obrigatoria ausente: ${table_name}."
   done
 
-  count="$(mysql_app_exec "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${FRAGHUB_DB_NAME}' AND table_name IN ('schema_migrations','users','matches','stats') AND table_collation='utf8mb4_unicode_ci';")"
-  [[ "$count" == "4" ]] || fail "Collation esperado (utf8mb4_unicode_ci) nao confirmado em todas as tabelas nucleares."
+  count="$(mysql_app_exec "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${FRAGHUB_DB_NAME}' AND table_name IN ('schema_migrations','users','matches','stats','refresh_tokens') AND table_collation='utf8mb4_unicode_ci';")"
+  [[ "$count" == "5" ]] || fail "Collation esperado (utf8mb4_unicode_ci) nao confirmado em todas as tabelas nucleares."
 }
 
 write_marker() {

@@ -65,7 +65,7 @@ run_game_services() {
   [[ "${FRAGHUB_INSTALL_USER}" != "root" ]] || fail "Servico de jogo nao pode ser configurado para usuario root."
 
   command -v sudo >/dev/null 2>&1 || fail "sudo necessario para criar unidades systemd."
-  sudo -n true 2>/dev/null || fail "sudo sem password nao disponivel para configurar servicos."
+  fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel para configurar servicos. Defina FRAGHUB_SUDO_PASSWORD em E2E se necessario."
   command -v systemctl >/dev/null 2>&1 || fail "systemctl nao disponivel."
 
   write_unit_file "fraghub-cs2.service" "$FRAGHUB_CS2_INSTANCE"

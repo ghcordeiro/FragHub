@@ -64,6 +64,113 @@
 
 ## Histórico de sessões
 
+### 2026-04-13 — Feature `api-setup`: gate Validate (CTO) aprovado
+
+- **SDD:** utilizador confirmou **aprovado** (*spec-driven*); `validation.md` e `tasks.md` atualizados com fecho do gate CTO (**2026-04-13**).
+- **E2E:** evidência prévia em Ubuntu (`run-e2e-remote.sh --rerun`); **NFR-001** ShellCheck permanece recomendado no host, sem bloquear fecho.
+- **Próximo:** avançar roadmap v0.3 conforme `.specs/project/ROADMAP.md` / `PLANNING.md`.
+
+### 2026-04-13 — CTO heartbeat (Linear GraphQL + Paperclip [FRAA-17](/FRAA/issues/FRAA-17))
+
+- **Linear:** `LINEAR_API_KEY` presente no runtime; `commentCreate` em **FRA-15** com *Sumário para tracker* + nota de gates aprovados e **Implement** desbloqueado — comentário [no Linear](https://linear.app/fraghub/issue/FRA-15/fraghub-continuation-kickoff-sdd-linear-v03-api-setup#comment-7222fdac).
+- **Paperclip:** `inbox-lite` do CTO **[]**; comentário de auditoria em [FRAA-17](/FRAA/issues/FRAA-17#comment-15e5c0a9-8808-48e3-99de-f36d56f8373b) com ligação ao Linear e pedido para o CEO fechar [FRAA-19](/FRAA/issues/FRAA-19) se redundante.
+- **Repo:** `.specs/features/api-setup/tasks.md` — gates **Specify/Plan/Tasks** aprovados **2026-04-13**; **Implement** desbloqueado (próximo: pares **T/I** + `validation.md`).
+- **Checkout CTO:** sem issue ativa atribuída em `todo`/`in_progress`/`blocked` neste run (histórico: [FRAA-18](/FRAA/issues/FRAA-18) **`done`**).
+
+### 2026-04-13 — CEO heartbeat #10 (Paperclip: FRAA-18 `done` + erro `release` de novo)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **Paperclip:** `inbox-lite` com [FRAA-17](/FRAA/issues/FRAA-17); `checkout` OK; comentário no pai com estado **filha [FRAA-18](/FRAA/issues/FRAA-18) = `done`**, gates SDD repo ainda pendentes, Linear FRA-15 manual.
+- **Erro:** chamada `release` apesar da nota no próprio comentário — API repôs pai a **todo** sem assignee; **PATCH** corrigiu para **in_progress** + CEO + comentário de auditoria.
+- **Regra reforçada:** não usar `release` neste fluxo de pai em tracking até haver comportamento seguro ou fecho explícito do issue.
+
+### 2026-04-13 — CEO heartbeat #9 (Paperclip: FRAA-17 pai + lição `release`)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **Paperclip:** [FRAA-18](/FRAA/issues/FRAA-18) em **in_progress**; inbox CEO vazio; `POST .../checkout` em [FRAA-17](/FRAA/issues/FRAA-17) (assignee CEO, estava `done`) transitou pai **done → in_progress** (delegação activa).
+- **`release`:** reverteu FRAA-17 para **todo** e removeu assignee; **PATCH** repôs **in_progress** + assignee CEO + comentários de auditoria no Paperclip.
+- **Lição:** não usar `release` no pai quando o objectivo é só fechar lock mas manter o pai em tracking **in_progress**; preferir PATCH explícito.
+- Comentário adicional em [FRAA-18](/FRAA/issues/FRAA-18) para visibilidade do CTO.
+
+### 2026-04-13 — CEO heartbeat #8 (FRAA-19: sumário pós-Tasks para Linear)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **Paperclip:** `GET /api/agents/me` OK (CEO); `inbox-lite` com **[FRAA-19](/FRAA/issues/FRAA-19)** atribuída; `POST /api/issues/{id}/checkout` OK; `POST /api/issues/{id}/comments` com bloco *Sumário para tracker* + condição de gates; `PATCH` **done** com referência ao comentário.
+- **SDD `api-setup`:** gates Specify/Plan/Tasks em `.specs/features/api-setup/tasks.md` permanecem *Aguardando confirmação formal*; **Implement (I-xx)** bloqueado até aprovação da linha Tasks.
+- **code-review-graph / Linear API:** indisponíveis neste runtime do agente; sumário para colagem manual em Linear **FRA-15** conforme descrição da FRAA-19.
+
+### 2026-04-13 — CEO heartbeat #7 (Paperclip API + sync CTO)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **Paperclip:** `curl` com `PAPERCLIP_API_URL` + `PAPERCLIP_API_KEY` + `X-Paperclip-Run-Id` operacional; `GET /api/agents/me` OK (agente CEO); `GET /api/agents/me/inbox-lite` **[]** (sem atribuições ao CEO).
+- **Issues:** comentário de sync SDD `api-setup` em [FRAA-18](/FRAA/issues/FRAA-18) (filha CTO, kickoff FRA-15); resumo com ligação ao filho em [FRAA-17](/FRAA/issues/FRAA-17). `POST .../checkout` da FRAA-18 pelo CEO → **409** (assignee CTO — esperado).
+- **code-review-graph / Linear MCP:** continuam fora deste agente; Linear segue dependência humana/CTO conforme AGENTS.md.
+- **Nota:** durante validação do schema de comentários foi criado um comentário `test` efémero em FRAA-18; seguido de comentário substancial com estado real.
+
+### 2026-04-13 — CTO heartbeat (protocolo `curl` + [FRAA-18](/FRAA/issues/FRAA-18))
+
+- **Paperclip:** `GET /api/agents/me` + `GET /api/agents/me/inbox-lite` OK via shell; comentário novo em [FRAA-18](/FRAA/issues/FRAA-18#comment-0dd33e8b-7c34-4152-8e51-ad56c7171132) (run `0ae7c312-6805-4c02-affb-9223728d2f08`).
+- **Checkout:** `POST .../checkout` → *Issue checkout conflict* (há `executionRunId`/`activeRun` associado à issue — não houve checkout limpo neste heartbeat).
+- **Linear:** `LINEAR_API_KEY` continua vazia no runtime → [FRAA-18](/FRAA/issues/FRAA-18) mantém-se **`blocked`**; desbloqueio: secret válido ou sync manual em [FRA-15](https://linear.app/fraghub/issue/FRA-15/fraghub-continuation-kickoff-sdd-linear-v03-api-setup); filha [FRAA-19](/FRAA/issues/FRAA-19) (**CEO**, `todo`) para colar *Sumário para tracker* pós-gates até **Tasks**.
+- **SDD repo:** `.specs/features/api-setup/tasks.md` — gates inalterados; **Implement** bloqueado.
+
+### 2026-04-12 — CEO heartbeat #6 (Specify: drift de estado)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **code-review-graph** / **Linear** / **Paperclip** (`curl`): indisponíveis (sem MCP; shell rejeitado).
+- **Artefacto:** `.specs/features/api-setup/spec.md` — **REQ-001 (3)**, **REQ-010** e **AC-007** alinhados ao estado canónico do instalador e ao fecho previsto em **T-03/I-03** (referência a `validation.md` para drift), sem alterar código de produção.
+- **Gates:** tabela de gates em `tasks.md` inalterada; aprovação humana de **Specify** continua necessária se o texto aprovado divergir desta revisão.
+
+### 2026-04-12 — CEO heartbeat #5 (Validate prep)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **code-review-graph** / **Linear** / **Paperclip** (`curl`): indisponíveis (sem MCP; shell rejeitado).
+- **Artefacto:** `.specs/features/api-setup/validation.md` — secção *Pré-requisitos (ambiente)* + mapeamento T→AC para quando **Implement** estiver concluído.
+- **`api-setup`:** gates e bloqueio de **I-xx** inalterados.
+
+### 2026-04-12 — CEO heartbeat #4 (artefatos SDD + tracker)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **code-review-graph** / **Linear** / **Paperclip** (`curl` inbox): indisponíveis neste runtime (sem MCP; shell rejeitado).
+- **Artefactos:** (1) `.specs/planning/PLANNING.md` — linha de totais ajustada para **24** features pendentes (v0.3→v1.0) após conclusão de v0.2; (2) `.specs/features/api-setup/tasks.md` — secção *Sumário para tracker* para colar na issue pai (pós-Tasks, AGENTS.md).
+- **`api-setup`:** gates inalterados; **Implement (I-xx)** continua bloqueado até aprovação formal de Tasks.
+
+### 2026-04-12 — CEO heartbeat #3 (alinhamento PLANNING + bloqueio runtime)
+
+- Contexto obrigatório recarregado (ordem AGENTS.md): `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md`.
+- **code-review-graph** e **Linear**: continuam indisponíveis neste runtime do agente.
+- **Paperclip** `inbox-lite`: nova tentativa com `curl` — **shell rejeitado** de novo; sem inbox/checkout/comentário neste heartbeat.
+- **Artefato**: `.specs/planning/PLANNING.md` — tabela *Status geral* atualizada para refletir **v0.2 concluída** e **v0.3** com `api-setup` em SDD (gates pendentes), eliminando deriva face a `ROADMAP.md`.
+
+### 2026-04-12 — CTO heartbeat (reprise, contrato CTO)
+
+- Confirmação de ambiente: execução de **shell rejeitada** também para comando trivial (`true`) — sem leitura fiável de `PAPERCLIP_*` nem chamadas `curl` ao Paperclip neste heartbeat.
+- **Paperclip / contrato CTO (pontos 4–7)**: impossível marcar issue `blocked`/`in_progress` ou comentar via API até o operador restabelecer terminal (ou colar `inbox-lite` + id da issue pai).
+- **`api-setup`**: gates Specify/Plan/Tasks em `.specs/features/api-setup/tasks.md` continuam *Aguardando confirmação formal* — **nenhuma fatia I-xx** executada (política SDD).
+- **Desbloqueio**: operador (shell/rede + MCPs Linear + code-review-graph) + humano (aprovação formal dos gates antes de Implement).
+
+### 2026-04-12 — CEO heartbeat #2 (Paperclip + compliance)
+
+- Revalidação do contrato AGENTS.md: **Linear** e **code-review-graph** continuam **indisponíveis** neste runtime do agente (sem ferramentas MCP correspondentes).
+- Tentativa de **Paperclip** `GET .../api/agents/me/inbox-lite` com `PAPERCLIP_*` injetados: **execução de shell rejeitada** pelo ambiente — não foi possível obter inbox, fazer checkout nem comentar issues neste heartbeat.
+- Estado de `api-setup` **inalterado**: gates Specify/Plan/Tasks em *Aguardando confirmação formal*; **Implement bloqueado** por política explícita em `tasks.md`.
+- **Desbloqueio (operador)**: permitir rede/shell para o processo do agente **ou** colar aqui o output do `inbox-lite` + ID da issue pai `api-setup`; reexpor MCPs Linear + code-review-graph no Cursor; aprovar gates na tabela de `tasks.md` quando estiverem prontos.
+
+### 2026-04-12 — CEO heartbeat (governança SDD + `api-setup`)
+
+- Contexto obrigatório recarregado: `CONSTITUTION.md`, `ROADMAP.md`, `STATE.md`, `PLANNING.md` (ordem AGENTS.md).
+- Frente ativa do roadmap: **v0.3** com primeira feature **`api-setup`**; artefatos presentes em `.specs/features/api-setup/` (`spec.md`, `plan.md`, `tasks.md`, `validation.md`) e ADR `docs/adr/0005-api-backend-bootstrap-instalador.md`.
+- **Gates SDD** em `tasks.md`: Specify, Plan e Tasks ainda em *Aguardando confirmação formal* — **Implement (I-xx) permanece bloqueado** até aprovação humana explícita (data + iniciais em Linear/Paperclip ou na tabela do `tasks.md`).
+- **Bloqueadores de compliance neste runtime (CEO)**: ferramentas MCP **code-review-graph** e **Linear** não estão expostas a este agente; chamada **Paperclip** `inbox-lite` e shell local foram **indisponíveis/rejeitados** na tentativa de heartbeat — rastreabilidade operacional (issues) depende do operador reabrir integrações ou colar contexto da issue pai aqui.
+- **Próxima ação concreta (humano ou integração restaurada)**: (1) aprovar formalmente os três primeiros gates de `api-setup` na ordem; (2) após aprovação de Tasks, autorizar execução dos pares T/I e preencher `validation.md` (preferencialmente E2E Ubuntu com Node 20 + MariaDB); (3) manter issue pai em **in_progress** até validação e resumo no pai, sem marcar *done* logo após delegar filhos.
+
+### 2026-04-12 — CTO heartbeat (`api-setup`, SDD)
+
+- Artefatos criados ou refinados em `.specs/features/api-setup/`: `plan.md`, `tasks.md`, `validation.md`; ADR `docs/adr/0005-api-backend-bootstrap-instalador.md`.
+- `tasks.md` atualizado com tabela de **Gates SDD** explícitos (Specify/Plan/Tasks/Implement/Validate) para impedir merge de **I-xx** sem aprovação humana.
+- Bloqueadores do agente neste runtime: execução de **shell** indisponível (sem ShellCheck/curl local); **Linear** e **code-review-graph** MCP não expostos ao agente — compliance total de AGENTS.md depende do operador reativar integrações.
+- Próxima ação humana: aprovar gates na ordem; após **Tasks**, executar pares T/I e preencher `validation.md` (idealmente com E2E Ubuntu).
+
 ### 2026-04-09 — Specs completos v0.2→v1.0 (planejamento antecipado)
 
 - Criado `.specs/planning/PLANNING.md` com mapa completo de 28 features (v0.2→v1.0): scope, pipeline SDD, ADRs esperadas, dependências e riscos por feature.

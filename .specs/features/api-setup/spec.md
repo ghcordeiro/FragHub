@@ -22,7 +22,7 @@ Bootstrap do projeto Node.js 20 LTS + Express + TypeScript (strict) em `/opt/fra
 ## Requisitos Funcionais
 
 ### APISETUP-REQ-001 - Precheck de Dependencias
-Antes de iniciar o scaffold, o script deve verificar: (1) Node.js versao 20.x disponivel via `node --version`; (2) npm disponivel; (3) database-baseline marcada como concluida no state file do installer (`/opt/fraghub/state`); (4) usuario `fraghub` existente no sistema. Se qualquer condicao falhar, o script deve abortar com mensagem de erro clara e codigo de saida nao-zero.
+Antes de iniciar o scaffold, o script deve verificar: (1) Node.js versao 20.x disponivel via `node --version`; (2) npm disponivel; (3) etapa `database_baseline` concluida e verificavel via `fraghub_state_verify database_baseline` (marcadores + credenciais alinhados a `state.sh`); (4) usuario `fraghub` existente no sistema. Se qualquer condicao falhar, o script deve abortar com mensagem de erro clara e codigo de saida nao-zero.
 
 ### APISETUP-REQ-002 - Estrutura de Diretorios
 O script deve criar a seguinte estrutura em `/opt/fraghub/api/`:
@@ -40,6 +40,7 @@ O script deve criar a seguinte estrutura em `/opt/fraghub/api/`:
   .eslintrc.json
   .prettierrc.json
   .env.example
+  .gitignore
 ```
 Todos os arquivos e diretorios devem pertencer ao usuario `fraghub` com grupo `fraghub`.
 
@@ -74,7 +75,7 @@ O campo `db` deve refletir o estado real da conexao com MariaDB no momento da re
 Deve ser criada a unidade `/etc/systemd/system/fraghub-api.service` com: `User=fraghub`, `WorkingDirectory=/opt/fraghub/api`, `ExecStart=node dist/index.js`, `Restart=always`, `RestartSec=5`, `EnvironmentFile=/opt/fraghub/api/.env`, `StandardOutput=journal`, `StandardError=journal`. O servico deve ser habilitado via `systemctl enable` e iniciado via `systemctl start`.
 
 ### APISETUP-REQ-010 - State File do Installer
-Ao concluir com sucesso, o script deve registrar `api-setup` como concluida no state file do installer em `/opt/fraghub/state`, seguindo o padrao ja estabelecido pela feature `cli-installer`.
+Ao concluir com sucesso, o script deve registrar `api_setup=done` em `${FRAGHUB_STATE_DIR:-$HOME/.fraghub/installer/state}/steps.env` (via `fraghub_state_set`, mesmo contrato que `install.sh`) e manter o marcador `api-setup.done` sob `FRAGHUB_INPUT_DIR` para verificacao `fraghub_state_verify_api_setup`. Reexecucoes idempotentes consultam `steps.env` + verificacao antes de instalar de novo.
 
 ## Requisitos Nao Funcionais
 
@@ -101,7 +102,7 @@ A porta da API deve ser configuravel via variavel de ambiente `PORT`. O default 
 - **AC-004**: `npx tsc --noEmit` executado em `/opt/fraghub/api/` completa sem erros
 - **AC-005**: `npm run lint` executado em `/opt/fraghub/api/` completa sem erros de lint
 - **AC-006**: Executar o script de instalacao uma segunda vez resulta em mensagem "api-setup ja instalado" sem erros
-- **AC-007**: `grep "api-setup" /opt/fraghub/state` retorna a linha de conclusao com timestamp
+- **AC-007**: evidência em `steps.env`: `grep '^api_setup=done$' "${FRAGHUB_STATE_DIR:-$HOME/.fraghub/installer/state}/steps.env"` e marcador `${FRAGHUB_INPUT_DIR:-$HOME/.fraghub/installer}/api-setup.done` presente após sucesso
 - **AC-008**: `systemctl enable fraghub-api.service` ja esta configurado — apos reboot, o servico sobe automaticamente
 
 ## Out of Scope (esta feature)
