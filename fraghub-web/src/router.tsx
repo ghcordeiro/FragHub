@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { HomePage } from '@/pages/HomePage'
+import { AdminLayout } from '@/components/AdminLayout'
 
 export const router = createBrowserRouter([
   {
@@ -31,5 +32,27 @@ export const router = createBrowserRouter([
   {
     path: '/leaderboard',
     lazy: () => import('@/pages/LeaderboardPage').then((m) => ({ Component: m.LeaderboardPage })),
+  },
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    children: [
+      {
+        path: 'dashboard',
+        lazy: () => import('@/pages/admin/Dashboard').then((m) => ({ Component: m.AdminDashboard })),
+      },
+      {
+        path: 'players',
+        lazy: () => import('@/pages/admin/Players').then((m) => ({ Component: m.AdminPlayers })),
+      },
+      {
+        path: 'servers',
+        lazy: () => import('@/pages/admin/Servers').then((m) => ({ Component: m.AdminServers })),
+      },
+      {
+        path: 'logs',
+        lazy: () => import('@/pages/admin/Logs').then((m) => ({ Component: m.AdminLogs })),
+      },
+    ],
   },
 ])
