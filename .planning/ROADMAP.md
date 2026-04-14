@@ -71,6 +71,10 @@ Phase 3 is in progress. See phase breakdown below.
 
 **Goal:** Interface web básica com login, perfis e leaderboard
 
+**Plans:**
+- [ ] 04-01-PLAN.md — Bootstrap React + auth UI + profile + leaderboard + Nginx SSL
+
+**Features:**
 - frontend-setup — React 18+ + TypeScript + Vite, Zustand, React Router v6
 - nginx-ssl — reverse proxy Nginx, SSL certbot, headers de segurança
 - auth-ui — Login, Registro, Google OAuth, vinculação Steam, gestão de sessão
@@ -79,7 +83,7 @@ Phase 3 is in progress. See phase breakdown below.
 
 **Completion Criteria:** usuário consegue logar e ver próprio perfil
 
-**Status:** Not started
+**Status:** Planned (1 plan)
 **Specs:** `.specs/features/frontend-setup/`, `.specs/features/nginx-ssl/`, `.specs/features/auth-ui/`, `.specs/features/player-profile-ui/`, `.specs/features/leaderboard-ui/`
 
 ---
