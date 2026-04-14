@@ -1,5 +1,17 @@
 # Plugins Extended CS2 - Tasks (TDAD)
 
+## Gates SDD
+
+| Gate | Estado | Aprovador | Data |
+|------|--------|-----------|------|
+| Specify (`spec.md`) | Aprovado | utilizador | 2026-04-13 |
+| Plan (`plan.md`) | Aprovado | utilizador | 2026-04-13 |
+| Tasks (abaixo) | Aprovado | utilizador | 2026-04-13 |
+| Implement | Concluído no repo | — | 2026-04-13 |
+| Validate | Aprovado | utilizador | 2026-04-13 |
+
+---
+
 ## Tarefas
 
 ### T-01 - Definir validação por AC do bundle CS2 estendido

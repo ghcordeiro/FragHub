@@ -1,5 +1,17 @@
 # CLI Installer - Tasks (TDAD)
 
+## Gates SDD
+
+| Gate | Estado | Aprovador | Data |
+|------|--------|-----------|------|
+| Specify (`spec.md`) | Aprovado | utilizador | 2026-04-13 |
+| Plan (`plan.md`) | Aprovado | utilizador | 2026-04-13 |
+| Tasks (abaixo) | Aprovado | utilizador | 2026-04-13 |
+| Implement | Concluído no repo | — | 2026-04-13 |
+| Validate | Aprovado | utilizador | 2026-04-13 |
+
+---
+
 ## Convencoes
 
 - `T-XX` = tarefa de teste/verificacao.
