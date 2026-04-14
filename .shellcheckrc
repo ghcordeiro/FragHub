@@ -1,0 +1,9 @@
+# ShellCheck configuration for FragHub project
+# https://www.shellcheck.net/
+
+# Disable specific checks
+disable=SC2181,SC2086,SC1091
+
+# SC2181 — Check exit code directly (too verbose in some contexts)
+# SC2086 — Double quote to prevent globbing/word-splitting (bash scripts often use deliberate expansion)
+# SC1091 — Not following sourced file (many sourced files are dynamic)

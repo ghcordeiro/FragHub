@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Knex } from 'knex';
 import { QueueState, balanceTeams, joinQueue } from './queueService';
 
@@ -67,7 +68,7 @@ describe('Queue Service', () => {
         { id: 'user10', elo_rating: 750, displayName: 'Jack' },
       ];
 
-      knex.whereIn = jest.fn(() => ({ select: jest.fn(() => Promise.resolve(mockUsers)) })) as any;
+      knex.whereIn = vi.fn(() => ({ select: vi.fn(() => Promise.resolve(mockUsers)) })) as any;
 
       const userIds = mockUsers.map(u => u.id);
       const config = { maxEloDiff: 50 };
@@ -95,8 +96,8 @@ describe('Queue Service', () => {
       const { knex } = createMockKnex();
 
       const mockUser = { id: 'user1', steam_id: null };
-      knex.where = jest.fn(() => ({
-        first: jest.fn(() => Promise.resolve(mockUser)),
+      knex.where = vi.fn(() => ({
+        first: vi.fn(() => Promise.resolve(mockUser)),
       })) as any;
 
       await expect(
@@ -111,18 +112,18 @@ describe('Queue Service', () => {
       const { knex } = createMockKnex();
 
       let callCount = 0;
-      knex.where = jest.fn(() => {
+      knex.where = vi.fn(() => {
         callCount++;
         if (callCount === 1) {
           // First call: check if user exists
           return {
-            first: jest.fn(() => Promise.resolve({ id: 'user1', steam_id: 'steam123' })),
+            first: vi.fn(() => Promise.resolve({ id: 'user1', steam_id: 'steam123' })),
           };
         } else if (callCount === 2) {
           // Second call: check if already in queue
           return {
-            join: jest.fn(() => ({
-              first: jest.fn(() =>
+            join: vi.fn(() => ({
+              first: vi.fn(() =>
                 Promise.resolve({
                   id: 'qp1',
                   user_id: 'user1',

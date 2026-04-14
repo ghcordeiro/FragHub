@@ -1,17 +1,18 @@
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import * as discordService from './discordNotifyService';
 
 // Mock fetch globally
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 global.fetch = mockFetch as any;
 
 describe('Discord Notify Service', () => {
   beforeEach(() => {
     mockFetch.mockClear();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('notifyMatchReady', () => {
@@ -41,7 +42,7 @@ describe('Discord Notify Service', () => {
       await discordService.notifyMatchReady(teams, 'de_mirage', '192.168.1.1:27015');
 
       // Allow fire-and-forget promise to settle
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(mockFetch).toHaveBeenCalled();
       const call = mockFetch.mock.calls[0];
@@ -69,7 +70,7 @@ describe('Discord Notify Service', () => {
       await discordService.notifyMatchReady(teams, 'de_dust2', '127.0.0.1:27015');
 
       // Should not fetch if webhook is not configured
-      jest.runAllTimers();
+      vi.runAllTimers();
       // (fetch may or may not be called depending on env loading)
     });
 
@@ -83,7 +84,7 @@ describe('Discord Notify Service', () => {
 
       await discordService.notifyMatchReady(teams, 'de_mirage', '127.0.0.1:27015');
 
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(mockFetch).toHaveBeenCalled();
     });
@@ -110,7 +111,7 @@ describe('Discord Notify Service', () => {
 
       await discordService.notifyMatchComplete(result);
 
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(mockFetch).toHaveBeenCalled();
       const call = mockFetch.mock.calls[0];
@@ -142,7 +143,7 @@ describe('Discord Notify Service', () => {
 
       await discordService.notifyMatchComplete(result);
 
-      jest.runAllTimers();
+      vi.runAllTimers();
 
       expect(mockFetch).toHaveBeenCalled();
     });
