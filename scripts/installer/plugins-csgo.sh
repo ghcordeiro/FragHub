@@ -46,11 +46,41 @@ run_plugins_csgo() {
   install_plugin_marker "sourcemod"
   install_plugin_marker "get5"
 
+  # Phase 5: Install FragHub Tags plugin (fraghub-tags-csgo)
+  install_fraghub_tags_csgo
+
   mkdir -p "$INPUT_DIR"
   umask 077
   date -Iseconds >"$PLUGINS_CSGO_MARKER"
   chmod 600 "$PLUGINS_CSGO_MARKER" 2>/dev/null || true
   fraghub_log "INFO" "plugin_install_csgo concluido. Marcador: ${PLUGINS_CSGO_MARKER}"
+}
+
+install_fraghub_tags_csgo() {
+  local plugin_name="fraghub-tags"
+  local plugin_dir="${CSGO_PLUGIN_ROOT}/${plugin_name}"
+  local src_smx="plugins/csgo/fraghub-tags/fraghub_tags.smx"
+  local src_cfg="plugins/csgo/fraghub-tags/fraghub_tags.cfg"
+
+  # Create plugin directory
+  mkdir -p "$plugin_dir"
+
+  # Copy SMX if it exists
+  if [[ -f "$src_smx" ]]; then
+    cp "$src_smx" "$plugin_dir/"
+    fraghub_log "INFO" "Copied fraghub_tags.smx to $plugin_dir"
+  else
+    fraghub_log "WARN" "SMX not found at $src_smx; skipping"
+  fi
+
+  # Create or update config file
+  cat >"${plugin_dir}/fraghub_tags.cfg" << 'EOF'
+// FragHub Tags Plugin Configuration (CS:GO)
+api_url=http://localhost:3000
+EOF
+  fraghub_log "INFO" "Created config: ${plugin_dir}/fraghub_tags.cfg"
+
+  install_plugin_marker "$plugin_name"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

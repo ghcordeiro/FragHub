@@ -46,11 +46,43 @@ run_plugins_cs2() {
   install_plugin_marker "counterstrikesharp"
   install_plugin_marker "matchzy"
 
+  # Phase 5: Install FragHub Tags plugin (fraghub-tags-cs2)
+  install_fraghub_tags_cs2
+
   mkdir -p "$INPUT_DIR"
   umask 077
   date -Iseconds >"$PLUGINS_CS2_MARKER"
   chmod 600 "$PLUGINS_CS2_MARKER" 2>/dev/null || true
   fraghub_log "INFO" "plugin_install_cs2 concluido. Marcador: ${PLUGINS_CS2_MARKER}"
+}
+
+install_fraghub_tags_cs2() {
+  local plugin_name="fraghub-tags"
+  local plugin_dir="${CS2_PLUGIN_ROOT}/${plugin_name}"
+  local src_dll="plugins/cs2/fraghub-tags/bin/Release/net8.0/fraghub-tags.dll"
+  local src_cfg="plugins/cs2/fraghub-tags/fraghub_tags.cfg"
+
+  # Create plugin directory
+  mkdir -p "$plugin_dir"
+
+  # Copy DLL if it exists
+  if [[ -f "$src_dll" ]]; then
+    cp "$src_dll" "$plugin_dir/"
+    fraghub_log "INFO" "Copied fraghub-tags.dll to $plugin_dir"
+  else
+    fraghub_log "WARN" "DLL not found at $src_dll; skipping"
+  fi
+
+  # Create or update config file
+  mkdir -p "$plugin_dir"
+  cat >"${plugin_dir}/fraghub_tags.cfg" << 'EOF'
+{
+  "api_url": "http://localhost:3000"
+}
+EOF
+  fraghub_log "INFO" "Created config: ${plugin_dir}/fraghub_tags.cfg"
+
+  install_plugin_marker "$plugin_name"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
