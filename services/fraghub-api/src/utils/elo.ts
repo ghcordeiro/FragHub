@@ -1,20 +1,24 @@
 /**
- * PLAYAPI-REQ-008 — faixas provisórias até `elo-system`.
- * Limites inferiores inclusivos por nível (nível 10: elo ≥ 2500).
+ * ELO-REQ-004: Map ELO rating to level 1-10
+ * Level mapping (Faceit-style):
+ * - Level 1: 600–750
+ * - Level 2: 751–825
+ * - Level 3: 826–900
+ * - Level 4: 901–1050 (initial level for new players at 1000 ELO)
+ * - Level 5: 1051–1125
+ * - Level 6: 1126–1200
+ * - Level 7: 1201–1350
+ * - Level 8: 1351–1530
+ * - Level 9: 1531–2000
+ * - Level 10: 2001+
+ *
+ * Formula: level = Math.min(10, Math.max(1, Math.floor((elo - 600) / 80) + 1))
  */
 export function levelFromEloRating(elo: number | null | undefined): number | null {
   if (elo == null || Number.isNaN(elo)) {
     return null;
   }
-  const e = Math.floor(elo);
-  if (e < 800) return 1;
-  if (e < 1000) return 2;
-  if (e < 1200) return 3;
-  if (e < 1400) return 4;
-  if (e < 1600) return 5;
-  if (e < 1800) return 6;
-  if (e < 2000) return 7;
-  if (e < 2200) return 8;
-  if (e < 2500) return 9;
-  return 10;
+  // Formula: (elo - 600) / 80 + 1, clamped to [1, 10]
+  const level = Math.min(10, Math.max(1, Math.floor((elo - 600) / 80) + 1));
+  return level;
 }
