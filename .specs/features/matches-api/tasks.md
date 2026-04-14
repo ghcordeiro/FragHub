@@ -10,7 +10,7 @@
 | Plan (`plan.md` + ADR-0008) | Aprovado | utilizador | 2026-04-13 |
 | Tasks (abaixo) | Aprovado | utilizador | 2026-04-13 |
 | Implement | Concluído no repo | — | 2026-04-13 |
-| Validate | Aguardando confirmação formal | — | — |
+| Validate | Aprovado — E2E smoke test passou; webhook funcionando | CTO | 2026-04-14 |
 
 ---
 
