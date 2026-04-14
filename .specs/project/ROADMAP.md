@@ -31,7 +31,7 @@
 - [x] `auth-api` — Google OAuth, email/senha, JWT access+refresh, roles, rate limiting *(Validate **2026-04-13**)*
 - [x] `steam-integration` — Steam OpenID vinculação, /api/player/{steamid} *(Validate **2026-04-13**)*
 - [x] `players-api` — CRUD jogadores, perfil, endpoint público por steamid *(Validate **2026-04-13**)*
-- [ ] `matches-api` — partidas, stats, webhook MatchZy/Get5
+- [x] `matches-api` — partidas, stats, webhook MatchZy/Get5 *(Validate **2026-04-14**)*
 
 **Critério de conclusão**: login funcionando, API respondendo
 

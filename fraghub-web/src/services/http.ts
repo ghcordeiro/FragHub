@@ -11,11 +11,10 @@ interface RequestOptions {
 }
 
 class HttpClient {
-  private retryCount: Record<string, number> = {}
-
   async request<T>(
     endpoint: string,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
+    alreadyRefreshed = false
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`
     const store = useSessionStore.getState()
@@ -25,12 +24,12 @@ class HttpClient {
       ...(options.headers || {}),
     }
 
-    // Add JWT token if available
     if (store.accessToken) {
       headers.Authorization = `Bearer ${store.accessToken}`
     }
 
-    const body = options.body && typeof options.body === 'object' ? JSON.stringify(options.body) : undefined
+    const body =
+      options.body && typeof options.body === 'object' ? JSON.stringify(options.body) : undefined
 
     const config: RequestInit = {
       method: options.method,
@@ -42,36 +41,44 @@ class HttpClient {
     try {
       const response = await fetch(url, config)
 
-      // Handle 401 - attempt token refresh
-      if (response.status === 401) {
-        const retryKey = `${options.method || 'GET'}-${endpoint}`
-        if ((this.retryCount[retryKey] || 0) === 0) {
-          this.retryCount[retryKey] = (this.retryCount[retryKey] || 0) + 1
+      if (response.status === 401 && !alreadyRefreshed) {
+        try {
+          const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+          })
 
-          try {
-            // Attempt to refresh token
-            const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-              method: 'POST',
-              credentials: 'include',
-            })
-
-            if (refreshResponse.ok) {
-              const refreshData = (await refreshResponse.json()) as { accessToken: string }
-              store.setSession(refreshData.accessToken, store.user!)
-
-              // Retry the original request
-              return this.request<T>(endpoint, options)
+          if (refreshResponse.ok) {
+            const refreshData = (await refreshResponse.json()) as { accessToken: string }
+            const latest = useSessionStore.getState()
+            const user = latest.user
+            if (!user) {
+              latest.clearSession()
+            } else {
+              latest.setSession(refreshData.accessToken, user)
+              return this.request<T>(endpoint, options, true)
             }
-          } catch {
-            // Refresh failed, clear session
-            store.clearSession()
+          } else {
+            useSessionStore.getState().clearSession()
           }
-
-          this.retryCount[retryKey] = 0
+        } catch {
+          useSessionStore.getState().clearSession()
         }
+
+        let error: ApiError = {
+          error: 'Unauthorized',
+          statusCode: 401,
+        }
+        try {
+          const clone = response.clone()
+          const data = await clone.json()
+          error = data as ApiError
+        } catch {
+          // body not JSON
+        }
+        throw error
       }
 
-      // Handle non-2xx responses
       if (!response.ok) {
         let error: ApiError = {
           error: response.statusText || 'Unknown error',
@@ -88,7 +95,6 @@ class HttpClient {
         throw error
       }
 
-      // Parse and return response
       if (response.status === 204) {
         return undefined as T
       }

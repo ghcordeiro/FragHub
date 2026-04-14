@@ -12,13 +12,13 @@
 |-----------|----------|--------|
 | v0.1 | cli-installer, game-stack-baseline | ✅ Concluída |
 | v0.2 | database-baseline, plugins-extended-cs2, plugins-extended-csgo, database-backup | ✅ Concluída (alinhado a `ROADMAP.md` / `STATE.md`) |
-| v0.3 | api-setup, auth-api, steam-integration, players-api, matches-api | ✅ `api-setup`, `auth-api`, `steam-integration`, `players-api` (Validate **2026-04-13**); `matches-api` — Implement **2026-04-13**, Validate pendente |
+| v0.3 | api-setup, auth-api, steam-integration, players-api, matches-api | ✅ Concluída — incl. `matches-api` (Validate **2026-04-14**; ver `.specs/features/matches-api/validation.md`) |
 | v0.4 | frontend-setup, nginx-ssl, auth-ui, player-profile-ui, leaderboard-ui | ⬜ Pendente |
 | v0.5 | elo-system, matchmaking-queue, match-notifications, fraghub-tags-plugin | ⬜ Pendente |
 | v0.6 | admin-dashboard, server-management-ui, admin-logs, plugin-config-ui | ⬜ Pendente |
 | v1.0 | upgrade-command, ci-cd, tests-suite, security-audit, docs-release, landing-page | ⬜ Pendente |
 
-**Total features pendentes (v0.3→v1.0):** 20 — *`api-setup`, `auth-api`, `steam-integration` e `players-api` concluídas (Validate **2026-04-13**); v0.2 (4) concluída; v0.1 (2) já entregue antes deste mapa.*
+**Total features pendentes (v0.4→v1.0):** 19 — *v0.3 concluída (**2026-04-14**); v0.2 (4) e v0.1 (2) já entregues antes deste mapa.*
 
 ---
 
@@ -97,7 +97,7 @@
 - **Riscos:** —
 
 ### matches-api
-- **Status:** Implement concluído no repo (**2026-04-13**); gate **Validate** pendente (ver `validation.md`)
+- **Status:** ✅ Concluída (gate Validate **2026-04-14**; ver `.specs/features/matches-api/validation.md`)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **Endpoints:** criar/listar/detalhar partidas, stats por jogador/partida

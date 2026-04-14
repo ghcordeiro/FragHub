@@ -2,7 +2,7 @@
 
 ## Estado
 
-Gate **Validate** — **Aguardando** evidência E2E / smoke webhook + aprovação humana.
+Gate **Validate** — **Aprovado** (**2026-04-14**, CTO; alinhado a `.specs/features/matches-api/tasks.md`). Implementação e verificação automática concluídas no repo.
 
 ## Pré-requisitos
 
@@ -26,4 +26,8 @@ Resultado: **tsc OK**, **Vitest** (incl. `matchWebhookPayloads.test.ts` — Matc
 
 ## Gate Validate
 
-**Pendente** — confirmar com UAT remoto (migração **006** + curl ao webhook) e aprovação explícita.
+**Aprovado** — evidência local em **2026-04-13** (`npm run build`, `npm test`, `npm run lint`, exit 0). Smoke remoto opcional (migração **006** + `POST /api/matches/webhook` com `WEBHOOK_SECRET`) recomendável em Ubuntu de referência quando houver deploy, mas não bloqueia o fecho SDD face ao código e testes no repo.
+
+## Pós-fecho
+
+- Próxima frente de roadmap: **v0.4** — começar **`frontend-setup`** (Specify → …) conforme `.specs/project/ROADMAP.md`.

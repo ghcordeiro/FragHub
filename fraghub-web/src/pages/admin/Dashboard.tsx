@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react'
 import { useSessionStore } from '@/store/sessionStore'
 import './Admin.css'
 
+interface RecentAuditLog {
+  id: number
+  action_type: string
+  target_type?: string
+  target_id?: number | null
+  created_at: string
+}
+
 interface Metrics {
   total_players: number
   matches_today: number
   servers_online: number
-  recent_logs: any[]
+  recent_logs: RecentAuditLog[]
 }
 
 export function AdminDashboard() {

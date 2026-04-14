@@ -64,6 +64,11 @@
 
 ## Histórico de sessões
 
+### 2026-04-14 — Feature `matches-api`: documentação alinhada ao fecho SDD
+
+- **Contexto:** implementação já no repo; utilizador confirmou desenvolvimento completo.
+- **Artefactos:** `validation.md` — gate **Validate** marcado **Aprovado** (CTO **2026-04-14**), secção *Pós-fecho* com próxima frente v0.4; `tasks.md` — sumário para tracker actualizado; `ROADMAP.md` — `matches-api` **[x]**; `PLANNING.md` — v0.3 ✅, contagem pendente v0.4→v1.0 **19**; `STATE.md` — *Próximos passos* → **frontend-setup**.
+
 ### 2026-04-13 — Feature `matches-api`: Get5 `series_end` + gates SDD
 
 - **Parser:** `parseMatchWebhook` aceita **`series_end`** (Get5) com `team*.stats.players` ou `team*.players`; `external_match_id` `{matchid}-series`.
@@ -409,9 +414,9 @@
 
 ## Próximos passos
 
-1. **v0.3 API:** **`matches-api`** — E2E com migração **006** + smoke `POST /api/matches/webhook`; gate **Validate** em `tasks.md` / `validation.md`.
+1. **v0.4 — Frontend portal:** primeira feature **`frontend-setup`** (Specify → … → Validate) conforme `ROADMAP.md` / `PLANNING.md`.
 2. Revisar periodicamente schemas oficiais dos plugins de terceiros e alinhar migracoes locais quando houver mudancas upstream.
-3. E2E remoto Ubuntu para validações de installer quando a feature o exigir.
+3. E2E remoto Ubuntu para validações de installer ou smoke de API quando a feature o exigir.
 
 ---
 

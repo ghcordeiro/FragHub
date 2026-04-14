@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSessionStore } from '@/store/sessionStore'
 import './Admin.css'
 
@@ -29,36 +29,40 @@ export function AdminPlayers() {
   const [banReason, setBanReason] = useState('')
   const [showBanModal, setShowBanModal] = useState(false)
 
-  const fetchPlayers = async (p: number = 1) => {
-    try {
-      setLoading(true)
-      const url = new URL('/api/admin/players', window.location.origin)
-      url.searchParams.set('page', p.toString())
-      url.searchParams.set('limit', '20')
-      if (search) url.searchParams.set('search', search)
+  const fetchPlayers = useCallback(
+    async (p: number = 1) => {
+      if (!accessToken) return
+      try {
+        setLoading(true)
+        const url = new URL('/api/admin/players', window.location.origin)
+        url.searchParams.set('page', p.toString())
+        url.searchParams.set('limit', '20')
+        if (search) url.searchParams.set('search', search)
 
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      })
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
 
-      if (!response.ok) throw new Error('Failed to load players')
+        if (!response.ok) throw new Error('Failed to load players')
 
-      const data = await response.json()
-      setPlayers(data.data)
-      setPagination(data.pagination)
-      setPage(p)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
+        const data = await response.json()
+        setPlayers(data.data)
+        setPagination(data.pagination)
+        setPage(p)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [accessToken, search]
+  )
 
   useEffect(() => {
     if (accessToken) {
-      fetchPlayers(1)
+      void fetchPlayers(1)
     }
-  }, [accessToken, search])
+  }, [accessToken, search, fetchPlayers])
 
   const handleBan = async () => {
     if (!selectedPlayer || !banReason) return

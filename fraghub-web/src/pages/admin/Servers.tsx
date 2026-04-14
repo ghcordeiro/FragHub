@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSessionStore } from '@/store/sessionStore'
 import './Admin.css'
 
@@ -20,11 +20,12 @@ export function AdminServers() {
   const [selectedServer, setSelectedServer] = useState<string | null>(null)
   const [rconOutput, setRconOutput] = useState('')
 
-  const fetchServers = async () => {
+  const fetchServers = useCallback(async () => {
+    if (!accessToken) return
     try {
       setLoading(true)
       const response = await fetch('/api/admin/servers', {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
 
       if (!response.ok) throw new Error('Failed to load servers')
@@ -36,15 +37,16 @@ export function AdminServers() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [accessToken])
 
   useEffect(() => {
-    if (accessToken) {
-      fetchServers()
-      const interval = setInterval(fetchServers, 30000) // Poll every 30s
-      return () => clearInterval(interval)
-    }
-  }, [accessToken])
+    if (!accessToken) return
+    void fetchServers()
+    const interval = setInterval(() => {
+      void fetchServers()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [accessToken, fetchServers])
 
   const handleServerControl = async (serverId: string, action: 'start' | 'stop' | 'restart') => {
     try {
@@ -166,7 +168,9 @@ export function AdminServers() {
                 placeholder="Enter command..."
                 value={rconCommand}
                 onChange={(e) => setRconCommand(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleRconExecute()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleRconExecute()
+                }}
                 className="input-field"
               />
               <button onClick={handleRconExecute} className="btn btn-primary">

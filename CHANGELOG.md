@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `fraghub-web`: `tsconfig` compatível com TypeScript 6 (`ignoreDeprecations`), ESLint verde nas páginas admin, cliente HTTP com refresh JWT seguro (uma retentativa, sem `user!`), exemplo `.env.example` para deploy.
+
 ### Added
 - Production release foundation infrastructure
 - Upgrade command with backup, migration, and rollback support

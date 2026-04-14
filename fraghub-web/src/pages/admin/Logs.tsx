@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSessionStore } from '@/store/sessionStore'
 import './Admin.css'
 
@@ -8,7 +8,7 @@ interface AuditLog {
   action_type: string
   target_type?: string
   target_id?: number
-  details: Record<string, any>
+  details: Record<string, unknown>
   ip_address?: string
   created_at: string
 }
@@ -24,41 +24,43 @@ export function AdminLogs() {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [actionType, setActionType] = useState('')
-  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
 
-  const fetchLogs = async (p: number = 1) => {
-    try {
-      setLoading(true)
-      const url = new URL('/api/admin/logs', window.location.origin)
-      url.searchParams.set('page', p.toString())
-      url.searchParams.set('limit', '25')
-      if (actionType) url.searchParams.set('action_type', actionType)
+  const fetchLogs = useCallback(
+    async (p: number = 1) => {
+      if (!accessToken) return
+      try {
+        setLoading(true)
+        const url = new URL('/api/admin/logs', window.location.origin)
+        url.searchParams.set('page', p.toString())
+        url.searchParams.set('limit', '25')
+        if (actionType) url.searchParams.set('action_type', actionType)
 
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      })
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
 
-      if (!response.ok) throw new Error('Failed to load logs')
+        if (!response.ok) throw new Error('Failed to load logs')
 
-      const data = await response.json()
-      setLogs(data.data)
-      setPagination(data.pagination)
-      setPage(p)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
+        const data = await response.json()
+        setLogs(data.data)
+        setPagination(data.pagination)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [accessToken, actionType]
+  )
 
   useEffect(() => {
     if (accessToken) {
-      fetchLogs(1)
+      void fetchLogs(1)
     }
-  }, [accessToken, actionType])
+  }, [accessToken, actionType, fetchLogs])
 
   if (loading && logs.length === 0) return <div className="loading">Loading logs...</div>
   if (error) return <div className="error">{error}</div>

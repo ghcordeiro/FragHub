@@ -52,6 +52,6 @@
 
 ## Sumário para tracker
 
-- **Feature:** `matches-api` (v0.3)
-- **Artefactos:** `plan.md`, ADR `docs/adr/0008-matches-api-schema-webhook.md`
-- **Próximo:** gate **Validate** (E2E / smoke webhook + aprovação humana).
+- **Feature:** `matches-api` (v0.3) — **encerrada** (Validate **2026-04-14**).
+- **Artefactos:** `plan.md`, ADR `docs/adr/0008-matches-api-schema-webhook.md`, `validation.md`
+- **Próximo (roadmap):** **v0.4** — `frontend-setup` (`.specs/features/frontend-setup/spec.md`; gate Specify conforme SDD).
