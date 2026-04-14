@@ -10,7 +10,7 @@
 | Plan (`plan.md` + ADR-0006 + C4 L1/L2) | Aprovado | utilizador | 2026-04-13 |
 | Tasks (abaixo) | Aprovado | utilizador | 2026-04-13 |
 | Implement | Concluído no repo | — | 2026-04-12 |
-| Validate | Em progresso (evidências parciais em `validation.md`) | — | 2026-04-12 |
+| Validate | Aprovado | utilizador | 2026-04-13 |
 
 ---
 
@@ -62,4 +62,4 @@
 
 - **Feature:** `auth-api` (v0.3)
 - **Plan:** `plan.md` + ADR `docs/adr/0006-auth-api-jwt-oauth-refresh.md` + C4 em `docs/architecture/auth-api-*.md`
-- **Próximo:** fechar **Validate** — UAT/E2E contra AC-001…011 e `database-baseline` + `api-setup` num alvo Ubuntu; atualizar `validation.md` com outputs.
+- **Próximo (roadmap v0.3):** feature **`steam-integration`** — Specify (se gate pendente) → Plan/Tasks conforme scope → Implement → Validate.

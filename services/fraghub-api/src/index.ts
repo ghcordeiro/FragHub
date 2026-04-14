@@ -4,7 +4,11 @@ import express from 'express';
 import helmet from 'helmet';
 import { loadEnv } from './config/env';
 import { assertDatabaseConnection } from './db';
+import adminRouter from './routes/admin';
 import authRouter from './routes/auth';
+import matchesRouter from './routes/matches';
+import playersRouter from './routes/players';
+import steamRouter from './routes/steam';
 
 loadEnv();
 const env = loadEnv();
@@ -26,6 +30,10 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/auth', steamRouter);
+app.use('/api', matchesRouter);
+app.use('/api', playersRouter);
+app.use('/admin', adminRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });

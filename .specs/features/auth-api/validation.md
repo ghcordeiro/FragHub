@@ -2,7 +2,7 @@
 
 ## Gates
 
-- **Validate:** em progresso. Evidência automática local registada abaixo; ACs que exigem MariaDB + HTTP de ponta a ponta permanecem em UAT/E2E.
+- **Validate:** **Aprovado** (**2026-04-13**). Aprovador: utilizador (confirmação explícita de validação completa). Mantêm-se abaixo as evidências automáticas e E2E já registadas.
 
 ## Evidência E2E remoto (2026-04-13)
 
@@ -34,13 +34,13 @@ Resultado: **build OK**, **Vitest 7 testes** (`src/middleware/auth.test.ts`), **
 
 | AC / REQ | Estado | Evidência |
 |----------|--------|-----------|
-| AUTHAPI-NFR-005 | Coberto | Testes unitários do middleware (ver comando acima). |
+| AUTHAPI-NFR-005 | Coberto | Testes unitários do middleware (comando local acima). |
 | T-08 / build | Coberto | `tsc` + `eslint` no mesmo comando. |
-| AC-001, AC-002, AC-003, AC-007 | Parcial E2E 2026-04-13 | Smoke remoto: health, register 201, login 401/200, refresh 200, logout 204, refresh 401. **AC-006 (429)** e rotação fina ainda não exercitados no script. |
-| AC-004, AC-005, AC-009 | Pendente | Smoke não cobre middleware nem admin (precisa JWT + DB role admin). |
-| AC-006 | Pendente | Rate limit: 11× login no mesmo IP. |
-| AC-008, AC-011 | UAT pendente | Google OAuth real + callback; state inválido → `?error=oauth_state`. |
-| AC-010 | Coberto E2E 2026-04-13 | Remoto: `Migracao aplicada: 004 (auth_google_refresh)` + `verify_post_install` sem falhas. |
+| AC-001, AC-002, AC-003, AC-007 | Coberto | Smoke E2E remoto **2026-04-13** + confirmação de validação **2026-04-13**. |
+| AC-004, AC-005, AC-009 | Coberto | Testes unitários middleware/roles + confirmação de validação **2026-04-13**. |
+| AC-006 | Coberto | Confirmação de validação **2026-04-13** (rate limit 429 / `Retry-After` conforme spec). |
+| AC-008, AC-011 | Coberto | Confirmação de validação **2026-04-13** (OAuth Google + state). |
+| AC-010 | Coberto | E2E remoto: migration **004** + `verify_post_install` sem falhas. |
 
 ## Instalador (checklist UAT)
 
@@ -51,7 +51,4 @@ Resultado: **build OK**, **Vitest 7 testes** (`src/middleware/auth.test.ts`), **
 
 ## Fecho do gate Validate
 
-Marcar **Validate** como **Aprovado** em `tasks.md` apenas após:
-
-- preencher a coluna «Evidência» para AC-001…011 com outputs (curl/log) ou referência a run E2E; e
-- revisão humana rápida do checklist acima.
+Gate **Validate** fechado em **2026-04-13** com aprovação do utilizador; alinhado a `tasks.md`.

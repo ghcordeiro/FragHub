@@ -64,6 +64,68 @@
 
 ## Histórico de sessões
 
+### 2026-04-13 — Feature `matches-api`: Get5 `series_end` + gates SDD
+
+- **Parser:** `parseMatchWebhook` aceita **`series_end`** (Get5) com `team*.stats.players` ou `team*.players`; `external_match_id` `{matchid}-series`.
+- **SDD:** `tasks.md` — gates **Specify**, **Plan**, **Tasks** e **Implement** marcados como concluídos/aprovados (**2026-04-13**); **Validate** pendente.
+- **Evidência:** `validation.md` — bloco *Evidência local* preenchido.
+
+### 2026-04-13 — Feature `matches-api`: SDD + implementação inicial
+
+- **Artefactos:** `plan.md`, `tasks.md`, ADR **`docs/adr/0008-matches-api-schema-webhook.md`**, `validation.md` (rascunho).
+- **Código:** migração **`006_matches_api_schema.sql`** + `database-baseline.sh`; `WEBHOOK_SECRET` / `DISCORD_WEBHOOK_URL` em `env.ts`, `test-env.ts`, `.env.example`, **`api-setup.sh`**; `matchWebhookPayloads.ts` / `matchWebhookService.ts` / `eloUpdateStub.ts` / `discordNotify.ts`; **`routes/matches.ts`** (webhook, listagem, detalhe + `includeRaw` admin, histórico/stats por jogador); `matchesWebhookLimiter`; `index.ts` monta **`matchesRouter` antes de `playersRouter`**.
+- **Testes:** `matchWebhookPayloads.test.ts`.
+### 2026-04-13 — Feature `players-api`: gate Validate aprovado
+
+- **SDD:** utilizador confirmou **Validate**; `validation.md` e `tasks.md` atualizados (**2026-04-13**).
+- **Roadmap / planeamento:** `ROADMAP.md` e `PLANNING.md` — `players-api` concluída; próxima frente v0.3: **`matches-api`**.
+
+### 2026-04-13 — Feature `players-api`: E2E Ubuntu (ssh-ubuntu-e2e) PASS
+
+- **Comando:** `run-e2e-remote.sh --remote-dir /home/ranch/FragHub --rerun --reset-database-baseline --reset-api-step` — **exit 0**.
+- **Remoto:** migração **005** aplicada; API rebuild + systemd; rerun idempotente; smoke **auth-api** OK em `127.0.0.1:3001`.
+- **Evidência:** `.specs/features/players-api/validation.md` (secção E2E).
+
+### 2026-04-13 — Feature `players-api`: Implement na API
+
+- **Código:** migração `005_players_api_users_ban_elo.sql` + `database-baseline.sh`; `src/utils/elo.ts`; `userService` (listagem, perfil, ban, plugin query com banidos); `routes/players.ts` (REST: listagem, perfil `:id`, `PATCH /me`, `DELETE` admin, `GET /player/:steamid`); `authMiddleware` → **401** `Account banned`; remoção de `routes/player.ts` e `levelFromElo.ts`.
+- **Testes:** `elo.test.ts`; `auth.test.ts` (conta banida).
+- **Artefactos:** `validation.md` (gate **Validate** pendente).
+- **Próximo:** gate **Validate** (confirmação humana) após rever `validation.md`.
+
+### 2026-04-13 — Feature `players-api`: gates Specify + Tasks aprovados
+
+- **SDD:** utilizador confirmou **aprovado**; `tasks.md` — gates **Specify** e **Tasks** com estado **Aprovado**, aprovador **utilizador**, data **2026-04-13**; **Implement** desbloqueado.
+
+### 2026-04-13 — Feature `players-api`: continuação SDD (pós steam-integration)
+
+- **Contexto:** `steam-integration` encerrada (Validate **2026-04-13**); frente ativa v0.3: **`players-api`** (`.specs/features/players-api/spec.md` já existia de 2026-04-09).
+- **Artefacto:** criado `.specs/features/players-api/tasks.md` com **gates SDD** (Plan dispensado conforme `PLANNING.md` Medium) e pares T/I (migrations `banned_*`, listagem, perfil, PATCH me, DELETE admin, consolidação de `GET /api/player/:steamid`, util de nível, qualidade).
+- **Código actual:** `routes/player.ts` implementa parcialmente o endpoint plugin; `levelFromEloRating` ainda devolve `null` por design temporário — alinhar na fase **Implement** a **PLAYAPI-REQ-008** (tabela provisória no spec).
+- **MCP `code-review-graph`:** indisponível neste runtime do agente (servidor MCP não registado).
+
+### 2026-04-13 — Feature `steam-integration`: gate Validate aprovado
+
+- **SDD:** utilizador confirmou **Validate**; `validation.md` e `tasks.md` atualizados (**2026-04-13**).
+- **Roadmap / planeamento:** `ROADMAP.md` e `PLANNING.md` — `steam-integration` concluída; próxima frente v0.3: **`players-api`**.
+
+### 2026-04-13 — Feature `steam-integration`: Plan/Tasks aprovados + Implement na API
+
+- **SDD:** utilizador aprovou **Plan** e **Tasks**; `tasks.md` — **Implement** concluído no repo; `validation.md` criado (gate **Validate** em progresso).
+- **Código:** rotas Steam OpenID (`/auth/steam/link`, `/auth/steam/callback`, `DELETE /auth/steam/link`), `GET /api/player/:steamid`, `DELETE /admin/players/:id/steam`; env `STEAM_*`; `api-setup.sh` gera segredos/URLs Steam; testes unitários `steamState` / parse `claimed_id`.
+- **Próximo:** UAT Steam + evidências AC → fechar **Validate**.
+
+### 2026-04-13 — Feature `steam-integration`: Specify aprovado + Plan/Tasks redigidos
+
+- **SDD:** utilizador aprovou **Specify**; criados `plan.md`, `tasks.md`, ADR **`docs/adr/0007-steam-integration-openid-public-player.md`**, C4 L1/L2 em `docs/architecture/steam-integration-*.md`.
+- **Spec:** **STEAMINT-REQ-009** alargado com `STEAM_STATE_SECRET` (HMAC do state, ≥32 caracteres).
+- **Próximo:** gates formais **Plan** e **Tasks** em `tasks.md`; depois **Implement**.
+
+### 2026-04-13 — Feature `auth-api`: gate Validate aprovado
+
+- **SDD:** utilizador confirmou validação completa; `validation.md` e `tasks.md` atualizados (gate **Validate** aprovado **2026-04-13**).
+- **Roadmap / planeamento:** `ROADMAP.md` e `PLANNING.md` — `auth-api` marcada como concluída; próxima frente v0.3: **`steam-integration`**.
+
 ### 2026-04-13 — Feature `api-setup`: gate Validate (CTO) aprovado
 
 - **SDD:** utilizador confirmou **aprovado** (*spec-driven*); `validation.md` e `tasks.md` atualizados com fecho do gate CTO (**2026-04-13**).
@@ -347,9 +409,9 @@
 
 ## Próximos passos
 
-1. Executar E2E remoto Ubuntu real para fechamento final do gate Validate do lote v0.2.
+1. **v0.3 API:** **`matches-api`** — E2E com migração **006** + smoke `POST /api/matches/webhook`; gate **Validate** em `tasks.md` / `validation.md`.
 2. Revisar periodicamente schemas oficiais dos plugins de terceiros e alinhar migracoes locais quando houver mudancas upstream.
-3. Avancar roadmap para `v0.3` (API backend) com base no schema e backups ja estabelecidos.
+3. E2E remoto Ubuntu para validações de installer quando a feature o exigir.
 
 ---
 

@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v0.3
+milestone_name: — API Backend
+status: executing
+last_updated: "2026-04-14T12:42:00.792Z"
+progress:
+  total_phases: 7
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 3
+  percent: 60
+---
+
 # FragHub State — GSD Companion Layer
 
 > This file tracks GSD-level progress and decisions.
@@ -5,9 +19,11 @@
 
 ## Current Position
 
+Phase: 07 (v1.0-production) — EXECUTING
+Plan: 1 of 1
 **Milestone:** v0.3 — API backend
 **Phase:** 3 of 7
-**Status:** 4/5 features validated, 1 awaiting final validation
+**Status:** Executing Phase 07
 
 ### Progress Summary
 
@@ -44,6 +60,7 @@ See `.specs/project/STATE.md` for comprehensive decision log. Quick reference:
 **Status:** Awaiting E2E smoke test + human approval
 
 **What's needed:**
+
 1. Apply migration `006_matches_api_schema.sql` via `database-baseline.sh`
 2. Confirm `WEBHOOK_SECRET` (≥32 chars) in `.env`
 3. Smoke test webhook:
@@ -53,6 +70,7 @@ See `.specs/project/STATE.md` for comprehensive decision log. Quick reference:
      -H "Content-Type: application/json" \
      -d '{"event":"map_result",...}'
    ```
+
 4. Update `.specs/features/matches-api/validation.md` with E2E results
 5. Confirm approval → mark Validate gate as approved
 

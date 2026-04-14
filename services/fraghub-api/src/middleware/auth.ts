@@ -27,6 +27,10 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
+      if (user.banned_at != null) {
+        res.status(401).json({ error: 'Account banned' });
+        return;
+      }
       req.user = { id: user.id, email: user.email, role: user.role };
       next();
     } catch {

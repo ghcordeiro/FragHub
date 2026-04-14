@@ -28,9 +28,9 @@
 > API REST para o portal
 
 - [x] `api-setup` — Node.js 20 + Express + TypeScript, Knex, systemd, health check *(Validate CTO 2026-04-13)*
-- [ ] `auth-api` — Google OAuth, email/senha, JWT access+refresh, roles, rate limiting
-- [ ] `steam-integration` — Steam OpenID vinculação, /api/player/{steamid}
-- [ ] `players-api` — CRUD jogadores, perfil, endpoint público por steamid
+- [x] `auth-api` — Google OAuth, email/senha, JWT access+refresh, roles, rate limiting *(Validate **2026-04-13**)*
+- [x] `steam-integration` — Steam OpenID vinculação, /api/player/{steamid} *(Validate **2026-04-13**)*
+- [x] `players-api` — CRUD jogadores, perfil, endpoint público por steamid *(Validate **2026-04-13**)*
 - [ ] `matches-api` — partidas, stats, webhook MatchZy/Get5
 
 **Critério de conclusão**: login funcionando, API respondendo

@@ -12,13 +12,13 @@
 |-----------|----------|--------|
 | v0.1 | cli-installer, game-stack-baseline | ✅ Concluída |
 | v0.2 | database-baseline, plugins-extended-cs2, plugins-extended-csgo, database-backup | ✅ Concluída (alinhado a `ROADMAP.md` / `STATE.md`) |
-| v0.3 | api-setup, auth-api, steam-integration, players-api, matches-api | ✅ `api-setup` (Validate CTO **2026-04-13**); em aberto: `auth-api`, steam-integration, players-api, matches-api |
+| v0.3 | api-setup, auth-api, steam-integration, players-api, matches-api | ✅ `api-setup`, `auth-api`, `steam-integration`, `players-api` (Validate **2026-04-13**); `matches-api` — Implement **2026-04-13**, Validate pendente |
 | v0.4 | frontend-setup, nginx-ssl, auth-ui, player-profile-ui, leaderboard-ui | ⬜ Pendente |
 | v0.5 | elo-system, matchmaking-queue, match-notifications, fraghub-tags-plugin | ⬜ Pendente |
 | v0.6 | admin-dashboard, server-management-ui, admin-logs, plugin-config-ui | ⬜ Pendente |
 | v1.0 | upgrade-command, ci-cd, tests-suite, security-audit, docs-release, landing-page | ⬜ Pendente |
 
-**Total features pendentes (v0.3→v1.0):** 23 — *`api-setup` concluída em **2026-04-13**; v0.2 (4) concluída; v0.1 (2) já entregue antes deste mapa.*
+**Total features pendentes (v0.3→v1.0):** 20 — *`api-setup`, `auth-api`, `steam-integration` e `players-api` concluídas (Validate **2026-04-13**); v0.2 (4) concluída; v0.1 (2) já entregue antes deste mapa.*
 
 ---
 
@@ -72,6 +72,7 @@
 - **Riscos:** —
 
 ### auth-api
+- **Status:** ✅ Concluída (gate Validate **2026-04-13**; ver `.specs/features/auth-api/validation.md`)
 - **Scope:** Complex
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **ADRs esperadas:** Google OAuth flow (passport vs manual); JWT access+refresh rotation; armazenamento de sessions; rate limiting
@@ -79,13 +80,15 @@
 - **Riscos:** refresh token rotation segura; CSRF em OAuth; revogação de tokens
 
 ### steam-integration
+- **Status:** ✅ Concluída (gate Validate **2026-04-13**; ver `.specs/features/steam-integration/validation.md`)
 - **Scope:** Medium
-- **Pipeline SDD:** Specify → Tasks → Implement
+- **Pipeline SDD:** Specify → Plan → Tasks → Implement *(Plan/Tasks formalizados **2026-04-13**)*
 - **ADRs esperadas:** Steam OpenID vs Web API para vinculação; obrigatoriedade por feature (apenas queue)
 - **Depends on:** auth-api
 - **Riscos:** dependência externa Steam; usuário já autenticado vinculando Steam
 
 ### players-api
+- **Status:** ✅ Concluída (gate Validate **2026-04-13**; ver `.specs/features/players-api/validation.md`)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **Endpoints:** CRUD usuários, perfil público, `/api/player/{steamid}` (para plugins)
@@ -94,6 +97,7 @@
 - **Riscos:** —
 
 ### matches-api
+- **Status:** Implement concluído no repo (**2026-04-13**); gate **Validate** pendente (ver `validation.md`)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **Endpoints:** criar/listar/detalhar partidas, stats por jogador/partida

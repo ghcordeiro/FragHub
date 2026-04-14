@@ -33,7 +33,7 @@ Vinculacao de conta Steam a uma conta FragHub ja existente via Steam OpenID 2.0,
 ## Requisitos Funcionais
 
 ### STEAMINT-REQ-001 - Coluna steam_id na Tabela users
-A tabela `users` deve ter a coluna `steam_id` (VARCHAR 20, nullable, UNIQUE). A migration que adiciona esta coluna deve ser versionada e executada pelo modulo de migrations da feature `database-baseline`. O Steam ID deve ser armazenado no formato SteamID64 (numero de 17 digitos como string).
+A tabela `users` já possui `steam_id` (`VARCHAR(32)`, nullable, `UNIQUE`) na migration `001_create_users.sql` do `database-baseline`. Esta feature **não** exige nova migration só para criar a coluna. O Steam ID deve ser persistido no formato **SteamID64** (17 dígitos como string); validar na API antes de gravar. (Se no futuro se quiser alinhar o tamanho do tipo a 20 caracteres, isso pode ser uma migration opcional separada.)
 
 ### STEAMINT-REQ-002 - Endpoint de Inicio da Vinculacao Steam
 `GET /auth/steam/link` deve ser protegido por `authMiddleware`. O sistema deve gerar um `state` assinado com HMAC-SHA256 contendo `{ userId, nonce, exp }` (expiracao de 10 minutos) e incluir na URL de redirect para Steam OpenID. O realm e o return_to devem ser configurados via `STEAM_REALM` e `STEAM_RETURN_URL` no `.env`.
@@ -66,7 +66,7 @@ Se nao encontrado, retornar HTTP 404 com `{ "error": "Player not found" }`. Nenh
 `GET /api/player/:steamid` deve ter rate limiting de 60 requisicoes por IP por minuto para prevenir scraping. Retornar HTTP 429 com `Retry-After` em caso de excesso.
 
 ### STEAMINT-REQ-009 - Variaveis de Ambiente Steam
-As seguintes variaveis devem ser adicionadas ao `.env` e validadas no startup: `STEAM_REALM` (ex: `https://fraghub.example.com`), `STEAM_RETURN_URL` (ex: `https://fraghub.example.com/auth/steam/callback`). O sistema deve falhar ao iniciar se estas variaveis nao estiverem definidas.
+As seguintes variaveis devem ser adicionadas ao `.env` e validadas no startup: `STEAM_REALM` (ex: `https://fraghub.example.com`), `STEAM_RETURN_URL` (URL absoluta do callback API, ex: `https://api.fraghub.example.com/auth/steam/callback`), `STEAM_STATE_SECRET` (segredo dedicado para HMAC do `state` em **STEAMINT-REQ-002**, minimo 32 caracteres). O sistema deve falhar ao iniciar se alguma estiver ausente ou invalida.
 
 ## Requisitos Nao Funcionais
 

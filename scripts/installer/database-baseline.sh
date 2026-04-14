@@ -191,6 +191,8 @@ apply_migrations() {
 002|create_matches|${FRAGHUB_DB_MIGRATIONS_DIR}/002_create_matches.sql
 003|create_stats|${FRAGHUB_DB_MIGRATIONS_DIR}/003_create_stats.sql
 004|auth_google_refresh|${FRAGHUB_DB_MIGRATIONS_DIR}/004_auth_google_id_refresh_tokens.sql
+005|players_api_ban_elo|${FRAGHUB_DB_MIGRATIONS_DIR}/005_players_api_users_ban_elo.sql
+006|matches_api_schema|${FRAGHUB_DB_MIGRATIONS_DIR}/006_matches_api_schema.sql
 EOF
 }
 

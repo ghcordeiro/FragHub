@@ -12,6 +12,9 @@ const ctx = vi.hoisted(() => ({
     display_name: string;
     google_id: string | null;
     steam_id: string | null;
+    elo_rating: number;
+    banned_at: Date | string | null;
+    banned_reason: string | null;
   },
 }));
 
@@ -50,6 +53,9 @@ describe('authMiddleware', () => {
       display_name: 'A',
       google_id: null,
       steam_id: null,
+      elo_rating: 1000,
+      banned_at: null,
+      banned_reason: null,
     };
   });
 
@@ -103,6 +109,30 @@ describe('authMiddleware', () => {
     const res = await request(app).get('/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
+
+  it('returns 401 Account banned when banned_at is set', async () => {
+    ctx.userRow = {
+      id: 1,
+      email: 'a@b.com',
+      role: 'player',
+      password_hash: 'x',
+      display_name: 'A',
+      google_id: null,
+      steam_id: null,
+      elo_rating: 1000,
+      banned_at: new Date().toISOString(),
+      banned_reason: 'spam',
+    };
+    const token = jwt.sign(
+      { sub: 1, email: 'a@b.com', role: 'player', displayName: 'A' },
+      JWT_SECRET,
+      { algorithm: 'HS256', expiresIn: '5m' },
+    );
+    const app = buildApp(authMiddleware);
+    const res = await request(app).get('/me').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Account banned' });
+  });
 });
 
 describe('requireRole', () => {
@@ -115,6 +145,9 @@ describe('requireRole', () => {
       display_name: 'Admin',
       google_id: null,
       steam_id: null,
+      elo_rating: 1000,
+      banned_at: null,
+      banned_reason: null,
     };
   });
 
@@ -131,6 +164,9 @@ describe('requireRole', () => {
       display_name: 'P',
       google_id: null,
       steam_id: null,
+      elo_rating: 1000,
+      banned_at: null,
+      banned_reason: null,
     };
     const token = jwt.sign(
       { sub: 3, email: 'p@test.com', role: 'player', displayName: 'P' },

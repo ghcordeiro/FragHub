@@ -104,6 +104,7 @@ sync_api_template() {
 
 write_environment_files() {
   local db_host db_user db_password db_name tmp_env tmp_example jwt_secret jwt_refresh frontend_url google_redirect google_id google_secret
+  local steam_state steam_realm steam_return
 
   db_host="$(extract_db_field "host")"
   db_user="$(extract_db_field "user")"
@@ -121,6 +122,32 @@ write_environment_files() {
   fi
   if [[ ${#jwt_refresh} -lt 32 ]]; then
     jwt_refresh="$(generate_api_secret 48)"
+  fi
+
+  steam_state=""
+  if [[ -f "$FRAGHUB_API_ENV_FILE" ]]; then
+    steam_state="$(grep -E '^STEAM_STATE_SECRET=' "$FRAGHUB_API_ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- || true)"
+  fi
+  if [[ ${#steam_state} -lt 32 ]]; then
+    steam_state="$(generate_api_secret 48)"
+  fi
+
+  webhook_secret=""
+  if [[ -f "$FRAGHUB_API_ENV_FILE" ]]; then
+    webhook_secret="$(grep -E '^WEBHOOK_SECRET=' "$FRAGHUB_API_ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- || true)"
+  fi
+  if [[ ${#webhook_secret} -lt 32 ]]; then
+    webhook_secret="$(generate_api_secret 48)"
+  fi
+
+  steam_return="${FRAGHUB_STEAM_RETURN_URL:-http://127.0.0.1:${FRAGHUB_API_PORT}/auth/steam/callback}"
+  steam_realm="${FRAGHUB_STEAM_REALM:-}"
+  if is_blank "$steam_realm"; then
+    if is_blank "${FRAGHUB_DOMAIN:-}"; then
+      steam_realm="http://127.0.0.1:${FRAGHUB_API_PORT}"
+    else
+      steam_realm="https://${FRAGHUB_DOMAIN}"
+    fi
   fi
 
   frontend_url="${FRAGHUB_FRONTEND_URL:-}"
@@ -159,6 +186,13 @@ write_environment_files() {
     printf 'GOOGLE_CLIENT_SECRET=%s\n' "$google_secret"
     printf 'GOOGLE_REDIRECT_URI=%s\n' "$google_redirect"
     printf 'FRONTEND_URL=%s\n' "$frontend_url"
+    printf 'STEAM_REALM=%s\n' "$steam_realm"
+    printf 'STEAM_RETURN_URL=%s\n' "$steam_return"
+    printf 'STEAM_STATE_SECRET=%s\n' "$steam_state"
+    printf 'WEBHOOK_SECRET=%s\n' "$webhook_secret"
+    if [[ -n "${FRAGHUB_DISCORD_WEBHOOK_URL:-}" ]]; then
+      printf 'DISCORD_WEBHOOK_URL=%s\n' "${FRAGHUB_DISCORD_WEBHOOK_URL}"
+    fi
   } >"$tmp_env"
   sudo install -o "${FRAGHUB_API_USER}" -g "${FRAGHUB_API_GROUP}" -m 600 "$tmp_env" "$FRAGHUB_API_ENV_FILE"
   rm -f "$tmp_env"
@@ -179,6 +213,11 @@ GOOGLE_CLIENT_ID=<google_oauth_client_id>
 GOOGLE_CLIENT_SECRET=<google_oauth_client_secret>
 GOOGLE_REDIRECT_URI=http://127.0.0.1:3001/auth/google/callback
 FRONTEND_URL=http://127.0.0.1:5173
+STEAM_REALM=http://127.0.0.1:3001
+STEAM_RETURN_URL=http://127.0.0.1:3001/auth/steam/callback
+STEAM_STATE_SECRET=<min_32_chars_random_different_from_jwt>
+WEBHOOK_SECRET=<min_32_chars_random_for_match_webhook>
+# DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 EOF
   sudo install -o "${FRAGHUB_API_USER}" -g "${FRAGHUB_API_GROUP}" -m 644 "$tmp_example" "${FRAGHUB_API_DIR}/.env.example"
   rm -f "$tmp_example"

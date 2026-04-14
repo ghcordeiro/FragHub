@@ -18,6 +18,14 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GOOGLE_REDIRECT_URI: z.string().url(),
   FRONTEND_URL: z.string().url(),
+  STEAM_REALM: z.string().url(),
+  STEAM_RETURN_URL: z.string().url(),
+  STEAM_STATE_SECRET: z.string().min(32),
+  WEBHOOK_SECRET: z.string().min(32),
+  DISCORD_WEBHOOK_URL: z.preprocess(
+    (v) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim()),
+    z.string().url().optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

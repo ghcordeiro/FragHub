@@ -31,6 +31,7 @@ import {
   updateUserGoogleId,
   type UserRow,
 } from '../services/userService';
+import { isDuplicateKeyError } from '../utils/dbErrors';
 
 const ACCESS_EXPIRES_SEC = 15 * 60;
 const OAUTH_ACCESS_EXPIRES_SEC = 30;
@@ -79,10 +80,6 @@ function oauthStateCookieOptions(env: ReturnType<typeof loadEnv>): CookieOptions
     path: '/auth',
     maxAge: 10 * 60 * 1000,
   };
-}
-
-function isDuplicateKeyError(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'code' in e && (e as { code: string }).code === 'ER_DUP_ENTRY';
 }
 
 const INVALID_CREDENTIALS = { error: 'Invalid credentials' };

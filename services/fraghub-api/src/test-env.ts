@@ -12,3 +12,7 @@ process.env.GOOGLE_CLIENT_ID = 'test-google-client-id.apps.googleusercontent.com
 process.env.GOOGLE_CLIENT_SECRET = 'test-google-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://127.0.0.1:3001/auth/google/callback';
 process.env.FRONTEND_URL = 'http://127.0.0.1:5173';
+process.env.STEAM_REALM = 'http://127.0.0.1:3001';
+process.env.STEAM_RETURN_URL = 'http://127.0.0.1:3001/auth/steam/callback';
+process.env.STEAM_STATE_SECRET = '01234567890123456789012345678903';
+process.env.WEBHOOK_SECRET = '01234567890123456789012345678904';
