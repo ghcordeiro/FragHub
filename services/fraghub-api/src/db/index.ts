@@ -21,6 +21,10 @@ export const db: Knex = knex({
   },
 });
 
+export function getKnex(): Knex {
+  return db;
+}
+
 export async function assertDatabaseConnection(): Promise<void> {
   await db.raw('SELECT 1');
 }
