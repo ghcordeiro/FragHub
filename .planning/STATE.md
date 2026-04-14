@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.4
-milestone_name: — Frontend Portal
+milestone: v0.6
+milestone_name: — Admin Panel
 status: executing
-last_updated: "2026-04-14T17:35:48Z"
+last_updated: "2026-04-14T18:45:30Z"
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 5
+  percent: 83
 ---
 
 # FragHub State — GSD Companion Layer
@@ -19,11 +19,11 @@ progress:
 
 ## Current Position
 
-Phase: 04 (v0.4-frontend-portal) — EXECUTING
+Phase: 06 (v0.6-admin-panel) — EXECUTING
 Plan: 1 of 1
-**Milestone:** v0.4 — Frontend Portal
-**Phase:** 4 of 7
-**Status:** Phase 4 Plan 01 COMPLETE
+**Milestone:** v0.6 — Admin Panel
+**Phase:** 6 of 7
+**Status:** Phase 6 Plan 01 COMPLETE
 
 ### Progress Summary
 
@@ -35,12 +35,15 @@ Plan: 1 of 1
   - `steam-integration`: ✅ Validate Aprovado
   - `players-api`: ✅ Validate Aprovado
   - `matches-api`: ✅ Validate Aprovado (E2E smoke test passed 2026-04-14)
-- v0.4 🔄 In progress (5 features, 1 plan completed)
+- v0.4 ✅ Complete (5 features, 1 plan completed)
   - `frontend-setup`: ✅ 04-01-PLAN.md COMPLETE (React 18 + Vite + TypeScript)
   - `auth-ui`: ✅ 04-01-PLAN.md COMPLETE (Login/Register/OAuth)
   - `player-profile-ui`: ✅ 04-01-PLAN.md COMPLETE (Profile pages + level badges)
   - `leaderboard-ui`: ✅ 04-01-PLAN.md COMPLETE (Ranking with pagination/filters)
   - `nginx-ssl`: ✅ 04-01-PLAN.md COMPLETE (Reverse proxy + Certbot automation)
+- v0.5 ⏸️ Not started (Matchmaking Queue — ELO, queue service)
+- v0.6 🔄 In progress (1 plan completed)
+  - `admin-panel`: ✅ 06-01-PLAN.md COMPLETE (Dashboard, player mgmt, server control, audit logs)
 
 ---
 
@@ -89,6 +92,41 @@ See `.specs/project/STATE.md` for comprehensive decision log. Quick reference:
 
 **Next milestone:** Phase 5 planning (matchmaking queue)
 
+### Phase 6 — Admin Panel (v0.6) — EXECUTING ✅
+
+**Status:** Plan 06-01 COMPLETE (2026-04-14)
+
+**Completed:**
+- Database schema: admin_audit_logs (immutable), player_bans, server_configs tables
+- Authentication: requireAdmin() middleware, JWT role validation (never trusts body)
+- Admin API: 12 endpoints (dashboard, players CRUD, ban/unban, servers, RCON, config, logs)
+- Security: RCON command validation (blocklist + allowlist), path traversal prevention (path.resolve)
+- Audit logging: Async fire-and-forget pattern (never blocks response), 11 action types
+- Frontend: 5 pages (Dashboard, Players, Servers, Logs, + AdminLayout) with role-based access
+- Styling: Consistent dark sidebar, modals, tables, status badges, RCON console
+
+**Security Validations:**
+- ✓ RCON password never in logs/responses/errors (loaded from env, never exposed)
+- ✓ Path traversal blocked (test: ../../../etc/passwd → canonicalized, rejected)
+- ✓ Command injection prevented (blocklist: /;/, /&&/, /||/, /|/, /`/, /$(/)
+- ✓ Self-ban prevention (admin cannot ban self)
+- ✓ Immutable audit trail (insert-only, no delete endpoints)
+
+**Ready for:**
+1. **Phase 7 (v0.7) — Queue + Notifications** — New audit action types, dynamic server spawning
+2. **Integration testing** — Verify /api/admin/* routes with admin JWT token
+3. **UAT** — Manual testing of player ban/unban, server start/stop, RCON commands, config editing
+
+**Deployment checklist for Phase 6:**
+- [ ] Run migration 010_admin_panel.sql against database
+- [ ] Verify admin_audit_logs table created with indices
+- [ ] Test /api/admin/dashboard endpoint with admin token (200 response)
+- [ ] Test POST /api/admin/players/ban with non-admin token (403 response)
+- [ ] Test RCON command validation (status → allowed, quit → blocked)
+- [ ] Test path traversal (../../../etc/passwd → 400/403)
+
+**Next milestone:** Phase 7 planning (queue + notifications)
+
 ---
 
 ## Recent Session Notes
@@ -103,6 +141,15 @@ See `.specs/project/STATE.md` for comprehensive decision log. Quick reference:
   - Leaderboard with pagination/filtering (Task 5)
   - Nginx reverse proxy with Certbot (Task 6)
   - Bundle: 58 KB gzip, build: 107ms, all checks passing
+- **2026-04-14:** Executed Phase 6 Plan 01 (v0.6 Admin Panel) — ALL 5 TASKS COMPLETE
+  - Task 1: Database schema (admin_audit_logs, player_bans, server_configs) + adminAuth middleware
+  - Task 2: Admin service layer (player CRUD, ban/unban, dashboard metrics) + API routes
+  - Task 3: RCON service with command validation (blocklist/allowlist) + server management API
+  - Task 4: Plugin config service with path traversal prevention + config API endpoints
+  - Task 5: Complete frontend (Dashboard, Players, Servers, Logs pages) with role-based access
+  - Security: RCON password isolation, command injection prevention, path canonicalization
+  - Audit: Immutable async logging (fire-and-forget pattern), 12 API endpoints, 6 frontend pages
+  - Build: TypeScript strict, npm run build succeeded (frontend + backend)
 
 ---
 
