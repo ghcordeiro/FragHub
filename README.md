@@ -16,11 +16,11 @@ FragHub is an open source toolkit that aims to provide a complete CS2/CS:GO comm
 - **Dual game support** — CS2 and CS:GO Legacy (optional game stack in the installer)
 - **Interactive installer** — Wizard-based setup (`scripts/installer/install.sh`)
 - **MariaDB baseline** — Versioned SQL migrations and app user provisioning
-- **HTTP API** — `services/fraghub-api`: Express, TypeScript, JWT auth (email/password + Google OAuth hooks), refresh rotation, rate limits (see `docs/adr/0006-auth-api-jwt-oauth-refresh.md`)
-- **Web portal** — Planned (frontend not in this repo yet)
-- **ELO-style levels** — Specified in `.specs/project/`; matchmaking milestones ahead
-- **In-game tags** — Planned plugins integration
-- **Steam / Discord** — Partially specified; Steam linking and webhooks are roadmap items
+- **HTTP API** — `services/fraghub-api`: Express, TypeScript, JWT auth (email/password + Google OAuth), refresh rotation, rate limits
+- **Web portal** — React 18 + TypeScript + Vite, player profiles, leaderboard, admin panel
+- **ELO-style levels** — Glicko-2 simplified algorithm with 10 levels (1-10)
+- **In-game tags** — CS2 (C#) and CS:GO (SourcePawn) plugins with level display
+- **Steam / Discord** — Steam OpenID linking, Discord match notifications
 
 ## Quick start (installer)
 
@@ -81,11 +81,11 @@ End-user guides (`docs/installation.md`, etc.) are not present yet; installation
 
 - [x] v0.1 — Basic installer + optional game stack baseline
 - [x] v0.2 — Database baseline, extended plugins, backup
-- [x] v0.3 (in progress) — API bootstrap (`api-setup`) + auth API in repo; validate/extend per `.specs/features/auth-api/`
-- [ ] v0.4 — Web frontend
-- [ ] v0.5 — Matchmaking system
-- [ ] v0.6 — Admin panel
-- [ ] v1.0 — Production-hardening release
+- [x] v0.3 — API (auth, Steam, players, matches webhooks)
+- [x] v0.4 — Web frontend (React, auth UI, profiles, leaderboard)
+- [x] v0.5 — Matchmaking system (ELO, queue, notifications, in-game tags)
+- [x] v0.6 — Admin panel (dashboard, player mgmt, server control, audit logs)
+- [x] v1.0 — Production release (upgrade command, CI/CD, tests, security audit)
 
 ## Contributing
 
