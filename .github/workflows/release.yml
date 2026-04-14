@@ -1,0 +1,249 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Validate release tag format
+  # ---------------------------------------------------------------------------
+  validate-tag:
+    name: Validate release tag
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag format
+        run: |
+          TAG="${{ github.ref_name }}"
+          if ! echo "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9._-]+)?$'; then
+            echo "ERROR: Tag '${TAG}' does not match vMAJOR.MINOR.PATCH format."
+            exit 1
+          fi
+          echo "Tag format valid: ${TAG}"
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Full CI validation (re-run all checks on tag)
+  # ---------------------------------------------------------------------------
+  typecheck:
+    name: TypeScript type-check
+    runs-on: ubuntu-22.04
+    needs: validate-tag
+    defaults:
+      run:
+        working-directory: services/fraghub-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: services/fraghub-api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type-check
+        run: npx tsc --noEmit
+
+  lint:
+    name: ESLint
+    runs-on: ubuntu-22.04
+    needs: validate-tag
+    defaults:
+      run:
+        working-directory: services/fraghub-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: services/fraghub-api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-22.04
+    needs: validate-tag
+    defaults:
+      run:
+        working-directory: services/fraghub-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: services/fraghub-api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-22.04
+    needs: validate-tag
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: |
+          find scripts/installer -name '*.sh' -print0 | \
+            xargs -0 shellcheck --severity=error --shell=bash
+          shellcheck --severity=error --shell=bash scripts/upgrade.sh
+
+  build:
+    name: Build (tsc)
+    runs-on: ubuntu-22.04
+    needs: validate-tag
+    defaults:
+      run:
+        working-directory: services/fraghub-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: services/fraghub-api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Upload compiled API as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fraghub-api-dist-${{ github.ref_name }}
+          path: |
+            services/fraghub-api/dist/
+            services/fraghub-api/package.json
+            services/fraghub-api/package-lock.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Create GitHub Release with changelog
+  # ---------------------------------------------------------------------------
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04
+    needs:
+      - typecheck
+      - lint
+      - unit-tests
+      - shellcheck
+      - build
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes from git log
+        id: changelog
+        run: |
+          TAG="${{ github.ref_name }}"
+          PREV_TAG="$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -1 || true)"
+
+          {
+            echo "## What's Changed"
+            echo ""
+            if [[ -n "$PREV_TAG" ]]; then
+              echo "Changes since \`${PREV_TAG}\`:"
+              echo ""
+              git log --no-merges --pretty=format:"- %s (%h)" "${PREV_TAG}..${TAG}" || true
+            else
+              echo "Initial release."
+            fi
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Full installer:** \`bash scripts/installer/install.sh\`"
+            echo ""
+            echo "**Upgrade existing installation:** \`bash scripts/upgrade.sh\`"
+            echo ""
+            echo "**Rollback if needed:** \`bash scripts/upgrade.sh --rollback\`"
+          } > /tmp/release_notes.md
+
+          echo "notes_file=/tmp/release_notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Download API build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: fraghub-api-dist-${{ github.ref_name }}
+          path: /tmp/fraghub-api-dist/
+
+      - name: Package release archive
+        run: |
+          TAG="${{ github.ref_name }}"
+          ARCHIVE_NAME="fraghub-${TAG}"
+          mkdir -p "/tmp/${ARCHIVE_NAME}"
+
+          # Include installer scripts
+          cp -r scripts "/tmp/${ARCHIVE_NAME}/"
+
+          # Include API compiled output
+          mkdir -p "/tmp/${ARCHIVE_NAME}/services/fraghub-api"
+          cp -r /tmp/fraghub-api-dist/* "/tmp/${ARCHIVE_NAME}/services/fraghub-api/"
+
+          # Include docs
+          [[ -d docs ]] && cp -r docs "/tmp/${ARCHIVE_NAME}/" || true
+          [[ -f README.md ]] && cp README.md "/tmp/${ARCHIVE_NAME}/" || true
+          [[ -f CONTRIBUTING.md ]] && cp CONTRIBUTING.md "/tmp/${ARCHIVE_NAME}/" || true
+          [[ -f LICENSE ]] && cp LICENSE "/tmp/${ARCHIVE_NAME}/" || true
+
+          # Create tarballs
+          cd /tmp
+          tar czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}/"
+          zip -r "${ARCHIVE_NAME}.zip" "${ARCHIVE_NAME}/" -x "*.git*"
+
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "FragHub ${{ github.ref_name }}"
+          body_path: ${{ steps.changelog.outputs.notes_file }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            /tmp/${{ env.ARCHIVE_NAME }}.tar.gz
+            /tmp/${{ env.ARCHIVE_NAME }}.zip
+          generate_release_notes: false
