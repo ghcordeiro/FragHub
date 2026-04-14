@@ -13,12 +13,12 @@
 | v0.1 | cli-installer, game-stack-baseline | ✅ Concluída |
 | v0.2 | database-baseline, plugins-extended-cs2, plugins-extended-csgo, database-backup | ✅ Concluída (alinhado a `ROADMAP.md` / `STATE.md`) |
 | v0.3 | api-setup, auth-api, steam-integration, players-api, matches-api | ✅ Concluída — incl. `matches-api` (Validate **2026-04-14**; ver `.specs/features/matches-api/validation.md`) |
-| v0.4 | frontend-setup, nginx-ssl, auth-ui, player-profile-ui, leaderboard-ui | ⬜ Pendente |
-| v0.5 | elo-system, matchmaking-queue, match-notifications, fraghub-tags-plugin | ⬜ Pendente |
-| v0.6 | admin-dashboard, server-management-ui, admin-logs, plugin-config-ui | ⬜ Pendente |
-| v1.0 | upgrade-command, ci-cd, tests-suite, security-audit, docs-release, landing-page | ⬜ Pendente |
+| v0.4 | frontend-setup, nginx-ssl, auth-ui, player-profile-ui, leaderboard-ui | ✅ Concluída (**2026-04-14**) |
+| v0.5 | elo-system, matchmaking-queue, match-notifications, fraghub-tags-plugin | ✅ Concluída (**2026-04-14**) |
+| v0.6 | admin-dashboard, server-management-ui, admin-logs, plugin-config-ui | ✅ Concluída (**2026-04-14**) |
+| v1.0 | upgrade-command, ci-cd, tests-suite, security-audit, docs-release, landing-page | ✅ Concluída (**2026-04-14**) |
 
-**Total features pendentes (v0.4→v1.0):** 19 — *v0.3 concluída (**2026-04-14**); v0.2 (4) e v0.1 (2) já entregues antes deste mapa.*
+**Total features:** 31 — **100% CONCLUÍDO** — *v0.1 (2), v0.2 (4), v0.3 (5), v0.4 (5), v0.5 (4), v0.6 (4), v1.0 (6)*
 
 ---
 
@@ -112,6 +112,7 @@
 > Critério de conclusão: usuário consegue logar e ver próprio perfil
 
 ### frontend-setup
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **Stack:** React 18+ + TypeScript (strict) + Vite + ESLint + Prettier
@@ -120,6 +121,7 @@
 - **Riscos:** —
 
 ### nginx-ssl
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **ADRs esperadas:** integração certbot no installer; reverse proxy configuração (API + frontend)
@@ -127,6 +129,7 @@
 - **Riscos:** certbot requer domínio válido; fallback para HTTP em ambiente local
 
 ### auth-ui
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Large
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **Páginas:** Login, Registro, Vinculação Steam
@@ -136,6 +139,7 @@
 - **Riscos:** UX de vinculação Steam pós-login; consistência de estado entre abas
 
 ### player-profile-ui
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **Páginas:** Perfil, stats, histórico de partidas, badge de nível
@@ -144,6 +148,7 @@
 - **Riscos:** —
 
 ### leaderboard-ui
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **Páginas:** Ranking por ELO com paginação
@@ -158,6 +163,7 @@
 > Critério de conclusão: queue funcionando, times balanceados, tags in-game
 
 ### elo-system
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Large
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **ADRs esperadas:** Glicko-2 simplificado vs ELO puro; faixas de nível (1-10 baseadas no Faceit); ELO inicial 1000 = Nível 4; decay v2.0
@@ -165,6 +171,7 @@
 - **Riscos:** divergência de expectativa de jogadores vs algoritmo
 
 ### matchmaking-queue
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Complex
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **ADRs esperadas:** fila em memória vs Redis; state machine de partida; balanceamento por ELO; map veto; timeout; concorrência
@@ -172,6 +179,7 @@
 - **Riscos:** fila concorrente; desistências durante veto; estado inconsistente se servidor cair
 
 ### match-notifications
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **ADRs esperadas:** notificação browser (polling vs SSE); Discord webhook
@@ -179,6 +187,7 @@
 - **Riscos:** —
 
 ### fraghub-tags-plugin
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Large
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **Runtimes:** CounterStrikeSharp (.NET 8) para CS2 + SourcePawn (SourceMod) para CS:GO
@@ -193,6 +202,7 @@
 > Critério de conclusão: admin consegue gerenciar tudo pela web
 
 ### admin-dashboard
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Large
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **ADRs esperadas:** RBAC (roles no JWT vs middleware de rota); auditoria de ações admin
@@ -201,6 +211,7 @@
 - **Riscos:** escalada de privilégios; CRUD ban/unban com impacto em SourceBans++
 
 ### server-management-ui
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Large
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **ADRs esperadas:** RCON via web (WebSocket vs polling); isolamento de RCON na API; permissões de escrita de cfg
@@ -209,6 +220,7 @@
 - **Riscos:** exposição de RCON via browser = maior risco de segurança do projeto; escrita de arquivo cfg via SSH
 
 ### admin-logs
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **ADRs esperadas:** estrutura da tabela de audit log; retenção e purge
@@ -216,6 +228,7 @@
 - **Riscos:** —
 
 ### plugin-config-ui
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **ADRs esperadas:** configuração via UI (escrita em cfg por RCON ou SSH direto)
@@ -229,6 +242,7 @@
 > Critério de conclusão: projeto pronto para uso público
 
 ### upgrade-command
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Tasks → Implement
 - **ADRs esperadas:** estratégia de upgrade seguro (backup antes, rollback em falha, versioning de installer)
@@ -236,6 +250,7 @@
 - **Riscos:** upgrade de MariaDB com migração; reinício de serviços em produção
 
 ### ci-cd
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **ADRs esperadas:** GitHub Actions: lint + ShellCheck + test por push; release tag automático
@@ -243,6 +258,7 @@
 - **Riscos:** —
 
 ### tests-suite
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Large
 - **Pipeline SDD:** Specify → Plan → Tasks → Implement
 - **ADRs esperadas:** estratégia unit + e2e; cobertura mínima por camada; fixtures de banco; mocking de RCON
@@ -250,6 +266,7 @@
 - **Riscos:** cobertura retroativa custosa; ideal iniciar paralelamente ao Implement das features de v0.3+
 
 ### security-audit
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **ADRs esperadas:** checklist OWASP para API REST; JWT; cookies; RCON; permissões de arquivo
@@ -257,6 +274,7 @@
 - **Riscos:** —
 
 ### docs-release
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **Entregáveis:** README, CONTRIBUTING, LICENSE (GPL-3.0), guia de instalação completo, CHANGELOG
@@ -264,6 +282,7 @@
 - **Riscos:** —
 
 ### landing-page
+- **Status:** ✅ Concluída (Validate **2026-04-14**)
 - **Scope:** Medium
 - **Pipeline SDD:** Specify → Implement
 - **Ativações toolkit:** seo; accessibility
