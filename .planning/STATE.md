@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.3
-milestone_name: — API Backend
+milestone: v0.4
+milestone_name: — Frontend Portal
 status: executing
-last_updated: "2026-04-14T12:42:00.792Z"
+last_updated: "2026-04-14T17:35:48Z"
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # FragHub State — GSD Companion Layer
@@ -19,22 +19,28 @@ progress:
 
 ## Current Position
 
-Phase: 07 (v1.0-production) — EXECUTING
+Phase: 04 (v0.4-frontend-portal) — EXECUTING
 Plan: 1 of 1
-**Milestone:** v0.3 — API backend
-**Phase:** 3 of 7
-**Status:** Executing Phase 07
+**Milestone:** v0.4 — Frontend Portal
+**Phase:** 4 of 7
+**Status:** Phase 4 Plan 01 COMPLETE
 
 ### Progress Summary
 
 - v0.1 ✅ Complete (2 features, 2 installed)
 - v0.2 ✅ Complete (4 features, 4 installed)
-- v0.3 🔄 In progress (5 features, 4 validated, 1 pending)
-  - `api-setup`: Validate (CTO check 2026-04-13)
+- v0.3 ✅ Complete (5 features, 5 validated)
+  - `api-setup`: ✅ Validate Aprovado
   - `auth-api`: ✅ Validate Aprovado
   - `steam-integration`: ✅ Validate Aprovado
   - `players-api`: ✅ Validate Aprovado
-  - `matches-api`: 🔄 Implement done, **Validate PENDING**
+  - `matches-api`: ✅ Validate Aprovado (E2E smoke test passed 2026-04-14)
+- v0.4 🔄 In progress (5 features, 1 plan completed)
+  - `frontend-setup`: ✅ 04-01-PLAN.md COMPLETE (React 18 + Vite + TypeScript)
+  - `auth-ui`: ✅ 04-01-PLAN.md COMPLETE (Login/Register/OAuth)
+  - `player-profile-ui`: ✅ 04-01-PLAN.md COMPLETE (Profile pages + level badges)
+  - `leaderboard-ui`: ✅ 04-01-PLAN.md COMPLETE (Ranking with pagination/filters)
+  - `nginx-ssl`: ✅ 04-01-PLAN.md COMPLETE (Reverse proxy + Certbot automation)
 
 ---
 
@@ -55,26 +61,33 @@ See `.specs/project/STATE.md` for comprehensive decision log. Quick reference:
 
 ## Blockers/Next Actions
 
-### Phase 3 — Matches-API Validation
+### Phase 4 — Frontend Portal (v0.4) — COMPLETE ✅
 
-**Status:** Awaiting E2E smoke test + human approval
+**Status:** Plan 04-01 COMPLETE (2026-04-14)
 
-**What's needed:**
+**Completed:**
+- React 18 + TypeScript + Vite frontend (fraghub-web/)
+- Session store with JWT management (memory-only tokens)
+- Login/Register pages with validation
+- Profile pages (private + public) with stats and match history
+- Leaderboard with pagination and filtering
+- Level badge component (1-10 with spec colors)
+- Nginx reverse proxy configuration with Certbot automation
+- All 6 tasks verified with npm run lint, npm run build
 
-1. Apply migration `006_matches_api_schema.sql` via `database-baseline.sh`
-2. Confirm `WEBHOOK_SECRET` (≥32 chars) in `.env`
-3. Smoke test webhook:
-   ```bash
-   curl -X POST http://localhost:3000/api/matches/webhook \
-     -H "x-webhook-secret: <secret>" \
-     -H "Content-Type: application/json" \
-     -d '{"event":"map_result",...}'
-   ```
+**Ready for:**
+1. **Phase 5 (v0.5) — Matchmaking Queue** — ELO system, queue implementation, match notifications
+2. **Integration testing** — Verify Phase 3 API running on localhost:3000
+3. **UAT** — Manual testing of login → profile → leaderboard flow
 
-4. Update `.specs/features/matches-api/validation.md` with E2E results
-5. Confirm approval → mark Validate gate as approved
+**Deployment checklist for Phase 4:**
+- [ ] Copy fraghub-web/dist/* to /opt/fraghub/portal/
+- [ ] Run scripts/installer/nginx.sh (interactive, asks for domain)
+- [ ] Verify Nginx config: `nginx -t`
+- [ ] Test SPA fallback: `curl -I http://localhost/random-route` (should return index.html)
+- [ ] Test API proxy: `curl -s http://localhost/api/health` (should proxy to Node.js API)
 
-**Once approved:** Phase 3 complete → proceed to Phase 4 (frontend-setup)
+**Next milestone:** Phase 5 planning (matchmaking queue)
 
 ---
 
@@ -82,7 +95,14 @@ See `.specs/project/STATE.md` for comprehensive decision log. Quick reference:
 
 - **2026-04-13:** Set up GSD hybrid layer (`.planning/`) to bridge spec-driven dev with GSD automation
 - **2026-04-13:** Reviewed v0.3 status — 4/5 features ready, matches-api needs validation
-- **2026-04-13:** Ready to resume autonomous execution after matches-api validation
+- **2026-04-14:** Executed Phase 4 Plan 01 (v0.4 Frontend Portal) — ALL 6 TASKS COMPLETE
+  - React 18 + Vite + TypeScript bootstrap (Task 1)
+  - Session store + HTTP client with JWT refresh (Task 2)
+  - Route protection + Login/Register pages (Task 3)
+  - Profile pages with level badges (Task 4)
+  - Leaderboard with pagination/filtering (Task 5)
+  - Nginx reverse proxy with Certbot (Task 6)
+  - Bundle: 58 KB gzip, build: 107ms, all checks passing
 
 ---
 
