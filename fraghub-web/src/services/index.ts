@@ -1,1 +1,2 @@
-// Services barrel export
+export { httpClient } from './http'
+export { playerService } from './playerService'
