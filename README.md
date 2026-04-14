@@ -3,6 +3,7 @@
 > All-in-one open source toolkit for CS2/CS:GO community servers — game servers, matchmaking, web portal, and automated setup in one interactive install.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![CI](https://github.com/ghcordeiro/FragHub/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ghcordeiro/FragHub/actions/workflows/ci.yml)
 
 ## What is FragHub?
 
