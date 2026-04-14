@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.6
-milestone_name: — Admin Panel
-status: executing
-last_updated: "2026-04-14T18:45:30Z"
+milestone: v1.0
+milestone_name: — Production Release
+status: complete
+last_updated: "2026-04-14T19:30:00Z"
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_phases: 7
+  total_plans: 7
+  completed_plans: 7
+  percent: 100
 ---
 
 # FragHub State — GSD Companion Layer
@@ -19,11 +19,11 @@ progress:
 
 ## Current Position
 
-Phase: 06 (v0.6-admin-panel) — EXECUTING
+Phase: 07 (v1.0-production) — COMPLETE ✅
 Plan: 1 of 1
-**Milestone:** v0.6 — Admin Panel
-**Phase:** 6 of 7
-**Status:** Phase 6 Plan 01 COMPLETE
+**Milestone:** v1.0 — Production Release
+**Phase:** 7 of 7
+**Status:** ALL PHASES COMPLETE - Ready for public release
 
 ### Progress Summary
 
@@ -41,9 +41,23 @@ Plan: 1 of 1
   - `player-profile-ui`: ✅ 04-01-PLAN.md COMPLETE (Profile pages + level badges)
   - `leaderboard-ui`: ✅ 04-01-PLAN.md COMPLETE (Ranking with pagination/filters)
   - `nginx-ssl`: ✅ 04-01-PLAN.md COMPLETE (Reverse proxy + Certbot automation)
-- v0.5 ⏸️ Not started (Matchmaking Queue — ELO, queue service)
-- v0.6 🔄 In progress (1 plan completed)
-  - `admin-panel`: ✅ 06-01-PLAN.md COMPLETE (Dashboard, player mgmt, server control, audit logs)
+- v0.5 ✅ Complete (4 features, 1 plan completed)
+  - `elo-system`: ✅ 05-01-PLAN.md COMPLETE (Glicko-2 simplified, levels 1-10)
+  - `matchmaking-queue`: ✅ 05-01-PLAN.md COMPLETE (5v5 balancing, map veto, state machine)
+  - `match-notifications`: ✅ 05-01-PLAN.md COMPLETE (Discord webhooks)
+  - `fraghub-tags-plugin`: ✅ 05-01-PLAN.md COMPLETE (CS2 + CS:GO in-game tags)
+- v0.6 ✅ Complete (4 features, 1 plan completed)
+  - `admin-dashboard`: ✅ 06-01-PLAN.md COMPLETE (Metrics, player management)
+  - `server-management-ui`: ✅ 06-01-PLAN.md COMPLETE (Start/stop/restart, RCON)
+  - `admin-logs`: ✅ 06-01-PLAN.md COMPLETE (Audit trail with filters)
+  - `plugin-config-ui`: ✅ 06-01-PLAN.md COMPLETE (Config editor with allowlist)
+- v1.0 ✅ Complete (6 features, 1 plan completed)
+  - `upgrade-command`: ✅ 07-01-PLAN.md COMPLETE (Backup, migration, rollback)
+  - `ci-cd`: ✅ 07-01-PLAN.md COMPLETE (GitHub Actions pipeline)
+  - `tests-suite`: ✅ 07-01-PLAN.md COMPLETE (43 tests, 57.84% coverage)
+  - `security-audit`: ✅ 07-01-PLAN.md COMPLETE (STRIDE threat modeling, all mitigations)
+  - `docs-release`: ✅ 07-01-PLAN.md COMPLETE (README, INSTALL, CONTRIBUTING, LICENSE)
+  - `landing-page`: ✅ 07-01-PLAN.md COMPLETE (Public landing page)
 
 ---
 
