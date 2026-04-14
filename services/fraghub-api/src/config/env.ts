@@ -26,6 +26,11 @@ const envSchema = z.object({
     (v) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim()),
     z.string().url().optional(),
   ),
+  // Phase 5: Matchmaking Queue Configuration
+  MAX_ELO_DIFF: z.coerce.number().default(50).describe('Maximum ELO difference between team averages'),
+  QUEUE_TIMEOUT_MINUTES: z.coerce.number().default(10).describe('Minutes of inactivity before removal from queue'),
+  QUEUE_MAP_POOL: z.string().default('de_dust2,de_mirage,de_inferno,de_nuke,de_overpass,de_ancient,de_anubis').describe('Comma-separated list of available maps'),
+  VETO_TIMEOUT_SECONDS: z.coerce.number().default(30).describe('Seconds per veto turn before auto-ban'),
 });
 
 export type Env = z.infer<typeof envSchema>;

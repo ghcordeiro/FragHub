@@ -11,6 +11,8 @@ import { parseMatchWebhook } from '../services/matchWebhookPayloads';
 import { persistWebhookMatch } from '../services/matchWebhookService';
 import { verifyAccessToken } from '../services/tokenService';
 import { isDuplicateKeyError } from '../utils/dbErrors';
+import * as eloService from '../services/eloService';
+import logger from '../logger';
 
 const router = Router();
 
@@ -97,6 +99,12 @@ router.post(
       } catch (e) {
         // eslint-disable-next-line no-console
         console.warn('[matches] updateElo stub failed', e);
+      }
+      // Phase 5: Update ELO ratings from eloService
+      try {
+        await eloService.updatePlayerEloOnMatch(matchId, req.body, db);
+      } catch (e) {
+        logger.warn('[matches] ELO update failed (non-blocking):', e);
       }
       const top = [...normalized.players].sort((a, b) => b.kills - a.kills)[0];
       try {

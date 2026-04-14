@@ -3,12 +3,15 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { loadEnv } from './config/env';
-import { assertDatabaseConnection } from './db';
+import { assertDatabaseConnection, getKnex } from './db';
 import adminRouter from './routes/admin';
 import authRouter from './routes/auth';
 import matchesRouter from './routes/matches';
 import playersRouter from './routes/players';
 import steamRouter from './routes/steam';
+import createQueueRouter from './routes/queue';
+import * as queueService from './services/queueService';
+import logger from './logger';
 
 loadEnv();
 const env = loadEnv();
@@ -33,6 +36,11 @@ app.use('/auth', authRouter);
 app.use('/auth', steamRouter);
 app.use('/api', matchesRouter);
 app.use('/api', playersRouter);
+app.use('/api/queue', (req: any, res, next) => {
+  // Queue routes are authenticated via createQueueRouter middleware
+  next();
+});
+app.use('/api/queue', createQueueRouter(getKnex()));
 app.use('/admin', adminRouter);
 
 app.use((_req, res) => {
@@ -47,9 +55,19 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 
 async function main(): Promise<void> {
   await assertDatabaseConnection();
+  const knex = getKnex();
+
+  // Initialize queue timeout background task (every 60 seconds)
+  setInterval(() => {
+    queueService
+      .checkQueueTimeouts(knex, env.QUEUE_TIMEOUT_MINUTES)
+      .catch((err) => logger.error('[QUEUE] Timeout check failed:', err));
+  }, 60000);
+  logger.info('[QUEUE] Queue timeout service started (interval: 60s)');
+
   app.listen(env.PORT, () => {
-    // eslint-disable-next-line no-console -- startup banner
-    console.log(`fraghub-api listening on port ${env.PORT}`);
+    logger.info(`fraghub-api listening on port ${env.PORT}`);
+    logger.info('[CONFIG] Queue: MAX_ELO_DIFF=' + env.MAX_ELO_DIFF + ', TIMEOUT=' + env.QUEUE_TIMEOUT_MINUTES + 'min');
   });
 }
 
