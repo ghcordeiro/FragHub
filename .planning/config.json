@@ -1,0 +1,21 @@
+{
+  "workflow": {
+    "mode": "interactive",
+    "discuss_mode": "batch",
+    "commit_docs": true,
+    "search_gitignored": false
+  },
+  "agents": {
+    "researcher": true,
+    "plan_checker": true,
+    "verifier": true
+  },
+  "model_profile": "balanced",
+  "planning": {
+    "commit_docs": true,
+    "search_gitignored": false
+  },
+  "notes": {
+    "hybrid_approach": "This project uses both .specs/ (detailed spec-driven development with SDD gates) and .planning/ (GSD phase orchestration). Specs are the source of truth for requirements; GSD phases group specs into logical milestones for execution."
+  }
+}
