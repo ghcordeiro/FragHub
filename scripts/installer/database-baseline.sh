@@ -196,6 +196,7 @@ apply_migrations() {
 007|queue_sessions|${FRAGHUB_DB_MIGRATIONS_DIR}/007_queue_sessions.sql
 008|queue_players|${FRAGHUB_DB_MIGRATIONS_DIR}/008_queue_players.sql
 009|elo_history|${FRAGHUB_DB_MIGRATIONS_DIR}/009_elo_history.sql
+010|admin_panel|${FRAGHUB_DB_MIGRATIONS_DIR}/010_admin_panel.sql
 EOF
 }
 

@@ -28,6 +28,9 @@ if [[ "${FRAGHUB_FORCE_ALL:-0}" == "1" ]]; then
   fraghub_state_set game_summary "pending"
   fraghub_state_set database_backup "pending"
   fraghub_state_set api_setup "pending"
+  fraghub_state_set admin_bootstrap "pending"
+  fraghub_state_set portal_setup "pending"
+  fraghub_state_set nginx_setup "pending"
   fraghub_state_set verify "pending"
   fraghub_state_set summary "pending"
 fi
@@ -104,6 +107,15 @@ run_step database_backup "${SCRIPT_DIR}/database-backup.sh" \
 run_step api_setup "${SCRIPT_DIR}/api-setup.sh" \
   "Bootstrap da API backend (Node.js + TypeScript + systemd)" \
   "API setup finalizado."
+run_step admin_bootstrap "${SCRIPT_DIR}/admin-bootstrap.sh" \
+  "Bootstrap do utilizador admin (BD a partir do wizard)" \
+  "Utilizador admin garantido na base de dados."
+run_step portal_setup "${SCRIPT_DIR}/portal-setup.sh" \
+  "Build e publicacao do portal web (fraghub-web -> /opt/fraghub/portal/dist)" \
+  "Portal web publicado."
+run_step nginx_setup "${SCRIPT_DIR}/nginx.sh" \
+  "Nginx: site fraghub, proxy /api e remocao do default" \
+  "Nginx configurado."
 run_step verify "${SCRIPT_DIR}/verify.sh" \
   "Verificacoes de saude (smoke)" \
   "Verificacoes concluidas."

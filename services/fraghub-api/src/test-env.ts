@@ -16,3 +16,4 @@ process.env.STEAM_REALM = 'http://127.0.0.1:3001';
 process.env.STEAM_RETURN_URL = 'http://127.0.0.1:3001/auth/steam/callback';
 process.env.STEAM_STATE_SECRET = '01234567890123456789012345678903';
 process.env.WEBHOOK_SECRET = '01234567890123456789012345678904';
+process.env.DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/123456789/test_token_abc';

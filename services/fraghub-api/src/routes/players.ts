@@ -76,6 +76,7 @@ router.get('/players', async (req: Request, res: Response, next: NextFunction) =
         id: r.id,
         displayName: r.display_name,
         level: levelFromEloRating(r.elo_rating),
+        eloRating: r.elo_rating,
         steamId: r.steam_id,
         stats: {
           wins: 0,
@@ -84,6 +85,44 @@ router.get('/players', async (req: Request, res: Response, next: NextFunction) =
         },
       })),
       meta: { total, page, limit, totalPages },
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** PLAYAPI: perfil do utilizador autenticado (deve ficar antes de GET /players/:id para não capturar "me"). */
+router.get('/players/me', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  const uid = req.user!.id;
+  try {
+    const row = await findPublicProfileById(db, uid);
+    if (!row) {
+      res.status(404).json({ error: 'Player not found' });
+      return;
+    }
+    const { user, stats } = row;
+    const kdr = kdrOf(stats.kills, stats.deaths);
+    res.status(200).json({
+      id: user.id,
+      displayName: user.display_name,
+      level: levelFromEloRating(user.elo_rating),
+      eloRating: user.elo_rating,
+      steamId: user.steam_id,
+      role: user.role,
+      createdAt: user.created_at,
+      stats: {
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        kills: stats.kills,
+        deaths: stats.deaths,
+        assists: stats.assists,
+        kdr,
+        headshots: 0,
+        hsPercent: 0,
+        mvps: 0,
+        matchesPlayed: stats.matches_played,
+      },
     });
   } catch (e) {
     next(e);

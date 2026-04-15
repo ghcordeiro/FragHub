@@ -7,25 +7,24 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=logging.sh
 source "${SCRIPT_DIR}/logging.sh"
-# shellcheck source=state.sh
-source "${SCRIPT_DIR}/state.sh"
 
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 NGINX_SETUP_MARKER="${FRAGHUB_NGINX_SETUP_MARKER:-${INPUT_DIR}/nginx-setup.done}"
 
 FRAGHUB_PORTAL_DIR="${FRAGHUB_PORTAL_DIR:-/opt/fraghub/portal}"
-FRAGHUB_API_PORT="${FRAGHUB_API_PORT:-3000}"
+FRAGHUB_API_PORT="${FRAGHUB_API_PORT:-3001}"
 NGINX_SITES_AVAILABLE="/etc/nginx/sites-available/fraghub"
 NGINX_SITES_ENABLED="/etc/nginx/sites-enabled/fraghub"
 NGINX_LOG_DIR="/var/log/fraghub"
 
 fail() {
   fraghub_fail_actionable "$1" "bash scripts/installer/nginx.sh"
+  rm -f "$NGINX_SETUP_MARKER"
   exit 1
 }
 
 log_section() {
-  fraghub_log_info "$1"
+  fraghub_log "INFO" "$1"
 }
 
 nginx_is_installed() {
@@ -34,27 +33,31 @@ nginx_is_installed() {
 
 install_nginx() {
   log_section "Installing Nginx and Certbot..."
-  apt-get update -qq
-  apt-get install -y nginx certbot python3-certbot-nginx >/dev/null 2>&1 || fail "Failed to install Nginx/Certbot"
-  fraghub_log_success "Nginx and Certbot installed"
+  sudo apt-get update -qq
+  sudo apt-get install -y nginx certbot python3-certbot-nginx >/dev/null 2>&1 || fail "Failed to install Nginx/Certbot"
+  fraghub_log "INFO" "Nginx and Certbot installed"
 }
 
 create_nginx_config() {
   log_section "Creating Nginx reverse proxy configuration..."
 
-  mkdir -p "$NGINX_LOG_DIR"
+  sudo mkdir -p "$NGINX_LOG_DIR"
 
-  cat >"$NGINX_SITES_AVAILABLE" <<'EOF'
+  local tmp
+  tmp="$(mktemp)"
+
+  cat >"$tmp" <<'EOF'
 # FragHub Nginx configuration
 # Serves React frontend from /opt/fraghub/portal/dist
-# Proxies /api/* to Node.js backend on localhost:3000
+# Proxies /api/* to Node.js backend (PORT from FRAGHUB_API_PORT / api-setup)
 
 upstream fraghub_api {
-    server 127.0.0.1:3000;
+    server 127.0.0.1:PORT_PLACEHOLDER;
 }
 
 server {
-    listen 80;
+    listen 80 default_server;
+    listen [::]:80 default_server;
     server_name _;
 
     # Security headers
@@ -82,18 +85,16 @@ server {
         }
     }
 
-    # API proxy
+    # API proxy (/api/foo -> upstream /foo)
     location /api/ {
         proxy_pass http://fraghub_api/;
         proxy_http_version 1.1;
 
-        # Pass through headers
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Request/response buffering
         proxy_buffering on;
         proxy_buffer_size 128k;
         proxy_buffers 4 256k;
@@ -105,13 +106,18 @@ server {
 # This block is added by certbot automatically
 EOF
 
-  fraghub_log_success "Nginx configuration created at $NGINX_SITES_AVAILABLE"
+  sed -i "s/PORT_PLACEHOLDER/${FRAGHUB_API_PORT}/g" "$tmp"
+  sudo cp "$tmp" "$NGINX_SITES_AVAILABLE"
+  sudo chmod 644 "$NGINX_SITES_AVAILABLE"
+  rm -f "$tmp"
+
+  fraghub_log "INFO" "Nginx configuration created at $NGINX_SITES_AVAILABLE"
 }
 
 validate_nginx() {
   log_section "Validating Nginx configuration..."
-  if nginx -t >/dev/null 2>&1; then
-    fraghub_log_success "Nginx configuration is valid"
+  if sudo nginx -t >/dev/null 2>&1; then
+    fraghub_log "INFO" "Nginx configuration is valid"
     return 0
   else
     fail "Nginx configuration validation failed"
@@ -121,12 +127,14 @@ validate_nginx() {
 enable_and_restart_nginx() {
   log_section "Enabling and restarting Nginx..."
 
+  sudo rm -f /etc/nginx/sites-enabled/default
+
   if [[ ! -L "$NGINX_SITES_ENABLED" ]]; then
-    ln -sf "$NGINX_SITES_AVAILABLE" "$NGINX_SITES_ENABLED"
+    sudo ln -sf "$NGINX_SITES_AVAILABLE" "$NGINX_SITES_ENABLED"
   fi
 
-  systemctl restart nginx || fail "Failed to restart Nginx"
-  fraghub_log_success "Nginx enabled and restarted"
+  sudo systemctl restart nginx || fail "Failed to restart Nginx"
+  fraghub_log "INFO" "Nginx enabled and restarted"
 }
 
 setup_ssl_with_certbot() {
@@ -135,17 +143,16 @@ setup_ssl_with_certbot() {
 
   log_section "Setting up SSL certificate for domain: $domain"
 
-  certbot --nginx -d "$domain" --non-interactive --agree-tos -m "$email" >/dev/null 2>&1 || \
-    fraghub_log_warn "Certbot SSL setup encountered issues, but continuing..."
+  sudo certbot --nginx -d "$domain" --non-interactive --agree-tos -m "$email" >/dev/null 2>&1 || \
+    fraghub_log "WARN" "Certbot SSL setup encountered issues, but continuing..."
 
-  fraghub_log_success "SSL certificate setup completed for $domain"
+  fraghub_log "INFO" "SSL certificate setup completed for $domain"
 }
 
 setup_certbot_renewal() {
   log_section "Setting up Certbot automatic renewal..."
 
-  # Create timer
-  cat >/etc/systemd/system/certbot-renew.timer <<'EOF'
+  sudo tee /etc/systemd/system/certbot-renew.timer >/dev/null <<'EOF'
 [Unit]
 Description=Certbot renewal timer
 
@@ -158,8 +165,7 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
-  # Create service
-  cat >/etc/systemd/system/certbot-renew.service <<'EOF'
+  sudo tee /etc/systemd/system/certbot-renew.service >/dev/null <<'EOF'
 [Unit]
 Description=Certbot renewal
 After=network-online.target
@@ -171,52 +177,58 @@ StandardOutput=journal
 StandardError=journal
 EOF
 
-  systemctl daemon-reload
-  systemctl enable certbot-renew.timer >/dev/null 2>&1
-  systemctl start certbot-renew.timer >/dev/null 2>&1
+  sudo systemctl daemon-reload
+  sudo systemctl enable certbot-renew.timer >/dev/null 2>&1
+  sudo systemctl start certbot-renew.timer >/dev/null 2>&1
 
-  fraghub_log_success "Certbot renewal timer enabled"
+  fraghub_log "INFO" "Certbot renewal timer enabled"
+}
+
+nginx_noninteractive() {
+  [[ "${FRAGHUB_NGINX_NONINTERACTIVE:-0}" == "1" ]] \
+    || [[ "${FRAGHUB_INSTALL_NONINTERACTIVE:-0}" == "1" ]] \
+    || [[ "${DEBIAN_FRONTEND:-}" == "noninteractive" ]] \
+    || [[ ! -t 0 ]]
 }
 
 nginx_setup() {
   log_section "=== Nginx Setup ==="
 
-  # Check if already set up
-  if [[ -f "$NGINX_SETUP_MARKER" ]]; then
-    fraghub_log_info "Nginx already configured (marker found). Skipping setup."
-    return 0
-  fi
+  fraghub_sudo_noninteractive_ok || fail "sudo necessario para configurar Nginx."
 
-  # Install Nginx if needed
   if ! nginx_is_installed; then
     install_nginx
   fi
 
-  # Create configuration
   create_nginx_config
   validate_nginx
   enable_and_restart_nginx
 
-  # Ask about SSL
-  read -rp "Do you have a domain configured with DNS? (y/n) " -n 1 -r
-  echo
-
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    read -rp "Enter your domain name: " domain
-    read -rp "Enter admin email for SSL notifications: " email
-
-    setup_ssl_with_certbot "$domain" "$email"
-    setup_certbot_renewal
+  if nginx_noninteractive; then
+    fraghub_log "INFO" "Modo nao interactivo: SSL (certbot) omitido. Use certbot --nginx -d <dominio> mais tarde."
   else
-    fraghub_log_warn "Running without HTTPS. Certificate can be added later with: certbot --nginx -d <domain>"
+    read -rp "Do you have a domain configured with DNS? (y/n) " -n 1 -r
+    echo
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      read -rp "Enter your domain name: " domain
+      read -rp "Enter admin email for SSL notifications: " email
+
+      setup_ssl_with_certbot "$domain" "$email"
+      setup_certbot_renewal
+    else
+      fraghub_log "WARN" "Running without HTTPS. Certificate can be added later with: certbot --nginx -d <domain>"
+    fi
   fi
 
-  # Mark as done
-  touch "$NGINX_SETUP_MARKER"
-  fraghub_log_success "Nginx setup completed"
+  mkdir -p "$INPUT_DIR"
+  umask 077
+  date -Iseconds >"$NGINX_SETUP_MARKER"
+  chmod 600 "$NGINX_SETUP_MARKER" 2>/dev/null || true
+
+  fraghub_log "INFO" "Nginx setup completed"
 }
 
-# Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   nginx_setup
 fi

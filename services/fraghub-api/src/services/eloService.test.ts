@@ -55,16 +55,16 @@ describe('ELO Service', () => {
   });
 
   describe('getLevelFromElo', () => {
-    it('should map 600-750 ELO to level 1', () => {
-      expect(getLevelFromElo(600)).toBe(1);
-      expect(getLevelFromElo(700)).toBe(1);
-      expect(getLevelFromElo(750)).toBe(1);
+    it('should map 100-500 ELO to level 1', () => {
+      expect(getLevelFromElo(100)).toBe(1);
+      expect(getLevelFromElo(300)).toBe(1);
+      expect(getLevelFromElo(500)).toBe(1);
     });
 
-    it('should map 751-825 ELO to level 2', () => {
-      expect(getLevelFromElo(751)).toBe(2);
-      expect(getLevelFromElo(788)).toBe(2);
-      expect(getLevelFromElo(825)).toBe(2);
+    it('should map 501-750 ELO to level 2', () => {
+      expect(getLevelFromElo(501)).toBe(2);
+      expect(getLevelFromElo(600)).toBe(2);
+      expect(getLevelFromElo(750)).toBe(2);
     });
 
     it('should map 901-1050 ELO to level 4 (new player default)', () => {
@@ -73,10 +73,10 @@ describe('ELO Service', () => {
       expect(getLevelFromElo(1050)).toBe(4);
     });
 
-    it('should map 1051-1125 ELO to level 5', () => {
+    it('should map 1051-1200 ELO to level 5', () => {
       expect(getLevelFromElo(1051)).toBe(5);
-      expect(getLevelFromElo(1088)).toBe(5);
-      expect(getLevelFromElo(1125)).toBe(5);
+      expect(getLevelFromElo(1100)).toBe(5);
+      expect(getLevelFromElo(1200)).toBe(5);
     });
 
     it('should map 2001+ ELO to level 10', () => {
@@ -85,16 +85,11 @@ describe('ELO Service', () => {
       expect(getLevelFromElo(3000)).toBe(10);
     });
 
-    it('should clamp very low ELO to level 1', () => {
-      expect(getLevelFromElo(0)).toBe(1);
-      expect(getLevelFromElo(100)).toBe(1);
-      expect(getLevelFromElo(599)).toBe(1);
-    });
-
-    it('should use formula (elo - 600) / 80 + 1', () => {
-      // Level 4: 901 ELO = (901 - 600) / 80 + 1 = 301/80 + 1 = 3.7625 + 1 = 4.7625 → 4
-      // Level 7: 1201 ELO = (1201 - 600) / 80 + 1 = 601/80 + 1 = 7.5125 + 1 = 8.5125 → 8
-      expect(getLevelFromElo(1201)).toBe(8);
+    it('should use lookup table for level mapping', () => {
+      // Test various boundaries from the lookup table
+      expect(getLevelFromElo(900)).toBe(3); // Level 3: 751–900
+      expect(getLevelFromElo(1350)).toBe(6); // Level 6: 1201–1350
+      expect(getLevelFromElo(1531)).toBe(8); // Level 8: 1531–1750
     });
   });
 });

@@ -1,12 +1,17 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
-import * as discordService from './discordNotifyService';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch as any;
 
 describe('Discord Notify Service', () => {
-  beforeEach(() => {
+  let discordService: typeof import('./discordNotifyService');
+
+  beforeEach(async () => {
+    // Reset modules to clear env cache
+    vi.resetModules();
+    // Re-import after reset to get fresh loadEnv() call
+    discordService = await import('./discordNotifyService');
     mockFetch.mockClear();
     vi.useFakeTimers();
   });
@@ -42,7 +47,7 @@ describe('Discord Notify Service', () => {
       await discordService.notifyMatchReady(teams, 'de_mirage', '192.168.1.1:27015');
 
       // Allow fire-and-forget promise to settle
-      vi.runAllTimers();
+      await vi.runAllTimersAsync();
 
       expect(mockFetch).toHaveBeenCalled();
       const call = mockFetch.mock.calls[0];
@@ -70,7 +75,7 @@ describe('Discord Notify Service', () => {
       await discordService.notifyMatchReady(teams, 'de_dust2', '127.0.0.1:27015');
 
       // Should not fetch if webhook is not configured
-      vi.runAllTimers();
+      await vi.runAllTimersAsync();
       // (fetch may or may not be called depending on env loading)
     });
 
@@ -84,7 +89,7 @@ describe('Discord Notify Service', () => {
 
       await discordService.notifyMatchReady(teams, 'de_mirage', '127.0.0.1:27015');
 
-      vi.runAllTimers();
+      await vi.runAllTimersAsync();
 
       expect(mockFetch).toHaveBeenCalled();
     });
@@ -111,7 +116,7 @@ describe('Discord Notify Service', () => {
 
       await discordService.notifyMatchComplete(result);
 
-      vi.runAllTimers();
+      await vi.runAllTimersAsync();
 
       expect(mockFetch).toHaveBeenCalled();
       const call = mockFetch.mock.calls[0];
@@ -143,7 +148,7 @@ describe('Discord Notify Service', () => {
 
       await discordService.notifyMatchComplete(result);
 
-      vi.runAllTimers();
+      await vi.runAllTimersAsync();
 
       expect(mockFetch).toHaveBeenCalled();
     });

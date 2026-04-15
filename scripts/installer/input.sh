@@ -161,11 +161,15 @@ collect_inputs() {
   done
 
   while true; do
-    printf 'Senha do admin inicial (obrigatorio, min 8): '
+    printf 'Senha do admin inicial (obrigatorio, min 8, maiuscula+minuscula+digito): '
     read -rs admin_pass
     echo
     if ! min_len "$admin_pass" 8; then
       echo "Senha do admin deve ter no minimo 8 caracteres."
+      continue
+    fi
+    if [[ ! "$admin_pass" =~ [a-z] ]] || [[ ! "$admin_pass" =~ [A-Z] ]] || [[ ! "$admin_pass" =~ [0-9] ]]; then
+      echo "Senha do admin: inclua pelo menos uma maiuscula, uma minuscula e um digito (regra igual a /auth/register)."
       continue
     fi
     break

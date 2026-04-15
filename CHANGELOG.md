@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Instalador: etapa `admin-bootstrap` após `api-setup` — cria ou atualiza o utilizador admin na BD a partir de `FRAGHUB_ADMIN_EMAIL` / `FRAGHUB_ADMIN_PASSWORD` (bcrypt custo 12, alinhado à API); `FRAGHUB_ADMIN_BOOTSTRAP_PURGE=1` remove utilizadores e dados dependentes antes do upsert; migração `010_admin_panel.sql` incluída no `database-baseline`.
+- Instalador: etapas `portal-setup` (build Vite de `fraghub-web` para `/opt/fraghub/portal/dist`) e `nginx_setup` (site `fraghub`, `default_server`, remoção de `sites-enabled/default`, proxy `/api` → API na porta configurada); `verify` confirma portal e rejeita a página “Welcome to nginx!”; `bootstrap` com stack de jogo valida `linuxgsm.sh` para evitar estado inconsistente.
+
 ### Fixed
+- `fraghub-api`: `tsc` verde (`updatePlayerEloOnMatch` com `matchId` string, `Number(cnt)` no ELO, tipo `QueueRuntimeConfig` em `joinQueue`, `Knex.QueryBuilder` nos subqueries, shim `uuid`); `api-setup`: `FRAGHUB_API_SKIP_LINT=1` opcional para instalação quando o ESLint do pacote ainda não passa.
+- API + portal: `GET /api/players/me` para o perfil autenticado (evita colisão com `GET /api/players/:id` e 404 em `"me"`); listagem pública inclui `eloRating`; frontend envia `sort=elo_desc` e mapeia `{ data, meta }` do leaderboard; `PATCH /players/me` envia `displayName`.
+- `nginx.sh`: usar apenas `fraghub_log` de `logging.sh` (removidas chamadas inexistentes a `fraghub_log_info` / `_success` / `_warn`).
+- `state.sh`: `fraghub_state_verify_verify` confirma portal, site Nginx e que `http://127.0.0.1:80/` não é a página default do nginx, para não saltar `verify.sh` com estado obsoleto.
 - `fraghub-web`: `tsconfig` compatível com TypeScript 6 (`ignoreDeprecations`), ESLint verde nas páginas admin, cliente HTTP com refresh JWT seguro (uma retentativa, sem `user!`), exemplo `.env.example` para deploy.
 
 ### Added

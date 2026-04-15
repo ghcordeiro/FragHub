@@ -10,7 +10,7 @@ const createMockKnex = () => {
     queue_players: [],
   };
 
-  const knex = {
+  const chainable = {
     async query() {
       return this;
     },
@@ -41,10 +41,20 @@ const createMockKnex = () => {
     orderBy() {
       return this;
     },
-    transaction: async (callback: Function) => {
-      return callback(knex);
+    limit() {
+      return this;
     },
-  } as any as Knex;
+    whereIn() {
+      return this;
+    },
+  };
+
+  // knex must be callable as a function AND have methods
+  const knex = vi.fn().mockReturnValue(chainable) as any;
+  Object.assign(knex, chainable);
+  knex.transaction = async (callback: Function) => {
+    return callback(knex);
+  };
 
   return { knex, data };
 };
@@ -96,12 +106,20 @@ describe('Queue Service', () => {
       const { knex } = createMockKnex();
 
       const mockUser = { id: 'user1', steam_id: null };
-      knex.where = vi.fn(() => ({
+      // Override the chainable's where() to return a mock with first()
+      const chainableWithWhere = {
+        ...Object.getPrototypeOf(knex('users')),
         first: vi.fn(() => Promise.resolve(mockUser)),
-      })) as any;
+      };
+      knex.where = vi.fn(() => chainableWithWhere) as any;
 
       await expect(
-        joinQueue('user1', knex as any, { maxQueueSize: 10, maxEloDiff: 50 })
+        joinQueue('user1', knex as any, {
+          maxQueueSize: 10,
+          maxEloDiff: 50,
+          mapPool: ['de_mirage'],
+          vetoTimeoutSeconds: 60,
+        })
       ).rejects.toMatchObject({
         code: 'NO_STEAM_LINKED',
         statusCode: 403,
@@ -136,7 +154,12 @@ describe('Queue Service', () => {
       }) as any;
 
       await expect(
-        joinQueue('user1', knex as any, { maxQueueSize: 10, maxEloDiff: 50 })
+        joinQueue('user1', knex as any, {
+          maxQueueSize: 10,
+          maxEloDiff: 50,
+          mapPool: ['de_mirage'],
+          vetoTimeoutSeconds: 60,
+        })
       ).rejects.toMatchObject({
         code: 'ALREADY_IN_QUEUE',
         statusCode: 409,

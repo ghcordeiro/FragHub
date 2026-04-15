@@ -172,7 +172,7 @@ export async function updatePlayerEloOnMatch(
           .where('user_id', playerData.userId)
           .count('* as cnt')
           .first();
-        const playerMatchesCount = matchCount?.cnt || 0;
+        const playerMatchesCount = Number(matchCount?.cnt ?? 0);
 
         // Calculate ELO change
         const delta = calculateEloChange(currentElo, playerMatchesCount, opponentElos, playerResult);

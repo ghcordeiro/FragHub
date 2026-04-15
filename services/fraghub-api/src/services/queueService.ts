@@ -52,10 +52,17 @@ const vetoStates = new Map<
  * Join queue: add player to current queue session or create new one
  * QUEUE-REQ-001: Validate Steam, prevent duplicates, enforce rate limit
  */
+export type QueueRuntimeConfig = {
+  maxQueueSize: number;
+  maxEloDiff: number;
+  mapPool: string[];
+  vetoTimeoutSeconds: number;
+};
+
 export async function joinQueue(
   userId: string,
   knex: Knex,
-  config: { maxQueueSize: number; maxEloDiff: number }
+  config: QueueRuntimeConfig
 ): Promise<{ position: number; totalInQueue: number }> {
   // Validate user exists and has Steam linked
   const user = await knex('users').where('id', userId).first();
@@ -333,7 +340,7 @@ export async function balanceTeams(
 
   // Update queue_players with team assignments
   await knex('queue_players')
-    .where('queue_session_id', (qb) =>
+    .where('queue_session_id', (qb: Knex.QueryBuilder) =>
       qb
         .select('queue_session_id')
         .from('queue_players')
@@ -344,7 +351,7 @@ export async function balanceTeams(
     .update({ team_assignment: 'TEAM_A' });
 
   await knex('queue_players')
-    .where('queue_session_id', (qb) =>
+    .where('queue_session_id', (qb: Knex.QueryBuilder) =>
       qb
         .select('queue_session_id')
         .from('queue_players')

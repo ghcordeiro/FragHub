@@ -26,6 +26,9 @@ GAME_VERIFY_MARKER="${FRAGHUB_GAME_VERIFY_MARKER:-${INPUT_DIR}/game-verify.done}
 GAME_SUMMARY_MARKER="${FRAGHUB_GAME_SUMMARY_MARKER:-${INPUT_DIR}/game-summary.done}"
 DATABASE_BACKUP_MARKER="${FRAGHUB_DATABASE_BACKUP_MARKER:-${INPUT_DIR}/database-backup.done}"
 API_SETUP_MARKER="${FRAGHUB_API_SETUP_MARKER:-${INPUT_DIR}/api-setup.done}"
+ADMIN_BOOTSTRAP_MARKER="${FRAGHUB_ADMIN_BOOTSTRAP_MARKER:-${INPUT_DIR}/admin-bootstrap.done}"
+PORTAL_SETUP_MARKER="${FRAGHUB_PORTAL_SETUP_MARKER:-${INPUT_DIR}/portal-setup.done}"
+NGINX_SETUP_MARKER="${FRAGHUB_NGINX_SETUP_MARKER:-${INPUT_DIR}/nginx-setup.done}"
 VERIFY_MARKER="${FRAGHUB_VERIFY_MARKER:-${INPUT_DIR}/verify.passed}"
 SUMMARY_MARKER="${FRAGHUB_SUMMARY_MARKER:-${INPUT_DIR}/summary.done}"
 
@@ -82,6 +85,9 @@ fraghub_state_verify_secrets() {
 fraghub_state_verify_bootstrap() {
   [[ -f "$BOOTSTRAP_MARKER" ]] || return 1
   dpkg-query -W -f='${Status}' nginx 2>/dev/null | grep -q "install ok installed" || return 1
+  if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
+    [[ -x "${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}/linuxgsm.sh" ]] || return 1
+  fi
   return 0
 }
 
@@ -167,8 +173,37 @@ fraghub_state_verify_api_setup() {
   return 0
 }
 
+fraghub_state_verify_admin_bootstrap() {
+  [[ -f "$ADMIN_BOOTSTRAP_MARKER" ]] || return 1
+  [[ -f "${FRAGHUB_DB_APP_DEFAULTS:-${INPUT_DIR}/mysql-app.cnf}" ]] || return 1
+  [[ -f "$EFFECTIVE_FILE" ]] || return 1
+  return 0
+}
+
+fraghub_state_verify_portal_setup() {
+  [[ -f "$PORTAL_SETUP_MARKER" ]] || return 1
+  [[ -f "${FRAGHUB_PORTAL_DIST:-/opt/fraghub/portal/dist}/index.html" ]] || return 1
+  return 0
+}
+
+fraghub_state_verify_nginx_setup() {
+  [[ -f "$NGINX_SETUP_MARKER" ]] || return 1
+  [[ -f /etc/nginx/sites-available/fraghub ]] || return 1
+  [[ -L /etc/nginx/sites-enabled/fraghub ]] || return 1
+  return 0
+}
+
 fraghub_state_verify_verify() {
   [[ -f "$VERIFY_MARKER" ]] || return 1
+  [[ -f "$PORTAL_SETUP_MARKER" ]] || return 1
+  [[ -f "$NGINX_SETUP_MARKER" ]] || return 1
+  [[ -f /opt/fraghub/portal/dist/index.html ]] || return 1
+  [[ -L /etc/nginx/sites-enabled/fraghub ]] || return 1
+  local root_body
+  root_body="$(curl -fsS --max-time 5 "http://127.0.0.1:80/" 2>/dev/null)" || return 1
+  if printf '%s' "$root_body" | grep -qiF "Welcome to nginx"; then
+    return 1
+  fi
   return 0
 }
 
@@ -197,6 +232,9 @@ fraghub_state_verify() {
     game_summary) fraghub_state_verify_game_summary ;;
     database_backup) fraghub_state_verify_database_backup ;;
     api_setup) fraghub_state_verify_api_setup ;;
+    admin_bootstrap) fraghub_state_verify_admin_bootstrap ;;
+    portal_setup) fraghub_state_verify_portal_setup ;;
+    nginx_setup) fraghub_state_verify_nginx_setup ;;
     verify) fraghub_state_verify_verify ;;
     summary) fraghub_state_verify_summary ;;
     *) return 1 ;;

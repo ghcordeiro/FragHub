@@ -102,7 +102,7 @@ router.post(
       }
       // Phase 5: Update ELO ratings from eloService
       try {
-        await eloService.updatePlayerEloOnMatch(matchId, req.body, db);
+        await eloService.updatePlayerEloOnMatch(String(matchId), req.body, db);
       } catch (e) {
         logger.warn('[matches] ELO update failed (non-blocking):', e);
       }

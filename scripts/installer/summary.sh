@@ -68,14 +68,16 @@ run_summary() {
   echo "  - Banco: fraghub_db + fraghub_app + schema_migrations/users/matches/stats"
   echo "  - Backup DB: /opt/fraghub/scripts/db-backup.sh (cron diario 03:00, retencao 7 dias)"
   echo "  - API backend: /opt/fraghub/api (Express + TypeScript + systemd fraghub-api.service)"
+  echo "  - Admin BD: email/senha do wizard (FRAGHUB_ADMIN_*); purge opcional: FRAGHUB_ADMIN_BOOTSTRAP_PURGE=1"
+  echo "  - Portal web: /opt/fraghub/portal/dist (build Vite a partir de fraghub-web)"
+  echo "  - Nginx: site fraghub em :80 (proxy /api -> API, ficheiros estaticos do portal)"
   if [[ "${FRAGHUB_ENABLE_GAME_STACK:-0}" == "1" ]]; then
     echo "  - Plugins estendidos CS2: CS2-SimpleAdmin, WeaponPaints, demo-recorder"
     echo "  - Plugins estendidos CS:GO: SourceBans++, Weapons & Knives, RankMe"
   fi
   echo ""
   echo "## Pendente / proximas milestones"
-  echo "  - Endpoints de negocio (auth, players, matches)"
-  echo "  - SSL (certbot) se FRAGHUB_DOMAIN definido"
+  echo "  - SSL (certbot) se tiveres dominio: certbot --nginx -d <dominio>"
   echo ""
   echo "## Portas relevantes"
   echo "  - 22   SSH"
