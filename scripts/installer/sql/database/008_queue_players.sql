@@ -3,9 +3,9 @@
 -- Requirements: QUEUE-REQ-001, QUEUE-REQ-011
 
 CREATE TABLE IF NOT EXISTS queue_players (
-  id CHAR(36) PRIMARY KEY COMMENT 'UUID',
+  id CHAR(36) NOT NULL COMMENT 'UUID',
   queue_session_id CHAR(36) NOT NULL COMMENT 'FK to queue_sessions',
-  user_id CHAR(36) NOT NULL COMMENT 'FK to users',
+  user_id BIGINT UNSIGNED NOT NULL COMMENT 'FK to users',
   team_assignment ENUM('TEAM_A', 'TEAM_B') NULL COMMENT 'Assigned after 10 players join, set by balanceTeams',
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'For timeout detection',

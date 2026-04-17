@@ -32,7 +32,7 @@ run_portal_setup() {
 
   command -v node >/dev/null 2>&1 || fail "Node.js nao encontrado."
   command -v npm >/dev/null 2>&1 || fail "npm nao encontrado."
-  node -v | grep -qE '^v20\.' || fail "Node.js 20.x esperado (obtido: $(node -v))."
+  node -v | grep -qE '^v(20|22)\.' || fail "Node.js 20.x ou 22.x esperado (obtido: $(node -v))."
   fraghub_sudo_noninteractive_ok || fail "sudo nao disponivel para publicar em ${FRAGHUB_PORTAL_DIR}."
 
   fraghub_log "INFO" "Build do portal (Vite) a partir de ${FRAGHUB_WEB_SRC}."

@@ -103,7 +103,6 @@ ensure_my_cnf() {
     printf 'host=%s\n' "$FRAGHUB_DB_BACKUP_HOST"
     printf 'user=%s\n' "$FRAGHUB_DB_BACKUP_USER"
     printf 'password=%s\n' "$FRAGHUB_DB_BACKUP_PASSWORD"
-    printf 'database=%s\n' "$FRAGHUB_DB_NAME"
   } >"$tmp"
   sudo install -o "$FRAGHUB_INSTALL_USER" -g "$FRAGHUB_INSTALL_USER" -m 600 "$tmp" "$FRAGHUB_MYCNF_PATH"
   rm -f "$tmp"

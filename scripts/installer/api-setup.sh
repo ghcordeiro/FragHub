@@ -70,7 +70,7 @@ check_preconditions() {
   require_linux_ubuntu
   command -v node >/dev/null 2>&1 || fail "Node.js nao encontrado."
   command -v npm >/dev/null 2>&1 || fail "npm nao encontrado."
-  node -v | grep -qE '^v20\.' || fail "Node.js 20.x esperado (obtido: $(node -v))."
+  node -v | grep -qE '^v(20|22)\.' || fail "Node.js 20.x ou 22.x esperado (obtido: $(node -v))."
   id "$FRAGHUB_API_USER" >/dev/null 2>&1 || fail "Usuario '${FRAGHUB_API_USER}' nao existe."
   fraghub_state_verify database_baseline || fail "Dependencia ausente: database-baseline nao concluida ou inconsistente com ${FRAGHUB_STEPS_FILE}."
   [[ -f "$FRAGHUB_DB_APP_DEFAULTS" ]] || fail "Credenciais de app DB ausentes: ${FRAGHUB_DB_APP_DEFAULTS}."

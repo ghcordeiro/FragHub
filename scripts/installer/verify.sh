@@ -61,7 +61,7 @@ run_verify() {
   mysql --defaults-extra-file="$FRAGHUB_DB_APP_DEFAULTS" --batch --skip-column-names -e "USE \`${FRAGHUB_DB_NAME}\`; SELECT COUNT(*) FROM schema_migrations;" >/dev/null || fail "Schema baseline do banco nao validado."
 
   command -v node >/dev/null 2>&1 || fail "Node.js nao encontrado no PATH."
-  node -v | grep -qE '^v20\.' || fail "Node.js 20 LTS esperado (obtido: $(node -v))."
+  node -v | grep -qE '^v(20|22)\.' || fail "Node.js 20 ou 22 LTS esperado (obtido: $(node -v))."
 
   sudo ufw status | head -n 5 >/dev/null || fail "Nao foi possivel ler estado do UFW."
 
