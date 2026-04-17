@@ -104,7 +104,7 @@ vi.mock('../db', () => {
     return buildKnexChain([]);
   });
 
-  const trxStub = {
+  const _trxStub = {
     ...dbFn,
     users: ctx.users,
   };

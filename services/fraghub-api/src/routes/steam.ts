@@ -40,13 +40,23 @@ function queryToUrlSearchParams(query: Request['query']): URLSearchParams {
   return params;
 }
 
-router.get('/steam/link', authMiddleware, (req: Request, res: Response) => {
+router.get('/steam/link', async (req: Request, res: Response, next: NextFunction) => {
   const env = loadEnv();
+
+  // Accept token from query param for browser redirect flows (can't send headers)
+  const queryToken = firstQuery(req.query.token);
+  if (queryToken && !req.headers.authorization) {
+    req.headers.authorization = `Bearer ${queryToken}`;
+  }
+
+  await new Promise<void>((resolve) => authMiddleware(req, res, () => resolve()));
+  if (res.headersSent) return;
+
   const userId = req.user!.id;
   const payload = { userId, nonce: newSteamLinkNonce(), exp: Date.now() + 10 * 60 * 1000 };
-  const token = signSteamLinkState(payload, env.STEAM_STATE_SECRET);
+  const stateToken = signSteamLinkState(payload, env.STEAM_STATE_SECRET);
   const returnTo = new URL(env.STEAM_RETURN_URL);
-  returnTo.searchParams.set('state', token);
+  returnTo.searchParams.set('state', stateToken);
   const redirectUrl = buildSteamOpenIdRedirectUrl(returnTo.toString(), env.STEAM_REALM);
   res.redirect(302, redirectUrl);
 });
@@ -62,7 +72,7 @@ router.get('/steam/callback', async (req: Request, res: Response, next: NextFunc
   }
   const payload = verifySteamLinkState(stateToken, env.STEAM_STATE_SECRET);
   if (!payload) {
-    res.redirect(302, `${base}/profile?steam_error=state`);
+    res.redirect(302, `${base}/players/me?steam_error=state`);
     return;
   }
 
@@ -100,19 +110,19 @@ router.get('/steam/callback', async (req: Request, res: Response, next: NextFunc
       }
       await updateUserSteamId(trx, userId, steamId);
     });
-    res.redirect(302, `${base}/profile?steam_linked=1`);
+    res.redirect(302, `${base}/players/me?steam_linked=1`);
   } catch (e) {
     const err = e as { code?: string };
     if (err.code === 'STEAM_TAKEN' || isDuplicateKeyError(e)) {
-      res.redirect(302, `${base}/profile?steam_error=steam_taken`);
+      res.redirect(302, `${base}/players/me?steam_error=steam_taken`);
       return;
     }
     if (err.code === 'ALREADY_LINKED') {
-      res.redirect(302, `${base}/profile?steam_error=already_linked`);
+      res.redirect(302, `${base}/players/me?steam_error=already_linked`);
       return;
     }
     if (err.code === 'USER_MISSING') {
-      res.redirect(302, `${base}/profile?steam_error=user_missing`);
+      res.redirect(302, `${base}/players/me?steam_error=user_missing`);
       return;
     }
     next(e);

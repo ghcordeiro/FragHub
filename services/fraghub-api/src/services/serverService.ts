@@ -9,6 +9,7 @@ import logger from '../logger';
 import * as rconService from './rconService';
 import * as adminService from './adminService';
 import { validateCommand } from './rconService';
+import type { AdminAction } from '../types/admin';
 
 // Server configurations with fixed systemd service names
 const SERVER_CONFIG: Record<string, { service: string; rcon_port: number }> = {
@@ -25,7 +26,7 @@ const SERVER_CONFIG: Record<string, { service: string; rcon_port: number }> = {
 /**
  * List all configured servers with live status.
  */
-export async function listServers(db: Knex): Promise<any[]> {
+export async function listServers(_db: Knex): Promise<any[]> {
   try {
     const servers = [];
 
@@ -79,7 +80,7 @@ export async function controlServer(
     await adminService.createAuditLog(
       db,
       admin_id,
-      action_type as any,
+      action_type as AdminAction,
       'server',
       undefined,
       { server_id, action },

@@ -5,7 +5,7 @@
  */
 
 import { promises as fs } from 'fs';
-import { resolve, dirname, relative } from 'path';
+import { resolve } from 'path';
 import { Knex } from 'knex';
 import logger from '../logger';
 import { PLUGIN_CONFIG_PATHS, SERVER_PLUGINS } from '../config/pluginAllowlist';
@@ -138,7 +138,6 @@ export async function saveConfig(
 
     // Create temp file in same directory (atomic rename)
     const temp_path = `${validation.canonical!}.tmp`;
-    const dir = dirname(validation.canonical!);
 
     // Write to temp file
     await fs.writeFile(temp_path, content, 'utf-8');

@@ -22,6 +22,10 @@ const envSchema = z.object({
   STEAM_RETURN_URL: z.string().url(),
   STEAM_STATE_SECRET: z.string().min(32),
   WEBHOOK_SECRET: z.string().min(32),
+  COOKIE_SECURE: z.preprocess(
+    (v) => String(v).toLowerCase() !== 'false',
+    z.boolean(),
+  ).default(true),
   DISCORD_WEBHOOK_URL: z.preprocess(
     (v) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim()),
     z.string().url().optional(),

@@ -36,8 +36,7 @@ app.use('/auth', authRouter);
 app.use('/auth', steamRouter);
 app.use('/api', matchesRouter);
 app.use('/api', playersRouter);
-app.use('/api/queue', (req: any, res, next) => {
-  // Queue routes are authenticated via createQueueRouter middleware
+app.use('/api/queue', (_req, _res, next) => {
   next();
 });
 app.use('/api/queue', createQueueRouter(getKnex()));

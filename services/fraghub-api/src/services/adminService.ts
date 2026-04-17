@@ -7,7 +7,7 @@ import { Knex } from 'knex';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import logger from '../logger';
-import type { AdminAction, DashboardMetrics, AuditLogEntry, PlayerBan } from '../types/admin';
+import type { AdminAction, DashboardMetrics, AuditLogEntry } from '../types/admin';
 
 /**
  * Create an audit log entry asynchronously.
@@ -222,7 +222,7 @@ export async function banPlayer(
     const now = new Date();
 
     // Create ban record
-    const banRecord = await db('player_bans').insert({
+    await db('player_bans').insert({
       player_id,
       banned_by_id: admin_id,
       reason: banData.reason,

@@ -1,8 +1,8 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response } from 'express';
+import type { NextFunction } from 'express';
 import { Knex } from 'knex';
 import rateLimit from 'express-rate-limit';
 import * as queueService from '../services/queueService';
-import * as discordNotifyService from '../services/discordNotifyService';
 import { loadEnv } from '../config/env';
 import logger from '../logger';
 

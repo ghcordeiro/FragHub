@@ -53,7 +53,7 @@ export function validateCommand(command: string): { valid: boolean; reason?: str
 export async function executeRcon(
   server_id: string,
   command: string,
-  timeout: number = 5000,
+  _timeout: number = 5000,
 ): Promise<{ output: string; status: number }> {
   try {
     loadEnv();
@@ -85,7 +85,7 @@ export async function executeRcon(
  * Returns: { status: 'online' | 'offline', players_connected: number, uptime: string }
  */
 export async function getServerStatus(
-  server_id: string,
+  _server_id: string,
 ): Promise<{ status: 'online' | 'offline'; players_connected: number; uptime: string }> {
   try {
     // In production, would call systemctl is-active and parse RCON status output

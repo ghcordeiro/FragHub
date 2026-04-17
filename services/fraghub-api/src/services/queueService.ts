@@ -309,11 +309,11 @@ export async function balanceTeams(
   });
 
   // Snake draft: 1→A, 2→B, 3→B, 4→A, 5→A, 6→B, 7→B, 8→A, 9→A, 10→B
-  let teamA: string[] = [];
-  let teamB: string[] = [];
+  const teamA: string[] = [];
+  const teamB: string[] = [];
 
   for (let i = 0; i < 10; i++) {
-    const pattern = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const _pattern = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
     const position = i % 10;
     if ([0, 3, 4, 8].includes(position)) {
       teamA.push(sorted[i]);
@@ -449,7 +449,7 @@ export async function voteMap(
   map: string,
   queueSessionId: string,
   knex: Knex,
-  config: { vetoTimeoutSeconds: number }
+  _config: { vetoTimeoutSeconds: number }
 ): Promise<void> {
   const vetoState = vetoStates.get(queueSessionId);
   if (!vetoState) {

@@ -4,7 +4,7 @@
  * Consistent response format: { data?, error?, message?, pagination? }
  */
 
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { db } from '../db';
 import { requireAdmin } from '../middleware/adminAuth';
@@ -13,6 +13,7 @@ import * as adminService from '../services/adminService';
 import * as serverService from '../services/serverService';
 import * as configService from '../services/configService';
 import { captureIp } from '../middleware/adminAuth';
+import { clearUserSteamId, findUserById } from '../services/userService';
 import logger from '../logger';
 
 const router = Router();
@@ -21,7 +22,7 @@ const router = Router();
  * GET /api/admin/dashboard
  * Returns metrics for admin dashboard
  */
-router.get('/api/admin/dashboard', requireAdmin(), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/api/admin/dashboard', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const metrics = await adminService.getDashboardMetrics(db);
     res.status(200).json({ data: metrics });
@@ -463,7 +464,35 @@ router.put('/api/admin/servers/:id/config/:plugin', requireAdmin(), async (req: 
   }
 });
 
-// Delete old admin routes
-// router.delete('/players/:id/steam', ...); // Moved to separate endpoint if needed
+/**
+ * DELETE /admin/players/:id/steam
+ * Remove Steam link from a player (admin only)
+ */
+router.delete('/players/:id/steam', requireAdmin(), async (req: Request, res: Response) => {
+  try {
+    const player_id = Number.parseInt(req.params.id, 10);
+    if (!Number.isFinite(player_id) || player_id < 1) {
+      res.status(400).json({ error: 'Invalid player ID' });
+      return;
+    }
+
+    const user = await findUserById(db, player_id);
+    if (!user) {
+      res.status(404).json({ error: 'Player not found' });
+      return;
+    }
+    if (!user.steam_id) {
+      res.status(404).json({ error: 'Player has no Steam link' });
+      return;
+    }
+
+    await clearUserSteamId(db, player_id);
+    logger.info('[ADMIN] Steam link removed', { target_id: player_id, admin_id: req.user!.id });
+    res.status(204).send();
+  } catch (err) {
+    logger.error('[ADMIN] removeSteamLink failed:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 export default router;

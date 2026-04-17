@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Knex } from 'knex';
+import { describe, it, expect, vi } from 'vitest';
 import { QueueState, balanceTeams, joinQueue } from './queueService';
 
 // Mock Knex for testing
@@ -52,7 +51,7 @@ const createMockKnex = () => {
   // knex must be callable as a function AND have methods
   const knex = vi.fn().mockReturnValue(chainable) as any;
   Object.assign(knex, chainable);
-  knex.transaction = async (callback: Function) => {
+  knex.transaction = async (callback: (trx: unknown) => Promise<unknown>) => {
     return callback(knex);
   };
 
@@ -62,7 +61,7 @@ const createMockKnex = () => {
 describe('Queue Service', () => {
   describe('balanceTeams', () => {
     it('should balance 10 players into two teams of 5', async () => {
-      const { knex, data } = createMockKnex();
+      const { knex, data: _data } = createMockKnex();
 
       // Mock users with varying ELO
       const mockUsers = [

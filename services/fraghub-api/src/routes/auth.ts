@@ -65,9 +65,9 @@ const adminCreateSchema = z.object({
 function refreshCookieOptions(env: ReturnType<typeof loadEnv>): CookieOptions {
   return {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/auth',
+    secure: env.COOKIE_SECURE,
+    sameSite: 'lax',
+    path: '/',
     maxAge: REFRESH_EXPIRES_SEC * 1000,
   };
 }
@@ -115,9 +115,9 @@ function clearRefreshCookie(res: Response): void {
   const env = loadEnv();
   res.clearCookie('refresh_token', {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/auth',
+    secure: env.COOKIE_SECURE,
+    sameSite: 'lax',
+    path: '/',
   });
 }
 
