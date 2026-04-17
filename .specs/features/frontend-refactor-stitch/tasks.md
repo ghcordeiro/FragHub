@@ -12,8 +12,8 @@
 | Specify | ✅ Aprovado | Utilizador | 2026-04-17 |
 | Plan | ✅ Aprovado | Utilizador | 2026-04-17 |
 | Tasks | ✅ Aprovado | Utilizador | 2026-04-17 |
-| Implement | 🚀 Em progresso | — | — |
-| Validate | 🔒 Bloqueado | — | — |
+| Implement | ✅ Concluído | Claude | 2026-04-17 |
+| Validate | ✅ T-gates passados | Claude | 2026-04-17 |
 
 ---
 
