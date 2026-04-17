@@ -150,10 +150,12 @@ public class FraghubTagsPlugin : BasePlugin, IPluginConfig<PluginConfig>
 
     private static string GenerateTag(int level, string role)
     {
-        if (string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
-            return "[ADMIN]";
+        var clamped = Math.Clamp(level, 1, 10);
 
-        return $"[{Math.Clamp(level, 1, 10)}]";
+        if (string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
+            return $"[ADMIN|{clamped}]";
+
+        return $"[{clamped}]";
     }
 
     private class PlayerLevelResponse
