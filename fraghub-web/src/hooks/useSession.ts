@@ -18,7 +18,7 @@ export function useSession() {
 
       setLoading(true)
       try {
-        const response = await httpClient.post<AuthResponse>('/auth/refresh')
+        const response = await httpClient.post<AuthResponse>('/auth/refresh', undefined, { credentials: 'include' })
         setSession(response.accessToken, response.user)
       } catch {
         // Refresh failed, user is not authenticated

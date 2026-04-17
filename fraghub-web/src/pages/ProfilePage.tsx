@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LevelBadge } from '@/components/LevelBadge'
 import { PlayerAvatar } from '@/components/PlayerAvatar'
 import { playerService } from '@/services/playerService'
+import { useSessionStore } from '@/store'
 import type { Player, MatchRecord } from '@/types/player'
 
 export function ProfilePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const accessToken = useSessionStore((s) => s.accessToken)
+  const currentUser = useSessionStore((s) => s.user)
+  const isAdmin = currentUser?.role === 'admin'
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<MatchRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -37,7 +42,7 @@ export function ProfilePage() {
     }
 
     loadProfile()
-  }, [currentPage])
+  }, [currentPage, searchParams])
 
   const handleNameEdit = async () => {
     if (!player || editedName.length < 2 || editedName.length > 32) {
@@ -59,13 +64,40 @@ export function ProfilePage() {
     }
   }
 
+  const handleSteamUnlink = async () => {
+    if (!player) return
+    if (!window.confirm('Remover vínculo Steam deste jogador?')) return
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/admin/players/${player.id}/steam`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      setPlayer({ ...player, steamId: null })
+    } catch {
+      setError('Não foi possível remover o vínculo Steam')
+    }
+  }
+
   const handleSteamLink = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/steam`
+    const base = import.meta.env.VITE_API_URL
+    if (!base) {
+      console.error('VITE_API_URL is not defined')
+      return
+    }
+    const url = new URL(`${base}/auth/steam/link`, window.location.origin)
+    if (accessToken) url.searchParams.set('token', accessToken)
+    window.location.href = url.toString()
   }
 
   return (
     <ProtectedRoute>
       <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+        {searchParams.get('steam_linked') === '1' && (
+          <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px' }}>
+            Conta Steam vinculada com sucesso!
+          </div>
+        )}
+
         {error && (
           <div
             style={{
@@ -208,10 +240,31 @@ export function ProfilePage() {
               </div>
             </div>
 
-            {!player.steamId && (
+            {player.steamId ? (
+              isAdmin && (
+                <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#fff3e0', borderRadius: '4px' }}>
+                  <h3 style={{ margin: '0.5rem 0' }}>Steam Vinculada</h3>
+                  <p style={{ margin: '0.5rem 0', color: '#666' }}>ID: {player.steamId}</p>
+                  <button
+                    onClick={handleSteamUnlink}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: '#c62828',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      marginTop: '0.5rem',
+                    }}
+                  >
+                    Remover vínculo Steam
+                  </button>
+                </div>
+              )
+            ) : (
               <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
                 <h3 style={{ margin: '0.5rem 0' }}>Vincular Conta Steam</h3>
-                <p style={{ margin: '0.5rem 0', color: '#666' }}>Vinculue sua conta Steam para ver mais estatísticas.</p>
+                <p style={{ margin: '0.5rem 0', color: '#666' }}>Vincule sua conta Steam para ver mais estatísticas.</p>
                 <button
                   onClick={handleSteamLink}
                   style={{
