@@ -7,6 +7,10 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=logging.sh
 source "${SCRIPT_DIR}/logging.sh"
+# shellcheck source=lib/cs2-extended-download.sh
+source "${SCRIPT_DIR}/lib/cs2-extended-download.sh"
+# shellcheck source=lib/lgsm-paths.sh
+source "${SCRIPT_DIR}/lib/lgsm-paths.sh"
 
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
@@ -15,8 +19,10 @@ DATABASE_BASELINE_MARKER="${FRAGHUB_DATABASE_BASELINE_MARKER:-${INPUT_DIR}/datab
 PLUGINS_EXTENDED_CS2_MARKER="${FRAGHUB_PLUGINS_EXTENDED_CS2_MARKER:-${INPUT_DIR}/plugins-extended-cs2.done}"
 
 FRAGHUB_GAME_ROOT="${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}"
+FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
+FRAGHUB_CS2_INSTANCE="${FRAGHUB_CS2_INSTANCE:-cs2server}"
+FRAGHUB_INSTALL_USER="${FRAGHUB_INSTALL_USER:-$(id -un)}"
 CS2_PLUGIN_ROOT="${FRAGHUB_CS2_PLUGIN_ROOT:-${FRAGHUB_GAME_ROOT}/cs2/plugins}"
-CS2_EXTENDED_ROOT="${FRAGHUB_CS2_EXTENDED_ROOT:-${FRAGHUB_GAME_ROOT}/cs2/plugins/extended}"
 FRAGHUB_DEMOS_CS2_DIR="${FRAGHUB_DEMOS_CS2_DIR:-/opt/fraghub/demos/cs2}"
 FRAGHUB_STATE_DIR="${FRAGHUB_STATE_DIR:-/opt/fraghub/state}"
 FRAGHUB_MATCHZY_HOOK_FILE="${FRAGHUB_MATCHZY_HOOK_FILE:-${FRAGHUB_STATE_DIR}/matchzy-on-match-end.cfg}"
@@ -64,9 +70,13 @@ require_preconditions() {
   local free_mb
   free_mb="$(df -Pm "${FRAGHUB_GAME_ROOT}" | awk 'NR==2 {print $4}')"
   [[ "${free_mb:-0}" =~ ^[0-9]+$ ]] || fail "Nao foi possivel validar espaco em disco."
-  (( free_mb >= 5120 )) || fail "Espaco insuficiente para plugins+demos (${free_mb}MB, minimo: 5120MB)."
+  (( free_mb >= 3072 )) || fail "Espaco insuficiente para plugins+demos (${free_mb}MB, minimo: 3072MB)."
   curl -fsSIL https://api.github.com >/dev/null || fail "Sem conectividade com GitHub releases."
   mysql_app_exec "SELECT 1;" >/dev/null || fail "Conexao ao banco via fraghub_app falhou."
+  command -v python3 >/dev/null 2>&1 || fail "python3 e necessario para resolver URLs de releases GitHub."
+  command -v unzip >/dev/null 2>&1 || fail "unzip e necessario para extrair plugins CS2."
+  fraghub_lgsm_game_csgo_dir >/dev/null ||
+    fail "Diretorio game/csgo do servidor nao encontrado (tentou-se \${LGSM}/\${FRAGHUB_CS2_INSTANCE}/serverfiles/game/csgo e \${LGSM}/serverfiles/game/csgo). Conclua game_bootstrap ou defina FRAGHUB_LGSM_GAME_CSGO_ROOT."
 }
 
 latest_tag() {
@@ -77,21 +87,54 @@ latest_tag() {
   printf '%s' "$tag"
 }
 
-write_plugin_file() {
-  local path="$1"
-  local name="$2"
-  local version="$3"
-  if [[ -f "$path" ]]; then
-    fraghub_log "INFO" "${name} ja instalado em ${path}; pulando."
+fraghub_chown_game_tree() {
+  local tree="$1"
+  [[ -d "$tree" ]] || return 0
+  chown -R "${FRAGHUB_INSTALL_USER}:${FRAGHUB_INSTALL_USER}" "$tree" 2>/dev/null || true
+}
+
+install_cs2_simpleadmin_release() {
+  [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]] && {
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do CS2-SimpleAdmin."
     return 0
-  fi
-  mkdir -p "$(dirname "$path")"
-  {
-    printf 'PLUGIN=%s\n' "$name"
-    printf 'VERSION=%s\n' "$version"
-    printf 'STAMP=%s\n' "$(date -Iseconds)"
-  } >"$path"
-  chmod 644 "$path"
+  }
+  local url tmp unst dst
+  url="$(fraghub_github_cs2_simpleadmin_zip_url)" || fail "Falha ao obter URL do release CS2-SimpleAdmin (GitHub)."
+  tmp="$(mktemp -d)"
+  unst="${tmp}/extract"
+  mkdir -p "$unst"
+  fraghub_log "INFO" "A descarregar CS2-SimpleAdmin (GitHub)..."
+  curl -fsSL "$url" -o "${tmp}/cs2-simpleadmin.zip"
+  unzip -q -o "${tmp}/cs2-simpleadmin.zip" -d "$unst"
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  [[ -d "${unst}/counterstrikesharp" ]] || fail "Pacote CS2-SimpleAdmin invalido: falta counterstrikesharp/ no ZIP."
+  mkdir -p "${dst}/addons"
+  cp -a "${unst}/counterstrikesharp/." "${dst}/addons/counterstrikesharp/"
+  fraghub_chown_game_tree "${dst}/addons/counterstrikesharp"
+  rm -rf "$tmp"
+  fraghub_log "INFO" "CS2-SimpleAdmin extraido para ${dst}/addons/counterstrikesharp/"
+}
+
+install_cs2_weaponpaints_release() {
+  [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]] && {
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do WeaponPaints."
+    return 0
+  }
+  local url tmp unst dst
+  url="$(fraghub_github_weaponpaints_zip_url)" || fail "Falha ao obter URL do release WeaponPaints (GitHub)."
+  tmp="$(mktemp -d)"
+  unst="${tmp}/extract"
+  mkdir -p "$unst"
+  fraghub_log "INFO" "A descarregar WeaponPaints (GitHub)..."
+  curl -fsSL "$url" -o "${tmp}/weaponpaints.zip"
+  unzip -q -o "${tmp}/weaponpaints.zip" -d "$unst"
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  [[ -d "${unst}/WeaponPaints" ]] || fail "Pacote WeaponPaints invalido: falta WeaponPaints/ no ZIP."
+  mkdir -p "${dst}/addons/counterstrikesharp/plugins/WeaponPaints"
+  cp -a "${unst}/WeaponPaints/." "${dst}/addons/counterstrikesharp/plugins/WeaponPaints/"
+  fraghub_chown_game_tree "${dst}/addons/counterstrikesharp/plugins/WeaponPaints"
+  rm -rf "$tmp"
+  fraghub_log "INFO" "WeaponPaints extraido para ${dst}/addons/counterstrikesharp/plugins/WeaponPaints/"
 }
 
 write_config_if_missing() {
@@ -128,6 +171,7 @@ configure_demo_recorder() {
   local owner_user
   owner_user="${FRAGHUB_INSTALL_USER:-$(id -un)}"
   command -v sudo >/dev/null 2>&1 || fail "sudo necessario para provisionar diretorios em /opt."
+  fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel. Execute sudo -v ou defina FRAGHUB_SUDO_PASSWORD (ambientes controlados)."
   sudo mkdir -p "$FRAGHUB_DEMOS_CS2_DIR"
   sudo mkdir -p "$FRAGHUB_STATE_DIR"
   sudo chown -R "$owner_user":"$owner_user" "$FRAGHUB_DEMOS_CS2_DIR" "$FRAGHUB_STATE_DIR"
@@ -160,10 +204,16 @@ EOF
 }
 
 verify_installation() {
-  [[ -f "${CS2_EXTENDED_ROOT}/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || fail "Arquivo CS2-SimpleAdmin.dll ausente."
-  [[ -f "${CS2_EXTENDED_ROOT}/WeaponPaints/WeaponPaints.dll" ]] || fail "Arquivo WeaponPaints.dll ausente."
-  [[ -f "${CS2_EXTENDED_ROOT}/CS2-SimpleAdmin/CS2-SimpleAdmin.json" ]] || fail "Config CS2-SimpleAdmin ausente."
-  [[ -f "${CS2_EXTENDED_ROOT}/WeaponPaints/WeaponPaints.json" ]] || fail "Config WeaponPaints ausente."
+  local dst
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  [[ -f "${dst}/addons/counterstrikesharp/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] ||
+    fail "CS2-SimpleAdmin.dll ausente em addons/counterstrikesharp/plugins/ (servidor CS2)."
+  [[ -f "${dst}/addons/counterstrikesharp/plugins/WeaponPaints/WeaponPaints.dll" ]] ||
+    fail "WeaponPaints.dll ausente em addons/counterstrikesharp/plugins/WeaponPaints/."
+  [[ -f "${dst}/addons/counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json" ]] ||
+    fail "Config CS2-SimpleAdmin ausente (JSON em configs/plugins)."
+  [[ -f "${dst}/addons/counterstrikesharp/configs/plugins/WeaponPaints/WeaponPaints.json" ]] ||
+    fail "Config WeaponPaints ausente (JSON em configs/plugins)."
   [[ -d "$FRAGHUB_DEMOS_CS2_DIR" ]] || fail "Diretorio de demos ausente."
   [[ -f "$FRAGHUB_CS2_MANIFEST" ]] || fail "Manifesto CS2 ausente."
 
@@ -177,12 +227,13 @@ run_plugins_extended_cs2() {
   require_preconditions
   fraghub_log "INFO" "Iniciando plugins estendidos CS2 (PLGCS2-REQ-001..009)."
 
-  local sa_version wp_version
+  local sa_version wp_version dst
   sa_version="$(latest_tag "daffyyyy/CS2-SimpleAdmin")"
   wp_version="$(latest_tag "Nereziel/cs2-WeaponPaints")"
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
 
-  write_plugin_file "${CS2_EXTENDED_ROOT}/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" "CS2-SimpleAdmin" "$sa_version"
-  write_config_if_missing "${CS2_EXTENDED_ROOT}/CS2-SimpleAdmin/CS2-SimpleAdmin.json" "{
+  install_cs2_simpleadmin_release
+  write_config_if_missing "${dst}/addons/counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json" "{
   \"host\": \"127.0.0.1\",
   \"database\": \"${FRAGHUB_DB_NAME}\",
   \"username\": \"fraghub_app\",
@@ -190,8 +241,8 @@ run_plugins_extended_cs2() {
 }"
   ensure_schema_migration "plgcs2_simpleadmin_001" "cs2 simpleadmin schema" "$SQL_SIMPLEADMIN"
 
-  write_plugin_file "${CS2_EXTENDED_ROOT}/WeaponPaints/WeaponPaints.dll" "WeaponPaints" "$wp_version"
-  write_config_if_missing "${CS2_EXTENDED_ROOT}/WeaponPaints/WeaponPaints.json" "{
+  install_cs2_weaponpaints_release
+  write_config_if_missing "${dst}/addons/counterstrikesharp/configs/plugins/WeaponPaints/WeaponPaints.json" "{
   \"host\": \"127.0.0.1\",
   \"database\": \"${FRAGHUB_DB_NAME}\",
   \"username\": \"fraghub_app\",
@@ -201,6 +252,7 @@ run_plugins_extended_cs2() {
 
   configure_demo_recorder
   write_manifest "$sa_version" "$wp_version"
+  fraghub_chown_game_tree "${dst}/addons/counterstrikesharp"
   verify_installation
 
   mkdir -p "$INPUT_DIR"

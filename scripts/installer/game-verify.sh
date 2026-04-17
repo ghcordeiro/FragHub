@@ -7,11 +7,15 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=logging.sh
 source "${SCRIPT_DIR}/logging.sh"
+# shellcheck source=lib/lgsm-paths.sh
+source "${SCRIPT_DIR}/lib/lgsm-paths.sh"
 
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 GAME_SERVICES_MARKER="${FRAGHUB_GAME_SERVICES_MARKER:-${INPUT_DIR}/game-services.done}"
 GAME_VERIFY_MARKER="${FRAGHUB_GAME_VERIFY_MARKER:-${INPUT_DIR}/game-verify.done}"
 FRAGHUB_GAME_ROOT="${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}"
+FRAGHUB_LINUXGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
+FRAGHUB_CS2_INSTANCE="${FRAGHUB_CS2_INSTANCE:-cs2server}"
 
 service_exists() {
   local unit="$1"
@@ -30,8 +34,11 @@ check_plugin_markers() {
   [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/metamod/.installed" ]] || fail "MetaMod CS2 nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/counterstrikesharp/.installed" ]] || fail "CounterStrikeSharp nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/matchzy/.installed" ]] || fail "MatchZy nao detectado."
-  [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/extended/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || fail "CS2-SimpleAdmin nao detectado."
-  [[ -f "${FRAGHUB_GAME_ROOT}/cs2/plugins/extended/WeaponPaints/WeaponPaints.dll" ]] || fail "WeaponPaints nao detectado."
+  local cs2_game
+  cs2_game="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado (defina FRAGHUB_LGSM_GAME_CSGO_ROOT se a instalação for nao standard)."
+  [[ -f "${cs2_game}/addons/counterstrikesharp/plugins/fraghub-tags/fraghub-tags.dll" ]] || fail "fraghub-tags nao detectado no servidor (counterstrikesharp)."
+  [[ -f "${cs2_game}/addons/counterstrikesharp/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || fail "CS2-SimpleAdmin nao detectado no servidor (counterstrikesharp)."
+  [[ -f "${cs2_game}/addons/counterstrikesharp/plugins/WeaponPaints/WeaponPaints.dll" ]] || fail "WeaponPaints nao detectado no servidor (counterstrikesharp)."
   [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/metamod/.installed" ]] || fail "MetaMod CS:GO nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/sourcemod/.installed" ]] || fail "SourceMod nao detectado."
   [[ -f "${FRAGHUB_GAME_ROOT}/csgo/plugins/get5/.installed" ]] || fail "Get5 nao detectado."

@@ -6,6 +6,8 @@
 STATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=logging.sh
 source "${STATE_SCRIPT_DIR}/logging.sh"
+# shellcheck source=lib/lgsm-paths.sh
+source "${STATE_SCRIPT_DIR}/lib/lgsm-paths.sh"
 
 : "${FRAGHUB_STATE_DIR:=${HOME}/.fraghub/installer/state}"
 FRAGHUB_STEPS_FILE="${FRAGHUB_STEPS_FILE:-${FRAGHUB_STATE_DIR}/steps.env}"
@@ -115,6 +117,9 @@ fraghub_state_verify_plugins_cs2() {
   [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/metamod/.installed" ]] || return 1
   [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/counterstrikesharp/.installed" ]] || return 1
   [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/matchzy/.installed" ]] || return 1
+  local g
+  g="$(fraghub_lgsm_game_csgo_dir)" || return 1
+  [[ -f "${g}/addons/counterstrikesharp/plugins/fraghub-tags/fraghub-tags.dll" ]] || return 1
   return 0
 }
 
@@ -128,8 +133,10 @@ fraghub_state_verify_plugins_csgo() {
 
 fraghub_state_verify_plugins_extended_cs2() {
   [[ -f "$PLUGINS_EXTENDED_CS2_MARKER" ]] || return 1
-  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/extended/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || return 1
-  [[ -f "${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}/cs2/plugins/extended/WeaponPaints/WeaponPaints.dll" ]] || return 1
+  local g
+  g="$(fraghub_lgsm_game_csgo_dir)" || return 1
+  [[ -f "${g}/addons/counterstrikesharp/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] || return 1
+  [[ -f "${g}/addons/counterstrikesharp/plugins/WeaponPaints/WeaponPaints.dll" ]] || return 1
   return 0
 }
 
