@@ -66,6 +66,8 @@ require_preconditions() {
   [[ -f "${CS2_PLUGIN_ROOT}/matchzy/.installed" ]] || fail "MatchZy nao detectado."
   command -v mysql >/dev/null 2>&1 || fail "mysql client nao encontrado."
   command -v curl >/dev/null 2>&1 || fail "curl nao encontrado."
+  command -v python3 >/dev/null 2>&1 || fail "python3 e necessario para resolver URLs de releases GitHub."
+  command -v unzip >/dev/null 2>&1 || fail "unzip e necessario para extrair plugins CS2."
 
   local free_mb
   free_mb="$(df -Pm "${FRAGHUB_GAME_ROOT}" | awk 'NR==2 {print $4}')"
@@ -73,8 +75,6 @@ require_preconditions() {
   (( free_mb >= 3072 )) || fail "Espaco insuficiente para plugins+demos (${free_mb}MB, minimo: 3072MB)."
   curl -fsSIL https://api.github.com >/dev/null || fail "Sem conectividade com GitHub releases."
   mysql_app_exec "SELECT 1;" >/dev/null || fail "Conexao ao banco via fraghub_app falhou."
-  command -v python3 >/dev/null 2>&1 || fail "python3 e necessario para resolver URLs de releases GitHub."
-  command -v unzip >/dev/null 2>&1 || fail "unzip e necessario para extrair plugins CS2."
   fraghub_lgsm_game_csgo_dir >/dev/null ||
     fail "Diretorio game/csgo do servidor nao encontrado (tentou-se \${LGSM}/\${FRAGHUB_CS2_INSTANCE}/serverfiles/game/csgo e \${LGSM}/serverfiles/game/csgo). Conclua game_bootstrap ou defina FRAGHUB_LGSM_GAME_CSGO_ROOT."
 }
@@ -91,6 +91,62 @@ fraghub_chown_game_tree() {
   local tree="$1"
   [[ -d "$tree" ]] || return 0
   chown -R "${FRAGHUB_INSTALL_USER}:${FRAGHUB_INSTALL_USER}" "$tree" 2>/dev/null || true
+}
+
+# Install a plugin whose ZIP root is `addons/` — copies into game/csgo/addons/
+install_addons_zip_plugin() {
+  local name="$1"
+  local url="$2"
+  local dst="$3"
+
+  [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]] && {
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download de ${name}."
+    return 0
+  }
+
+  local tmp unst
+  tmp="$(mktemp -d)"
+  unst="${tmp}/extract"
+  mkdir -p "$unst"
+  fraghub_log "INFO" "A descarregar ${name}..."
+  curl -fsSL "$url" -o "${tmp}/plugin.zip"
+  unzip -q -o "${tmp}/plugin.zip" -d "$unst"
+  [[ -d "${unst}/addons" ]] || fail "Pacote ${name} invalido: falta addons/ no ZIP."
+  mkdir -p "${dst}/addons"
+  cp -a "${unst}/addons/." "${dst}/addons/"
+  fraghub_chown_game_tree "${dst}/addons/counterstrikesharp"
+  rm -rf "$tmp"
+  fraghub_log "INFO" "${name} instalado em ${dst}/addons/"
+}
+
+install_cs2_anybaselib_release() {
+  local url
+  url="$(curl -fsSL "https://api.github.com/repos/NickFox007/AnyBaseLibCS2/releases/latest" 2>/dev/null \
+    | sed -nE 's/.*"browser_download_url":[[:space:]]*"([^"]+AnyBaseLib\.zip)".*/\1/p' | head -n1)"
+  [[ -n "$url" ]] || fail "Falha ao obter URL do AnyBaseLibCS2 (GitHub)."
+  local dst
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  install_addons_zip_plugin "AnyBaseLibCS2" "$url" "$dst"
+}
+
+install_cs2_playersettings_release() {
+  local url
+  url="$(curl -fsSL "https://api.github.com/repos/NickFox007/PlayerSettingsCS2/releases/latest" 2>/dev/null \
+    | sed -nE 's/.*"browser_download_url":[[:space:]]*"([^"]+PlayerSettings\.zip)".*/\1/p' | head -n1)"
+  [[ -n "$url" ]] || fail "Falha ao obter URL do PlayerSettingsCS2 (GitHub)."
+  local dst
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  install_addons_zip_plugin "PlayerSettingsCS2" "$url" "$dst"
+}
+
+install_cs2_menumanager_release() {
+  local url
+  url="$(curl -fsSL "https://api.github.com/repos/NickFox007/MenuManagerCS2/releases/latest" 2>/dev/null \
+    | sed -nE 's/.*"browser_download_url":[[:space:]]*"([^"]+MenuManager\.zip)".*/\1/p' | head -n1)"
+  [[ -n "$url" ]] || fail "Falha ao obter URL do MenuManagerCS2 (GitHub)."
+  local dst
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  install_addons_zip_plugin "MenuManagerCS2" "$url" "$dst"
 }
 
 install_cs2_simpleadmin_release() {
@@ -167,6 +223,67 @@ ensure_schema_migration() {
   mysql_app_exec "INSERT INTO schema_migrations (version, applied_at, description) VALUES ('${version}', NOW(), '${description}');"
 }
 
+# WeaponPaints requer que o seu weaponpaints.json exista em gamedata/ E que as
+# suas assinaturas estejam mergeadas no gamedata.json principal (CSS <v300 nao
+# carrega gamedata de plugins automaticamente).
+configure_weaponpaints_gamedata() {
+  local dst="$1"
+  local gamedata_dir="${dst}/addons/counterstrikesharp/gamedata"
+  local gamedata_json="${gamedata_dir}/gamedata.json"
+  local wp_gamedata="${dst}/addons/counterstrikesharp/plugins/WeaponPaints/gamedata/weaponpaints.json"
+
+  [[ -f "$wp_gamedata" ]] || { fraghub_log "WARN" "weaponpaints.json nao encontrado no plugin; a saltar."; return 0; }
+
+  # Copia o ficheiro standalone para gamedata/ (necessario para CSS carregar)
+  cp -f "$wp_gamedata" "${gamedata_dir}/weaponpaints.json"
+  fraghub_log "INFO" "weaponpaints.json copiado para ${gamedata_dir}/."
+
+  # Merge das assinaturas no gamedata.json principal
+  [[ -f "$gamedata_json" ]] || { fraghub_log "WARN" "gamedata.json nao encontrado; a saltar merge."; return 0; }
+  python3 - "$gamedata_json" "$wp_gamedata" <<'PYEOF'
+import json, sys, shutil
+gamedata_path, wp_path = sys.argv[1], sys.argv[2]
+shutil.copy2(gamedata_path, gamedata_path + ".bak")
+with open(gamedata_path) as f:
+    gamedata = json.load(f)
+with open(wp_path) as f:
+    wp_gamedata = json.load(f)
+added = [k for k in wp_gamedata if k not in gamedata]
+gamedata.update(wp_gamedata)
+with open(gamedata_path, "w") as f:
+    json.dump(gamedata, f, indent=2)
+if added:
+    print(f"[WeaponPaints] Adicionadas {len(added)} entradas ao gamedata.json: {', '.join(added)}")
+else:
+    print("[WeaponPaints] gamedata.json ja estava atualizado.")
+PYEOF
+  fraghub_log "INFO" "Merge gamedata WeaponPaints concluido."
+}
+
+# WeaponPaints usa APIs internas do CS2 (knife apply, gloves) que requerem
+# FollowCS2ServerGuidelines=false — sem isto os comandos nao funcionam.
+configure_css_core() {
+  local dst="$1"
+  local core_json="${dst}/addons/counterstrikesharp/configs/core.json"
+
+  [[ -f "$core_json" ]] || { fraghub_log "WARN" "core.json nao encontrado; a saltar configuracao."; return 0; }
+
+  python3 - "$core_json" <<'PYEOF'
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    d = json.load(f)
+if not d.get("FollowCS2ServerGuidelines") == False:
+    d["FollowCS2ServerGuidelines"] = False
+    with open(path, "w") as f:
+        json.dump(d, f, indent=4)
+    print(f"[CSS] FollowCS2ServerGuidelines definido como false em {path}")
+else:
+    print(f"[CSS] FollowCS2ServerGuidelines ja era false.")
+PYEOF
+  fraghub_log "INFO" "CSS core.json configurado."
+}
+
 configure_demo_recorder() {
   local owner_user
   owner_user="${FRAGHUB_INSTALL_USER:-$(id -un)}"
@@ -188,15 +305,21 @@ EOF
 }
 
 write_manifest() {
-  local simpleadmin_version="$1"
-  local weaponpaints_version="$2"
+  local sa_version="$1"
+  local wp_version="$2"
+  local anybaselib_version="$3"
+  local playersettings_version="$4"
+  local menumanager_version="$5"
   mkdir -p "$(dirname "$FRAGHUB_CS2_MANIFEST")"
   cat >"$FRAGHUB_CS2_MANIFEST" <<EOF
 {
   "generated_at": "$(date -Iseconds)",
   "plugins": [
-    {"name":"CS2-SimpleAdmin","version":"${simpleadmin_version}","schema":"plgcs2_simpleadmin_001"},
-    {"name":"WeaponPaints","version":"${weaponpaints_version}","schema":"plgcs2_weaponpaints_001"}
+    {"name":"AnyBaseLibCS2","version":"${anybaselib_version}"},
+    {"name":"PlayerSettingsCS2","version":"${playersettings_version}"},
+    {"name":"MenuManagerCS2","version":"${menumanager_version}"},
+    {"name":"CS2-SimpleAdmin","version":"${sa_version}","schema":"plgcs2_simpleadmin_001"},
+    {"name":"WeaponPaints","version":"${wp_version}","schema":"plgcs2_weaponpaints_001"}
   ]
 }
 EOF
@@ -206,32 +329,75 @@ EOF
 verify_installation() {
   local dst
   dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
-  [[ -f "${dst}/addons/counterstrikesharp/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] ||
-    fail "CS2-SimpleAdmin.dll ausente em addons/counterstrikesharp/plugins/ (servidor CS2)."
-  [[ -f "${dst}/addons/counterstrikesharp/plugins/WeaponPaints/WeaponPaints.dll" ]] ||
-    fail "WeaponPaints.dll ausente em addons/counterstrikesharp/plugins/WeaponPaints/."
-  [[ -f "${dst}/addons/counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json" ]] ||
-    fail "Config CS2-SimpleAdmin ausente (JSON em configs/plugins)."
-  [[ -f "${dst}/addons/counterstrikesharp/configs/plugins/WeaponPaints/WeaponPaints.json" ]] ||
-    fail "Config WeaponPaints ausente (JSON em configs/plugins)."
+  local css="${dst}/addons/counterstrikesharp"
+
+  # Dependencias do WeaponPaints
+  [[ -f "${css}/shared/AnyBaseLib/AnyBaseLib.dll" ]] ||
+    fail "AnyBaseLib.dll ausente em shared/AnyBaseLib/."
+  [[ -f "${css}/plugins/PlayerSettings/PlayerSettings.dll" ]] ||
+    fail "PlayerSettings.dll ausente em plugins/PlayerSettings/."
+  [[ -f "${css}/plugins/MenuManagerCore/MenuManagerCore.dll" ]] ||
+    fail "MenuManagerCore.dll ausente em plugins/MenuManagerCore/."
+
+  # Plugins principais
+  [[ -f "${css}/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll" ]] ||
+    fail "CS2-SimpleAdmin.dll ausente em plugins/CS2-SimpleAdmin/."
+  [[ -f "${css}/plugins/WeaponPaints/WeaponPaints.dll" ]] ||
+    fail "WeaponPaints.dll ausente em plugins/WeaponPaints/."
+
+  # Configs
+  [[ -f "${css}/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json" ]] ||
+    fail "Config CS2-SimpleAdmin ausente."
+  [[ -f "${css}/configs/plugins/WeaponPaints/WeaponPaints.json" ]] ||
+    fail "Config WeaponPaints ausente."
+
+  # Gamedata
+  [[ -f "${css}/gamedata/weaponpaints.json" ]] ||
+    fail "weaponpaints.json ausente em gamedata/."
+  python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+sys.exit(0 if 'CAttributeList_SetOrAddAttributeValueByName' in d else 1)
+" "${css}/gamedata/gamedata.json" ||
+    fail "Assinatura CAttributeList_SetOrAddAttributeValueByName ausente em gamedata.json."
+
+  # CSS core
+  python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+sys.exit(0 if d.get('FollowCS2ServerGuidelines') == False else 1)
+" "${css}/configs/core.json" ||
+    fail "FollowCS2ServerGuidelines nao esta definido como false em core.json."
+
+  # Infra
   [[ -d "$FRAGHUB_DEMOS_CS2_DIR" ]] || fail "Diretorio de demos ausente."
   [[ -f "$FRAGHUB_CS2_MANIFEST" ]] || fail "Manifesto CS2 ausente."
 
+  # Tabelas DB
   local count
-  count="$(mysql_app_exec "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${FRAGHUB_DB_NAME}' AND table_name IN ('sa_admins','sa_bans','wp_player_skins');")"
-  [[ "$count" == "3" ]] || fail "Tabelas dos plugins CS2 nao encontradas por completo."
+  count="$(mysql_app_exec "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${FRAGHUB_DB_NAME}' AND table_name IN ('sa_admins','sa_bans','wp_player_skins','wp_player_knife','wp_player_gloves','wp_player_agents','wp_player_music','wp_player_pins');")"
+  [[ "$count" == "8" ]] || fail "Tabelas dos plugins CS2 incompletas (esperadas 8: sa_admins, sa_bans, wp_player_skins, wp_player_knife, wp_player_gloves, wp_player_agents, wp_player_music, wp_player_pins)."
 }
 
 run_plugins_extended_cs2() {
   load_effective_env
   require_preconditions
-  fraghub_log "INFO" "Iniciando plugins estendidos CS2 (PLGCS2-REQ-001..009)."
+  fraghub_log "INFO" "Iniciando plugins estendidos CS2."
 
-  local sa_version wp_version dst
+  local sa_version wp_version anybaselib_version playersettings_version menumanager_version dst
+  anybaselib_version="$(latest_tag "NickFox007/AnyBaseLibCS2")"
+  playersettings_version="$(latest_tag "NickFox007/PlayerSettingsCS2")"
+  menumanager_version="$(latest_tag "NickFox007/MenuManagerCS2")"
   sa_version="$(latest_tag "daffyyyy/CS2-SimpleAdmin")"
   wp_version="$(latest_tag "Nereziel/cs2-WeaponPaints")"
   dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
 
+  # Dependencias do WeaponPaints (ordem obrigatoria: AnyBaseLib -> PlayerSettings -> MenuManager)
+  install_cs2_anybaselib_release
+  install_cs2_playersettings_release
+  install_cs2_menumanager_release
+
+  # CS2-SimpleAdmin
   install_cs2_simpleadmin_release
   write_config_if_missing "${dst}/addons/counterstrikesharp/configs/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.json" "{
   \"host\": \"127.0.0.1\",
@@ -241,17 +407,31 @@ run_plugins_extended_cs2() {
 }"
   ensure_schema_migration "plgcs2_simpleadmin_001" "cs2 simpleadmin schema" "$SQL_SIMPLEADMIN"
 
+  # WeaponPaints
   install_cs2_weaponpaints_release
   write_config_if_missing "${dst}/addons/counterstrikesharp/configs/plugins/WeaponPaints/WeaponPaints.json" "{
-  \"host\": \"127.0.0.1\",
-  \"database\": \"${FRAGHUB_DB_NAME}\",
-  \"username\": \"fraghub_app\",
-  \"password\": \"${FRAGHUB_DB_PASSWORD}\"
+  \"DatabaseHost\": \"127.0.0.1\",
+  \"DatabasePort\": 3306,
+  \"DatabaseUser\": \"fraghub_app\",
+  \"DatabasePassword\": \"${FRAGHUB_DB_PASSWORD}\",
+  \"DatabaseName\": \"${FRAGHUB_DB_NAME}\",
+  \"Website\": \"\",
+  \"KnifeEnabled\": true,
+  \"GloveEnabled\": true,
+  \"AgentEnabled\": true,
+  \"MusicEnabled\": true,
+  \"PinsEnabled\": true,
+  \"StickerInfo\": true,
+  \"KeyChainInfo\": true,
+  \"StatTrak\": true,
+  \"CmdRefreshCooldownSeconds\": 5
 }"
   ensure_schema_migration "plgcs2_weaponpaints_001" "cs2 weaponpaints schema" "$SQL_WEAPONPAINTS"
+  configure_weaponpaints_gamedata "$dst"
+  configure_css_core "$dst"
 
   configure_demo_recorder
-  write_manifest "$sa_version" "$wp_version"
+  write_manifest "$sa_version" "$wp_version" "$anybaselib_version" "$playersettings_version" "$menumanager_version"
   fraghub_chown_game_tree "${dst}/addons/counterstrikesharp"
   verify_installation
 

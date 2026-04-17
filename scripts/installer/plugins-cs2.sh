@@ -10,6 +10,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 source "${SCRIPT_DIR}/logging.sh"
 # shellcheck source=lib/lgsm-paths.sh
 source "${SCRIPT_DIR}/lib/lgsm-paths.sh"
+# shellcheck source=lib/cs2-extended-download.sh
+source "${SCRIPT_DIR}/lib/cs2-extended-download.sh"
 
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
@@ -27,6 +29,13 @@ fail() {
 
 require_bootstrap() {
   [[ -f "$GAME_BOOTSTRAP_MARKER" ]] || fail "Dependencia ausente: game_bootstrap nao concluido (${GAME_BOOTSTRAP_MARKER})."
+}
+
+require_tools() {
+  command -v curl >/dev/null 2>&1 || fail "curl nao encontrado."
+  command -v unzip >/dev/null 2>&1 || fail "unzip nao encontrado."
+  command -v tar >/dev/null 2>&1 || fail "tar nao encontrado."
+  command -v python3 >/dev/null 2>&1 || fail "python3 necessario para resolver URLs de release."
 }
 
 load_effective_env() {
@@ -73,26 +82,125 @@ install_plugin_marker() {
   chmod 600 "${plugin_dir}/.installed"
 }
 
-run_plugins_cs2() {
-  fraghub_log "INFO" "Iniciando plugin_install_cs2 (GSTACK-REQ-003)."
-  require_bootstrap
+patch_gameinfo_gi() {
+  local gi="$1"
+  [[ -f "$gi" ]] || fail "gameinfo.gi nao encontrado: ${gi}"
+  python3 - "$gi" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+with open(path) as f:
+    lines = f.readlines()
+if any('csgo/addons/metamod' in l for l in lines):
+    sys.exit(0)
+out = []
+patched = False
+for line in lines:
+    if not patched and re.match(r'^[ \t]+Game[ \t]+csgo[ \t]*$', line.rstrip('\n')):
+        indent = re.match(r'^([ \t]+)', line).group(1)
+        out.append(indent + 'Game\tcsgo/addons/metamod\n')
+        patched = True
+    out.append(line)
+if not patched:
+    sys.exit(1)
+with open(path, 'w') as f:
+    f.writelines(out)
+PYEOF
+  fraghub_log "INFO" "gameinfo.gi: entrada csgo/addons/metamod inserida."
+}
 
-  mkdir -p "$CS2_PLUGIN_ROOT"
+install_metamod_cs2() {
+  local dst="$1"
+  if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do Metamod:Source."
+  else
+    local url tmp
+    url="$(fraghub_metamod_tar_url)" || fail "Falha ao obter URL do Metamod:Source (AlliedModders)."
+    tmp="$(mktemp -d)"
+    fraghub_log "INFO" "A descarregar Metamod:Source: ${url}"
+    curl -fsSL "$url" -o "${tmp}/metamod.tar.gz"
+    mkdir -p "${dst}/addons"
+    tar -xzf "${tmp}/metamod.tar.gz" -C "${dst}"
+    rm -rf "$tmp"
+    fraghub_log "INFO" "Metamod:Source extraido para ${dst}/addons/metamod/"
+  fi
+  patch_gameinfo_gi "${dst}/gameinfo.gi"
+  fraghub_chown_game_subtree "${dst}/addons/metamod"
   install_plugin_marker "metamod"
+}
+
+install_css_cs2() {
+  local dst="$1"
+  if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do CounterStrikeSharp."
+  else
+    local url tmp unst
+    url="$(fraghub_css_zip_url)" || fail "Falha ao obter URL do CounterStrikeSharp (GitHub)."
+    tmp="$(mktemp -d)"
+    unst="${tmp}/extract"
+    mkdir -p "$unst"
+    fraghub_log "INFO" "A descarregar CounterStrikeSharp (com runtime): ${url}"
+    curl -fsSL "$url" -o "${tmp}/counterstrikesharp.zip"
+    unzip -q -o "${tmp}/counterstrikesharp.zip" -d "$unst"
+    [[ -d "${unst}/addons/counterstrikesharp" ]] || fail "Pacote CSS invalido: falta addons/counterstrikesharp/ no ZIP."
+    mkdir -p "${dst}/addons"
+    cp -a "${unst}/addons/." "${dst}/addons/"
+    rm -rf "$tmp"
+    fraghub_log "INFO" "CounterStrikeSharp extraido para ${dst}/addons/counterstrikesharp/"
+  fi
+  fraghub_chown_game_subtree "${dst}/addons/counterstrikesharp"
   install_plugin_marker "counterstrikesharp"
+}
+
+install_matchzy_cs2() {
+  local dst="$1"
+  local plugin_dir="${dst}/addons/counterstrikesharp/plugins/MatchZy"
+  if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do MatchZy."
+  else
+    local url tmp unst
+    url="$(fraghub_matchzy_zip_url)" || fail "Falha ao obter URL do MatchZy (GitHub)."
+    tmp="$(mktemp -d)"
+    unst="${tmp}/extract"
+    mkdir -p "$unst"
+    fraghub_log "INFO" "A descarregar MatchZy: ${url}"
+    curl -fsSL "$url" -o "${tmp}/matchzy.zip"
+    unzip -q -o "${tmp}/matchzy.zip" -d "$unst"
+    local src_plugin="${unst}/addons/counterstrikesharp/plugins/MatchZy"
+    [[ -d "$src_plugin" ]] || fail "Pacote MatchZy invalido: falta addons/counterstrikesharp/plugins/MatchZy/ no ZIP."
+    mkdir -p "$plugin_dir"
+    cp -a "${src_plugin}/." "$plugin_dir/"
+    [[ -d "${unst}/cfg" ]] && cp -a "${unst}/cfg/." "${dst}/cfg/"
+    rm -rf "$tmp"
+    fraghub_log "INFO" "MatchZy extraido para ${plugin_dir}/"
+  fi
+  fraghub_chown_game_subtree "$plugin_dir"
   install_plugin_marker "matchzy"
+}
 
-  fraghub_log "WARN" "Plugins base CS2 (MetaMod/CounterStrikeSharp/MatchZy): apenas marcadores em ${CS2_PLUGIN_ROOT}. Para o servidor carregar, instale os binarios (LinuxGSM mods ou guia upstream) em serverfiles/game/csgo/addons/."
-
-  load_effective_env
-  # Phase 5: Install FragHub Tags plugin (CounterStrikeSharp so carrega de addons/counterstrikesharp no game/csgo).
-  install_fraghub_tags_cs2
-
-  mkdir -p "$INPUT_DIR"
-  umask 077
-  date -Iseconds >"$PLUGINS_CS2_MARKER"
-  chmod 600 "$PLUGINS_CS2_MARKER" 2>/dev/null || true
-  fraghub_log "INFO" "plugin_install_cs2 concluido. Marcador: ${PLUGINS_CS2_MARKER}"
+install_weaponpaints_cs2() {
+  local dst="$1"
+  local plugin_dir="${dst}/addons/counterstrikesharp/plugins/WeaponPaints"
+  if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
+    fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do WeaponPaints."
+  else
+    local url tmp unst
+    url="$(fraghub_github_weaponpaints_zip_url)" || fail "Falha ao obter URL do WeaponPaints (GitHub)."
+    tmp="$(mktemp -d)"
+    unst="${tmp}/extract"
+    mkdir -p "$unst"
+    fraghub_log "INFO" "A descarregar WeaponPaints: ${url}"
+    curl -fsSL "$url" -o "${tmp}/weaponpaints.zip"
+    unzip -q -o "${tmp}/weaponpaints.zip" -d "$unst"
+    # ZIP structure: WeaponPaints/ at root (no addons/... prefix)
+    local src_plugin="${unst}/WeaponPaints"
+    [[ -d "$src_plugin" ]] || fail "Pacote WeaponPaints invalido: falta WeaponPaints/ no ZIP."
+    mkdir -p "$plugin_dir"
+    cp -a "${src_plugin}/." "$plugin_dir/"
+    rm -rf "$tmp"
+    fraghub_log "INFO" "WeaponPaints extraido para ${plugin_dir}/"
+  fi
+  fraghub_chown_game_subtree "$plugin_dir"
+  install_plugin_marker "weaponpaints"
 }
 
 install_fraghub_tags_cs2() {
@@ -125,6 +233,49 @@ install_fraghub_tags_cs2() {
 
   mkdir -p "$marker_dir"
   install_plugin_marker "$plugin_name"
+}
+
+verify_base_installation() {
+  local dst="$1"
+  [[ -d "${dst}/addons/metamod" ]] || fail "Metamod nao encontrado em ${dst}/addons/metamod/."
+  grep -q 'csgo/addons/metamod' "${dst}/gameinfo.gi" || fail "gameinfo.gi nao tem entrada do Metamod."
+  [[ -d "${dst}/addons/counterstrikesharp" ]] || fail "CounterStrikeSharp nao encontrado em ${dst}/addons/counterstrikesharp/."
+  [[ -f "${dst}/addons/counterstrikesharp/plugins/MatchZy/MatchZy.dll" ]] || fail "MatchZy.dll ausente em plugins/MatchZy/."
+  [[ -f "${CS2_PLUGIN_ROOT}/metamod/.installed" ]] || fail "Marcador metamod ausente."
+  [[ -f "${CS2_PLUGIN_ROOT}/counterstrikesharp/.installed" ]] || fail "Marcador counterstrikesharp ausente."
+  [[ -f "${CS2_PLUGIN_ROOT}/matchzy/.installed" ]] || fail "Marcador matchzy ausente."
+  [[ -f "${CS2_PLUGIN_ROOT}/weaponpaints/.installed" ]] || fail "Marcador weaponpaints ausente."
+}
+
+run_plugins_cs2() {
+  fraghub_log "INFO" "Iniciando plugin_install_cs2 (GSTACK-REQ-003)."
+  require_bootstrap
+  require_tools
+
+  if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" != "1" ]]; then
+    curl -fsSIL https://api.github.com >/dev/null 2>&1 || fail "Sem conectividade com GitHub."
+  fi
+
+  local dst
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado (defina FRAGHUB_LGSM_GAME_CSGO_ROOT se a instalacao for nao standard)."
+
+  mkdir -p "$CS2_PLUGIN_ROOT"
+
+  install_metamod_cs2 "$dst"
+  install_css_cs2 "$dst"
+  install_matchzy_cs2 "$dst"
+  install_weaponpaints_cs2 "$dst"
+
+  load_effective_env
+  install_fraghub_tags_cs2
+
+  verify_base_installation "$dst"
+
+  mkdir -p "$INPUT_DIR"
+  umask 077
+  date -Iseconds >"$PLUGINS_CS2_MARKER"
+  chmod 600 "$PLUGINS_CS2_MARKER" 2>/dev/null || true
+  fraghub_log "INFO" "plugin_install_cs2 concluido. Marcador: ${PLUGINS_CS2_MARKER}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
