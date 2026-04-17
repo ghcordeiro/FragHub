@@ -1,0 +1,4 @@
+obj/
+bin/Release/net8.0/fraghub-tags.deps.json
+bin/Release/net8.0/fraghub-tags.pdb
+bin/Release/net8.0/fraghub-tags.xml
