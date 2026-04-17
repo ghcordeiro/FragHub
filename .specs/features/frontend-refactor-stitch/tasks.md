@@ -11,8 +11,8 @@
 |------|--------|-----------|------|
 | Specify | ✅ Aprovado | Utilizador | 2026-04-17 |
 | Plan | ✅ Aprovado | Utilizador | 2026-04-17 |
-| Tasks | ⏳ Aguardando confirmação formal | — | — |
-| Implement | 🔒 Bloqueado até Tasks aprovado | — | — |
+| Tasks | ✅ Aprovado | Utilizador | 2026-04-17 |
+| Implement | 🚀 Em progresso | — | — |
 | Validate | 🔒 Bloqueado | — | — |
 
 ---

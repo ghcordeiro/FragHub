@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { LevelBadge } from './LevelBadge'
 import type { Player } from '@/types/player'
+import styles from './RankingTable.module.css'
 
 interface RankingTableProps {
   players: Player[]
@@ -21,67 +22,63 @@ export function RankingTable({
 }: RankingTableProps) {
   const startPosition = (currentPage - 1) * pageSize + 1
 
+  const pageNumbers = (() => {
+    const total = totalPages
+    const current = currentPage
+    const delta = 2
+    const range: number[] = []
+
+    for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+      range.push(i)
+    }
+
+    const pages: (number | 'ellipsis')[] = [1]
+    if (range[0] > 2) pages.push('ellipsis')
+    pages.push(...range)
+    if (range[range.length - 1] < total - 1) pages.push('ellipsis')
+    if (total > 1) pages.push(total)
+
+    return pages
+  })()
+
   return (
     <div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
-              <th style={{ padding: '0.75rem', textAlign: 'center' }}>Posição</th>
-              <th style={{ padding: '0.75rem', textAlign: 'left' }}>Jogador</th>
-              <th style={{ padding: '0.75rem', textAlign: 'center' }}>Nível</th>
-              <th style={{ padding: '0.75rem', textAlign: 'right' }}>ELO</th>
-              <th style={{ padding: '0.75rem', textAlign: 'right', display: 'none', minWidth: '600px' }}>
-                Partidas
-              </th>
-              <th style={{ padding: '0.75rem', textAlign: 'right', display: 'none', minWidth: '600px' }}>
-                Win %
-              </th>
+      <div className={styles.wrapper}>
+        <table className={styles.table}>
+          <thead className={styles.thead}>
+            <tr>
+              <th className={styles.center}>Pos</th>
+              <th>Jogador</th>
+              <th className={styles.center}>Nível</th>
+              <th className={styles.right}>ELO</th>
+              <th className={`${styles.right} ${styles.hideOnMobile}`}>W/L</th>
+              <th className={`${styles.right} ${styles.hideOnMobile}`}>Win %</th>
             </tr>
           </thead>
           <tbody>
             {players.map((player, index) => {
-              const isCurrentUser = currentUserId && player.id === currentUserId
+              const isCurrentUser = Boolean(currentUserId && player.id === currentUserId)
               const position = startPosition + index
 
               return (
                 <tr
                   key={player.id}
-                  style={{
-                    borderBottom: '1px solid #eee',
-                    backgroundColor: isCurrentUser ? '#fff3cd' : 'transparent',
-                    fontWeight: isCurrentUser ? 'bold' : 'normal',
-                  }}
+                  className={`${styles.row}${isCurrentUser ? ` ${styles.currentUser}` : ''}`}
                 >
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>#{position}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                    <Link
-                      to={`/players/${player.id}`}
-                      style={{ color: '#007bff', textDecoration: 'none' }}
-                    >
+                  <td className={`${styles.center} ${styles.rank}`}>#{position}</td>
+                  <td>
+                    <Link to={`/players/${player.id}`} className={styles.playerLink}>
                       {player.name}
                     </Link>
                   </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                  <td className={styles.center}>
                     <LevelBadge level={player.level} size="sm" />
                   </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right' }}>{player.elo}</td>
-                  <td
-                    style={{
-                      padding: '0.75rem',
-                      textAlign: 'right',
-                      display: window.innerWidth < 768 ? 'none' : 'table-cell',
-                    }}
-                  >
+                  <td className={styles.right}>{player.elo}</td>
+                  <td className={`${styles.right} ${styles.hideOnMobile}`}>
                     {player.totalMatches}
                   </td>
-                  <td
-                    style={{
-                      padding: '0.75rem',
-                      textAlign: 'right',
-                      display: window.innerWidth < 768 ? 'none' : 'table-cell',
-                    }}
-                  >
+                  <td className={`${styles.right} ${styles.hideOnMobile}`}>
                     {player.winPercentage.toFixed(1)}%
                   </td>
                 </tr>
@@ -91,65 +88,47 @@ export function RankingTable({
         </table>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <div className={styles.pagination}>
         <button
+          className={styles.pageBtn}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-            opacity: currentPage === 1 ? 0.5 : 1,
-          }}
+          aria-label="Página anterior"
         >
-          Anterior
+          ‹
         </button>
 
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          const page = i + 1
-          return (
+        {pageNumbers.map((p, i) =>
+          p === 'ellipsis' ? (
+            <span key={`ellipsis-${i}`} className={styles.pageEllipsis}>
+              …
+            </span>
+          ) : (
             <button
-              key={page}
-              onClick={() => onPageChange(page)}
-              style={{
-                padding: '0.5rem 0.75rem',
-                backgroundColor: currentPage === page ? '#0056b3' : '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
+              key={p}
+              className={`${styles.pageBtn}${currentPage === p ? ` ${styles.active}` : ''}`}
+              onClick={() => onPageChange(p)}
+              aria-label={`Página ${p}`}
+              aria-current={currentPage === p ? 'page' : undefined}
             >
-              {page}
+              {p}
             </button>
           )
-        })}
-
-        {totalPages > 5 && <span style={{ padding: '0.5rem 0.75rem' }}>...</span>}
+        )}
 
         <button
+          className={styles.pageBtn}
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage >= totalPages}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
-            opacity: currentPage >= totalPages ? 0.5 : 1,
-          }}
+          aria-label="Próxima página"
         >
-          Próxima
+          ›
         </button>
       </div>
 
-      <div style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>
+      <p className={styles.pageInfo}>
         Página {currentPage} de {totalPages}
-      </div>
+      </p>
     </div>
   )
 }

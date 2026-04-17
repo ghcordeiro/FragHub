@@ -1,0 +1,11 @@
+.alert {
+  background: var(--error-container);
+  color: var(--on-error);
+  border-radius: var(--radius-md);
+  padding: var(--sp-sm) var(--sp-md);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+}

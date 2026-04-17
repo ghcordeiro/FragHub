@@ -3,9 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LevelBadge } from '@/components/LevelBadge'
 import { PlayerAvatar } from '@/components/PlayerAvatar'
+import { Button } from '@/components/ui'
+import { ErrorAlert } from '@/components/ui'
 import { playerService } from '@/services/playerService'
 import { useSessionStore } from '@/store'
 import type { Player, MatchRecord } from '@/types/player'
+import styles from './ProfilePage.module.css'
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -13,6 +16,7 @@ export function ProfilePage() {
   const accessToken = useSessionStore((s) => s.accessToken)
   const currentUser = useSessionStore((s) => s.user)
   const isAdmin = currentUser?.role === 'admin'
+
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<MatchRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -29,8 +33,6 @@ export function ProfilePage() {
         const playerData = await playerService.getCurrentPlayer()
         setPlayer(playerData)
         setEditedName(playerData.name)
-
-        // Load matches
         const matchesData = await playerService.getPlayerMatches(playerData.id, currentPage)
         setMatches(matchesData)
       } catch (err) {
@@ -49,7 +51,6 @@ export function ProfilePage() {
       setError('Nome deve ter entre 2 e 32 caracteres')
       return
     }
-
     setIsSavingName(true)
     try {
       const updated = await playerService.updatePlayerName(editedName)
@@ -80,317 +81,182 @@ export function ProfilePage() {
 
   const handleSteamLink = () => {
     const base = import.meta.env.VITE_API_URL
-    if (!base) {
-      console.error('VITE_API_URL is not defined')
-      return
-    }
+    if (!base) return
     const url = new URL(`${base}/auth/steam/link`, window.location.origin)
     if (accessToken) url.searchParams.set('token', accessToken)
     window.location.href = url.toString()
   }
 
+  const resultClass = (result: MatchRecord['result']) => {
+    if (result === 'win') return styles.resultWin
+    if (result === 'loss') return styles.resultLoss
+    return styles.resultDraw
+  }
+
+  const resultLabel = (result: MatchRecord['result']) => {
+    if (result === 'win') return 'Vitória'
+    if (result === 'loss') return 'Derrota'
+    return 'Empate'
+  }
+
   return (
     <ProtectedRoute>
-      <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+      <div className={styles.page}>
         {searchParams.get('steam_linked') === '1' && (
-          <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px' }}>
-            Conta Steam vinculada com sucesso!
-          </div>
+          <div className={styles.successAlert}>Conta Steam vinculada com sucesso!</div>
         )}
 
-        {error && (
-          <div
-            style={{
-              padding: '1rem',
-              marginBottom: '1rem',
-              backgroundColor: '#ffebee',
-              color: '#c62828',
-              borderRadius: '4px',
-            }}
-          >
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <p>Carregando perfil...</p>
-          </div>
+          <p className={styles.loading}>Carregando perfil…</p>
         ) : player ? (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem', gap: '2rem' }}>
+            <div className={styles.header}>
               <PlayerAvatar avatarUrl={player.avatarUrl} name={player.name} size={96} />
-
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+              <div className={styles.headerInfo}>
+                <div className={styles.nameRow}>
                   {isEditingName ? (
                     <>
                       <input
+                        className={styles.editInput}
                         type="text"
                         value={editedName}
                         onChange={(e) => setEditedName(e.target.value)}
-                        style={{ padding: '0.5rem', fontSize: '1.25rem' }}
                       />
-                      <button
-                        onClick={handleNameEdit}
-                        disabled={isSavingName}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#4caf50',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: isSavingName ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {isSavingName ? 'Salvando...' : 'Salvar'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsEditingName(false)
-                          setEditedName(player.name)
-                        }}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#999',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Cancelar
-                      </button>
+                      <div className={styles.editActions}>
+                        <Button variant="primary" size="sm" isLoading={isSavingName} onClick={handleNameEdit}>
+                          Salvar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setIsEditingName(false); setEditedName(player.name) }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     <>
-                      <h1 style={{ margin: 0 }}>{player.name}</h1>
-                      <button
-                        onClick={() => setIsEditingName(true)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#007bff',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                        }}
-                      >
+                      <h1 className={styles.playerName}>{player.name}</h1>
+                      <Button variant="ghost" size="sm" onClick={() => setIsEditingName(true)}>
                         Editar Nome
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div className={styles.levelRow}>
                   <LevelBadge level={player.level} size="lg" />
-                  <div>
-                    <p style={{ margin: '0.25rem 0' }}>
-                      <strong>Nível {player.level}</strong>
-                    </p>
-                    <p style={{ margin: '0.25rem 0', color: '#666' }}>ELO: {player.elo}</p>
+                  <div className={styles.levelInfo}>
+                    <p className={styles.levelLabel}>Nível {player.level}</p>
+                    <p className={styles.eloLabel}>ELO: {player.elo}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ marginBottom: '2rem' }}>
-              <h2>Estatísticas</h2>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  gap: '1rem',
-                }}
-              >
-                <div style={{ padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.875rem' }}>Total de Partidas</p>
-                  <p style={{ margin: '0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {player.totalMatches}
-                  </p>
-                </div>
-
-                <div style={{ padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.875rem' }}>Vitórias</p>
-                  <p style={{ margin: '0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {player.wins}
-                  </p>
-                </div>
-
-                <div style={{ padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.875rem' }}>Taxa de Vitória</p>
-                  <p style={{ margin: '0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {player.winPercentage.toFixed(1)}%
-                  </p>
-                </div>
-
-                <div style={{ padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.875rem' }}>K/D Ratio</p>
-                  <p style={{ margin: '0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {player.kdRatio.toFixed(2)}
-                  </p>
-                </div>
-
-                <div style={{ padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.875rem' }}>HS %</p>
-                  <p style={{ margin: '0.5rem 0', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {player.hsPercentage.toFixed(1)}%
-                  </p>
-                </div>
+            <div className={styles.statsSection}>
+              <h2 className={styles.sectionTitle}>Estatísticas</h2>
+              <div className={styles.statsGrid}>
+                {[
+                  { label: 'Partidas', value: player.totalMatches },
+                  { label: 'Vitórias', value: player.wins },
+                  { label: 'Win %', value: `${player.winPercentage.toFixed(1)}%` },
+                  { label: 'K/D Ratio', value: player.kdRatio.toFixed(2) },
+                  { label: 'HS %', value: `${player.hsPercentage.toFixed(1)}%` },
+                ].map(({ label, value }) => (
+                  <div key={label} className={styles.statCard}>
+                    <p className={styles.statLabel}>{label}</p>
+                    <p className={styles.statValue}>{value}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {player.steamId ? (
-              isAdmin && (
-                <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#fff3e0', borderRadius: '4px' }}>
-                  <h3 style={{ margin: '0.5rem 0' }}>Steam Vinculada</h3>
-                  <p style={{ margin: '0.5rem 0', color: '#666' }}>ID: {player.steamId}</p>
-                  <button
-                    onClick={handleSteamUnlink}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      backgroundColor: '#c62828',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      marginTop: '0.5rem',
-                    }}
-                  >
-                    Remover vínculo Steam
-                  </button>
-                </div>
-              )
-            ) : (
-              <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
-                <h3 style={{ margin: '0.5rem 0' }}>Vincular Conta Steam</h3>
-                <p style={{ margin: '0.5rem 0', color: '#666' }}>Vincule sua conta Steam para ver mais estatísticas.</p>
-                <button
-                  onClick={handleSteamLink}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    backgroundColor: '#1b1a1a',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    marginTop: '0.5rem',
-                  }}
-                >
-                  Vincular Steam
-                </button>
-              </div>
-            )}
+            <div className={styles.steamSection}>
+              {player.steamId ? (
+                <>
+                  <h3 className={styles.steamTitle}>Steam Vinculada</h3>
+                  <p className={styles.steamId}>ID: {player.steamId}</p>
+                  {isAdmin && (
+                    <Button variant="danger" size="sm" onClick={handleSteamUnlink}>
+                      Remover vínculo Steam
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h3 className={styles.steamTitle}>Vincular Conta Steam</h3>
+                  <p className={styles.steamId}>Vincule sua conta Steam para ver mais estatísticas.</p>
+                  <Button variant="ghost" size="sm" onClick={handleSteamLink}>
+                    Vincular Steam
+                  </Button>
+                </>
+              )}
+            </div>
 
-            <div>
-              <h2>Histórico de Partidas</h2>
+            <div className={styles.matchSection}>
+              <h2 className={styles.sectionTitle}>Histórico de Partidas</h2>
               {matches.length > 0 ? (
                 <>
-                  <table
-                    style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    <thead>
-                      <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
-                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Data</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Mapa</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Resultado</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right' }}>Kills</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right' }}>Deaths</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right' }}>K/D</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right' }}>HS %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {matches.map((match) => (
-                        <tr key={match.id} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '0.75rem' }}>
-                            {new Date(match.date).toLocaleDateString()}
-                          </td>
-                          <td style={{ padding: '0.75rem' }}>{match.map}</td>
-                          <td
-                            style={{
-                              padding: '0.75rem',
-                              color:
-                                match.result === 'win'
-                                  ? '#4caf50'
-                                  : match.result === 'loss'
-                                    ? '#f44336'
-                                    : '#ff9800',
-                              fontWeight: 'bold',
-                            }}
-                          >
-                            {match.result === 'win' ? 'Vitória' : match.result === 'loss' ? 'Derrota' : 'Empate'}
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right' }}>{match.kills}</td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right' }}>{match.deaths}</td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right' }}>{match.kdRatio.toFixed(2)}</td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right' }}>
-                            {match.hsPercentage.toFixed(1)}%
-                          </td>
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.matchTable}>
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th>Mapa</th>
+                          <th>Resultado</th>
+                          <th className={styles.right}>Kills</th>
+                          <th className={styles.right}>Deaths</th>
+                          <th className={styles.right}>K/D</th>
+                          <th className={styles.right}>HS %</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      </thead>
+                      <tbody>
+                        {matches.map((match) => (
+                          <tr key={match.id}>
+                            <td>{new Date(match.date).toLocaleDateString()}</td>
+                            <td>{match.map}</td>
+                            <td className={resultClass(match.result)}>{resultLabel(match.result)}</td>
+                            <td className={styles.right}>{match.kills}</td>
+                            <td className={styles.right}>{match.deaths}</td>
+                            <td className={styles.right}>{match.kdRatio.toFixed(2)}</td>
+                            <td className={styles.right}>{match.hsPercentage.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className={styles.pagination}>
                     <button
+                      className={styles.pageBtn}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                        opacity: currentPage === 1 ? 0.5 : 1,
-                      }}
                     >
-                      Anterior
+                      ‹
                     </button>
-                    <span style={{ padding: '0.5rem 1rem' }}>Página {currentPage}</span>
+                    <span className={styles.pageLabel}>Página {currentPage}</span>
                     <button
+                      className={styles.pageBtn}
                       onClick={() => setCurrentPage((p) => p + 1)}
                       disabled={matches.length < 10}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: matches.length < 10 ? 'not-allowed' : 'pointer',
-                        opacity: matches.length < 10 ? 0.5 : 1,
-                      }}
                     >
-                      Próxima
+                      ›
                     </button>
                   </div>
                 </>
               ) : (
-                <p>Nenhuma partida encontrada.</p>
+                <p className={styles.steamId}>Nenhuma partida encontrada.</p>
               )}
             </div>
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <p>Erro ao carregar o perfil.</p>
-            <button
-              onClick={() => navigate('/')}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
+          <div className={styles.errorState}>
+            <p className={styles.errorText}>Erro ao carregar o perfil.</p>
+            <Button variant="ghost" size="md" onClick={() => navigate('/')}>
               Voltar ao Início
-            </button>
+            </Button>
           </div>
         )}
       </div>

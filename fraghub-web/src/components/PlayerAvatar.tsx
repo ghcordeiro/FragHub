@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import styles from './PlayerAvatar.module.css'
 
 interface PlayerAvatarProps {
   avatarUrl: string | null | undefined
@@ -8,41 +9,25 @@ interface PlayerAvatarProps {
 
 export function PlayerAvatar({ avatarUrl, name, size = 48 }: PlayerAvatarProps) {
   const [hasError, setHasError] = useState(false)
+  const initial = name.charAt(0).toUpperCase() || '?'
+  const fontSize = Math.round(size * 0.4)
 
   if (avatarUrl && !hasError) {
     return (
       <img
         src={avatarUrl}
         alt={name}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: '50%',
-          objectFit: 'cover',
-        }}
+        className={styles.avatar}
+        style={{ width: size, height: size }}
         onError={() => setHasError(true)}
       />
     )
   }
 
-  // Fallback: SVG circle with initials
-  const initial = name.charAt(0).toUpperCase() || '?'
-
   return (
     <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        backgroundColor: '#e0e0e0',
-        color: '#666',
-        fontSize: `${size * 0.4}px`,
-        fontWeight: 'bold',
-        userSelect: 'none',
-      }}
+      className={styles.fallback}
+      style={{ width: size, height: size, fontSize }}
       aria-label={`Avatar de ${name}`}
     >
       {initial}

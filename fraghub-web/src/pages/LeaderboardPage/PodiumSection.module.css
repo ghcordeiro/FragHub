@@ -1,0 +1,93 @@
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--sp-md);
+  padding: var(--sp-xl) var(--sp-lg);
+}
+
+.card {
+  background: var(--surface-container-low);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-lg) var(--sp-xl);
+  flex: 1;
+  max-width: 220px;
+}
+
+.first {
+  padding: var(--sp-xl) var(--sp-xl);
+  max-width: 260px;
+}
+
+.positionBadge {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.positionBadge.gold {
+  color: var(--tertiary);
+  font-size: 1.125rem;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--on-surface);
+  margin: 0;
+  text-align: center;
+  word-break: break-word;
+}
+
+.first .name {
+  font-size: 1.125rem;
+}
+
+.stats {
+  display: flex;
+  gap: var(--sp-md);
+  margin-top: var(--sp-xs);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.statLabel {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 640px) {
+  .podium {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card,
+  .first {
+    max-width: 100%;
+    width: 100%;
+  }
+}

@@ -1,0 +1,51 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 700;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Sizes */
+.sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.875rem;
+}
+
+.md {
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+}
+
+.lg {
+  width: 64px;
+  height: 64px;
+  font-size: 1.625rem;
+}
+
+/* Level tiers — FR-011 Tactical Monolith palette */
+.tier-low {
+  background: var(--outline);
+  color: var(--background);
+}
+
+.tier-mid {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary);
+}
+
+.tier-high {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.tier-top {
+  background: var(--error);
+  color: var(--on-error);
+  box-shadow: 0 0 12px rgba(255, 180, 171, 0.5);
+}

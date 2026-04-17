@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useSessionStore } from '@/store'
 import { httpClient } from '@/services/http'
 import type { AuthResponse } from '@/types/auth'
+import { InputField, ErrorAlert, Button } from '@/components/ui'
+import styles from './LoginPage.module.css'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -20,118 +22,65 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await httpClient.post<AuthResponse>('/auth/login', {
-        email,
-        password,
-      })
-
+      const response = await httpClient.post<AuthResponse>('/auth/login', { email, password })
       setSession(response.accessToken, response.user)
       const redirect = searchParams.get('redirect') || '/'
       navigate(redirect)
     } catch (err: unknown) {
-      const error = err as { statusCode?: number; error?: string }
-      if (error.statusCode === 401) {
-        setError('Email ou senha incorretos')
-      } else {
-        setError('Não foi possível conectar ao servidor')
-      }
+      const apiErr = err as { statusCode?: number }
+      setError(apiErr.statusCode === 401 ? 'Email ou senha incorretos' : 'Não foi possível conectar ao servidor')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '3rem auto', padding: '2rem' }}>
-      <h1>Entrar</h1>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Entrar</h1>
 
-      {error && (
-        <div
-          style={{
-            padding: '0.75rem',
-            marginBottom: '1rem',
-            backgroundColor: '#ffebee',
-            color: '#c62828',
-            borderRadius: '4px',
-          }}
-        >
-          {error}
-        </div>
-      )}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Email
-          </label>
-          <input
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
+          <InputField
             id="email"
+            label="Email"
             type="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}
           />
-        </div>
-
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem' }}>
-            Senha
-          </label>
-          <input
+          <InputField
             id="password"
+            label="Senha"
             type="password"
             required
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}
           />
-        </div>
+          <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={styles.submitBtn}>
+            {isLoading ? 'Entrando…' : 'Entrar'}
+          </Button>
+        </form>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1,
-            marginBottom: '1rem',
-          }}
+        <div className={styles.divider}>ou</div>
+
+        <a
+          href={`${import.meta.env.VITE_API_URL}/auth/google`}
+          className={styles.googleBtn}
         >
-          {isLoading ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
+          Entrar com Google
+        </a>
 
-      <a
-        href={`${import.meta.env.VITE_API_URL}/auth/google`}
-        style={{
-          display: 'block',
-          width: '100%',
-          padding: '0.75rem',
-          backgroundColor: '#4285f4',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          textAlign: 'center',
-          textDecoration: 'none',
-          marginBottom: '1rem',
-          fontSize: '1rem',
-        }}
-      >
-        Entrar com Google
-      </a>
-
-      <p style={{ textAlign: 'center' }}>
-        Não tem uma conta?{' '}
-        <Link to="/register" style={{ color: '#007bff', textDecoration: 'none' }}>
-          Criar conta
-        </Link>
-      </p>
+        <p className={styles.footer}>
+          Não tem uma conta?{' '}
+          <Link to="/register" className={styles.link}>
+            Criar conta
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }

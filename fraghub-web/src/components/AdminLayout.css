@@ -1,17 +1,17 @@
 .admin-container {
   display: flex;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--background);
 }
 
 .admin-sidebar {
   width: 250px;
-  background-color: #2c3e50;
-  color: white;
+  background-color: var(--surface-container-low);
+  color: var(--on-surface);
   padding: 20px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid var(--outline-variant);
 }
 
 .admin-header {
@@ -22,12 +22,14 @@
   margin: 0;
   font-size: 24px;
   margin-bottom: 10px;
+  font-family: var(--font-display);
+  color: var(--on-surface);
 }
 
 .admin-user {
   margin: 0;
   font-size: 12px;
-  color: #bdc3c7;
+  color: var(--on-surface-variant);
 }
 
 .admin-nav {
@@ -39,40 +41,43 @@
 
 .nav-link {
   padding: 12px 16px;
-  color: white;
+  color: var(--on-surface-variant);
   text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s, color 0.2s;
   font-size: 14px;
 }
 
 .nav-link:hover {
-  background-color: #34495e;
+  background-color: var(--surface-container-high);
+  color: var(--on-surface);
 }
 
 .nav-link.active {
-  background-color: #3498db;
+  background-color: var(--primary-container);
+  color: var(--on-surface);
 }
 
 .logout-btn {
   padding: 12px 16px;
-  background-color: #e74c3c;
-  color: white;
+  background-color: var(--error-container);
+  color: var(--on-error);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.2s;
+  transition: opacity 0.2s;
 }
 
 .logout-btn:hover {
-  background-color: #c0392b;
+  opacity: 0.85;
 }
 
 .admin-main {
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  color: var(--on-surface);
 }
 
 .admin-unauthorized {
@@ -82,16 +87,17 @@
   justify-content: center;
   height: 100vh;
   gap: 20px;
+  color: var(--on-surface);
 }
 
 .admin-unauthorized a {
   padding: 10px 20px;
-  background-color: #3498db;
-  color: white;
+  background-color: var(--primary-container);
+  color: var(--on-surface);
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 
 .admin-unauthorized a:hover {
-  background-color: #2980b9;
+  opacity: 0.88;
 }

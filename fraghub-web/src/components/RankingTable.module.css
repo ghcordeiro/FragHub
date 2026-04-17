@@ -1,0 +1,141 @@
+.wrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+}
+
+.thead th {
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: left;
+}
+
+.thead th.right {
+  text-align: right;
+}
+
+.thead th.center {
+  text-align: center;
+}
+
+.row {
+  background: var(--surface);
+  transition: background 0.1s;
+}
+
+.row:nth-child(even) {
+  background: var(--surface-container-low);
+}
+
+.row.currentUser {
+  background: var(--secondary-container);
+  border-left: 2px solid var(--primary);
+}
+
+.row td {
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: 0.9375rem;
+  color: var(--on-surface);
+  vertical-align: middle;
+}
+
+.row td.right {
+  text-align: right;
+}
+
+.row td.center {
+  text-align: center;
+}
+
+.playerLink {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.playerLink:hover {
+  text-decoration: underline;
+}
+
+.rank {
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+/* Hide K/D and W/L on mobile */
+.hideOnMobile {
+  /* always visible by default */
+}
+
+@media (max-width: 768px) {
+  .hideOnMobile {
+    display: none;
+  }
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  gap: var(--sp-xs);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--sp-xl);
+  align-items: center;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--sp-sm);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.pageBtn.active {
+  background: var(--primary-container);
+  color: var(--on-surface);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageEllipsis {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--sp-xs);
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.pageInfo {
+  margin-top: var(--sp-md);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+}
