@@ -22,7 +22,7 @@ const router = Router();
  * GET /api/admin/dashboard
  * Returns metrics for admin dashboard
  */
-router.get('/api/admin/dashboard', requireAdmin(), async (req: Request, res: Response) => {
+router.get('/dashboard', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const metrics = await adminService.getDashboardMetrics(db);
     res.status(200).json({ data: metrics });
@@ -37,7 +37,7 @@ router.get('/api/admin/dashboard', requireAdmin(), async (req: Request, res: Res
  * List players with optional search and pagination
  * Query params: search?, page=1, limit=50
  */
-router.get('/api/admin/players', requireAdmin(), adminRateLimiter, async (req: Request, res: Response) => {
+router.get('/players', requireAdmin(), adminRateLimiter, async (req: Request, res: Response) => {
   try {
     const search = (req.query.search as string) || undefined;
     const page = Number.parseInt((req.query.page as string) || '1', 10);
@@ -68,7 +68,7 @@ router.get('/api/admin/players', requireAdmin(), adminRateLimiter, async (req: R
  * GET /api/admin/players/:id
  * Get full player profile with match and ban history
  */
-router.get('/api/admin/players/:id', requireAdmin(), async (req: Request, res: Response) => {
+router.get('/players/:id', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const player_id = Number.parseInt(req.params.id, 10);
     if (!Number.isFinite(player_id) || player_id < 1) {
@@ -92,7 +92,7 @@ router.get('/api/admin/players/:id', requireAdmin(), async (req: Request, res: R
  * PATCH /api/admin/players/:id
  * Update player profile (name, email, role)
  */
-router.patch('/api/admin/players/:id', requireAdmin(), async (req: Request, res: Response) => {
+router.patch('/players/:id', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const player_id = Number.parseInt(req.params.id, 10);
     if (!Number.isFinite(player_id) || player_id < 1) {
@@ -130,7 +130,7 @@ router.patch('/api/admin/players/:id', requireAdmin(), async (req: Request, res:
  * Ban a player with reason and optional duration
  * Body: { player_id, reason, duration_days? }
  */
-router.post('/api/admin/players/ban', requireAdmin(), async (req: Request, res: Response) => {
+router.post('/players/ban', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const { player_id, reason, duration_days } = req.body;
 
@@ -171,7 +171,7 @@ router.post('/api/admin/players/ban', requireAdmin(), async (req: Request, res: 
  * Unban a player
  * Body: { player_id }
  */
-router.post('/api/admin/players/unban', requireAdmin(), async (req: Request, res: Response) => {
+router.post('/players/unban', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const { player_id } = req.body;
 
@@ -203,7 +203,7 @@ router.post('/api/admin/players/unban', requireAdmin(), async (req: Request, res
  * Body: { name, email }
  * Returns: { user, temp_password }
  */
-router.post('/api/admin/players', requireAdmin(), async (req: Request, res: Response) => {
+router.post('/players', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const { name, email } = req.body;
 
@@ -242,7 +242,7 @@ router.post('/api/admin/players', requireAdmin(), async (req: Request, res: Resp
  * Get audit logs with optional filters
  * Query params: action_type?, admin_id?, date_from?, date_to?, page=1, limit=50
  */
-router.get('/api/admin/logs', requireAdmin(), async (req: Request, res: Response) => {
+router.get('/logs', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const action_type = (req.query.action_type as string) || undefined;
     const admin_id = req.query.admin_id ? Number.parseInt(req.query.admin_id as string, 10) : undefined;
@@ -283,7 +283,7 @@ router.get('/api/admin/logs', requireAdmin(), async (req: Request, res: Response
  * GET /api/admin/servers
  * List all servers with live status
  */
-router.get('/api/admin/servers', requireAdmin(), async (req: Request, res: Response) => {
+router.get('/servers', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const servers = await serverService.listServers(db);
     res.status(200).json({ data: servers });
@@ -298,7 +298,7 @@ router.get('/api/admin/servers', requireAdmin(), async (req: Request, res: Respo
  * Control server lifecycle (start, stop, restart)
  * URL params: id (cs2, csgo), action (start, stop, restart)
  */
-router.post('/api/admin/servers/:id/:action', requireAdmin(), async (req: Request, res: Response) => {
+router.post('/servers/:id/:action', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const server_id = req.params.id;
     const action = req.params.action as 'start' | 'stop' | 'restart';
@@ -328,7 +328,7 @@ router.post('/api/admin/servers/:id/:action', requireAdmin(), async (req: Reques
  * Body: { command }
  * Rate limited: 20 req/min per admin
  */
-router.post('/api/admin/servers/:id/rcon', requireAdmin(), rconRateLimiter, async (req: Request, res: Response) => {
+router.post('/servers/:id/rcon', requireAdmin(), rconRateLimiter, async (req: Request, res: Response) => {
   try {
     const server_id = req.params.id;
     const { command } = req.body;
@@ -360,7 +360,7 @@ router.post('/api/admin/servers/:id/rcon', requireAdmin(), rconRateLimiter, asyn
  * List available plugins for a server
  * URL params: id (cs2, csgo)
  */
-router.get('/api/admin/servers/:id/config', requireAdmin(), async (req: Request, res: Response) => {
+router.get('/servers/:id/config', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const server_id = req.params.id;
     const plugins = configService.getAvailablePlugins(server_id);
@@ -382,7 +382,7 @@ router.get('/api/admin/servers/:id/config', requireAdmin(), async (req: Request,
  * Read a plugin configuration file
  * URL params: id (cs2, csgo), plugin (matchzy, get5, etc.)
  */
-router.get('/api/admin/servers/:id/config/:plugin', requireAdmin(), async (req: Request, res: Response) => {
+router.get('/servers/:id/config/:plugin', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const plugin = req.params.plugin;
 
@@ -416,7 +416,7 @@ router.get('/api/admin/servers/:id/config/:plugin', requireAdmin(), async (req: 
  * Body: { content }
  * Header: X-Confirm-Override (to override warning if players connected)
  */
-router.put('/api/admin/servers/:id/config/:plugin', requireAdmin(), async (req: Request, res: Response) => {
+router.put('/servers/:id/config/:plugin', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const plugin = req.params.plugin;
     const { content } = req.body;

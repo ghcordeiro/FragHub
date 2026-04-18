@@ -19,22 +19,34 @@ export function ProfilePage() {
 
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<MatchRecord[]>([])
+  const [matchesTotalPages, setMatchesTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
+  const [isMatchesLoading, setIsMatchesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedName, setEditedName] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
+  // Load player profile and stats once
   useEffect(() => {
     const loadProfile = async () => {
       try {
         setIsLoading(true)
         const playerData = await playerService.getCurrentPlayer()
-        setPlayer(playerData)
         setEditedName(playerData.name)
-        const matchesData = await playerService.getPlayerMatches(playerData.id, currentPage)
-        setMatches(matchesData)
+        const statsData = await playerService.getPlayerStats(playerData.id)
+        setPlayer({
+          ...playerData,
+          totalMatches: statsData.matchesPlayed,
+          wins: statsData.wins,
+          winPercentage:
+            statsData.matchesPlayed > 0
+              ? Math.round((statsData.wins / statsData.matchesPlayed) * 1000) / 10
+              : 0,
+          kdRatio: statsData.kdr,
+          hsPercentage: statsData.hsPercent,
+        })
       } catch (err) {
         setError('Não foi possível carregar o perfil')
         console.error(err)
@@ -42,9 +54,26 @@ export function ProfilePage() {
         setIsLoading(false)
       }
     }
-
     loadProfile()
-  }, [currentPage, searchParams])
+  }, [searchParams])
+
+  // Load matches separately, re-runs on page change
+  useEffect(() => {
+    if (!player) return
+    const loadMatches = async () => {
+      try {
+        setIsMatchesLoading(true)
+        const result = await playerService.getPlayerMatches(player.id, currentPage)
+        setMatches(result.data)
+        setMatchesTotalPages(result.totalPages)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setIsMatchesLoading(false)
+      }
+    }
+    void loadMatches()
+  }, [player?.id, currentPage])
 
   const handleNameEdit = async () => {
     if (!player || editedName.length < 2 || editedName.length > 32) {
@@ -232,7 +261,7 @@ export function ProfilePage() {
                     <button
                       className={styles.pageBtn}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
+                      disabled={currentPage === 1 || isMatchesLoading}
                     >
                       ‹
                     </button>
@@ -240,7 +269,7 @@ export function ProfilePage() {
                     <button
                       className={styles.pageBtn}
                       onClick={() => setCurrentPage((p) => p + 1)}
-                      disabled={matches.length < 10}
+                      disabled={currentPage >= matchesTotalPages || isMatchesLoading}
                     >
                       ›
                     </button>

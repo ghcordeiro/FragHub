@@ -1,20 +1,12 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Navigate, Outlet } from 'react-router-dom'
 import { useSessionStore } from '@/store/sessionStore'
 import './AdminLayout.css'
 
 export function AdminLayout() {
   const { user, clearSession } = useSessionStore()
 
-  // Check if user is admin
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="admin-unauthorized">
-        <h2>Access Denied</h2>
-        <p>You must be an admin to access this area.</p>
-        <Link to="/">Back to Home</Link>
-      </div>
-    )
-  }
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'admin') return <Navigate to="/" replace />
 
   return (
     <div className="admin-container">
@@ -36,6 +28,9 @@ export function AdminLayout() {
           </Link>
           <Link to="/admin/logs" className="nav-link">
             Audit Logs
+          </Link>
+          <Link to="/admin/config" className="nav-link">
+            Plugin Config
           </Link>
         </nav>
 

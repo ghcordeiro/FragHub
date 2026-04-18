@@ -3,16 +3,22 @@ import { Link, NavLink } from 'react-router-dom'
 import { useSession } from '@/hooks/useSession'
 import styles from './NavBar.module.css'
 
-const NAV_LINKS = [
+const PUBLIC_NAV_LINKS = [
   { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/matches', label: 'Matches' },
-  { to: '/servers', label: 'Servers' },
-  { to: '/news', label: 'News' },
+  { to: '/matches', label: 'Partidas' },
+]
+
+const AUTH_NAV_LINKS = [
+  { to: '/queue', label: 'Fila' },
 ]
 
 export function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useSession()
+
+  const navLinks = isAuthenticated
+    ? [...PUBLIC_NAV_LINKS, ...AUTH_NAV_LINKS]
+    : PUBLIC_NAV_LINKS
 
   return (
     <nav className={styles.nav}>
@@ -22,7 +28,7 @@ export function NavBar() {
         </Link>
 
         <div className={styles.links}>
-          {NAV_LINKS.map(({ to, label }) => (
+          {navLinks.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
@@ -38,7 +44,24 @@ export function NavBar() {
         <div className={styles.actions}>
           {isAuthenticated && user ? (
             <>
-              <span className={styles.userInfo}>{user.name}</span>
+              <NavLink
+                to="/players/me"
+                className={({ isActive }) =>
+                  `${styles.link}${isActive ? ` ${styles.active}` : ''}`
+                }
+              >
+                {user.name}
+              </NavLink>
+              {user.role === 'admin' && (
+                <NavLink
+                  to="/admin/dashboard"
+                  className={({ isActive }) =>
+                    `${styles.btnGhost}${isActive ? ` ${styles.active}` : ''}`
+                  }
+                >
+                  Admin
+                </NavLink>
+              )}
               <button className={styles.logoutBtn} onClick={logout}>
                 Logout
               </button>
@@ -49,7 +72,7 @@ export function NavBar() {
                 Login
               </Link>
               <Link to="/register" className={styles.btnPrimary}>
-                Join Queue
+                Registrar
               </Link>
             </>
           )}
@@ -79,7 +102,7 @@ export function NavBar() {
       </div>
 
       <div className={`${styles.mobileMenu}${menuOpen ? ` ${styles.open}` : ''}`}>
-        {NAV_LINKS.map(({ to, label }) => (
+        {navLinks.map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -92,19 +115,40 @@ export function NavBar() {
           </NavLink>
         ))}
         {isAuthenticated && user ? (
-          <button
-            className={styles.mobileLink}
-            onClick={() => { logout(); setMenuOpen(false) }}
-          >
-            Logout
-          </button>
+          <>
+            <NavLink
+              to="/players/me"
+              className={styles.mobileLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              {user.name}
+            </NavLink>
+            {user.role === 'admin' && (
+              <NavLink
+                to="/admin/dashboard"
+                className={styles.mobileLink}
+                onClick={() => setMenuOpen(false)}
+              >
+                Admin
+              </NavLink>
+            )}
+            <button
+              className={styles.mobileLink}
+              onClick={() => {
+                logout()
+                setMenuOpen(false)
+              }}
+            >
+              Logout
+            </button>
+          </>
         ) : (
           <>
             <Link to="/login" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
               Login
             </Link>
             <Link to="/register" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
-              Join Queue
+              Registrar
             </Link>
           </>
         )}

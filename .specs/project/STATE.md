@@ -412,9 +412,51 @@
 - Artefatos SDD criados para as 4 features v0.2:
   - `plan.md`, `tasks.md`, `validation.md`.
 
+### 2026-04-18 — Frontend portal: quick wins + MatchZy webhook fix
+
+**Quick wins implementados (Quick Mode — sem gates formais):**
+
+- **Paginação corrigida** (`ProfilePage.tsx`, `PublicProfilePage.tsx`): `disabled={matches.length < 10}` → `disabled={currentPage >= matchesTotalPages}`. `playerService.getPlayerMatches` agora retorna `{ data, totalPages, total }` em vez de `MatchRecord[]`.
+- **Stats separados de matches** (`ProfilePage.tsx`): dois `useEffect` independentes — stats+player só carregam uma vez; matches recarregam a cada troca de página. Elimina chamadas redundantes à API.
+- **AdminLayout redireciona** em vez de mostrar tela de erro: não autenticado → `/login`, autenticado sem role admin → `/`. Usa `<Navigate replace>` do react-router-dom.
+- **`matchService` exportado** em `services/index.ts` (estava faltando, inconsistência com playerService/leaderboardService).
+
+**MatchZy webhook configurado:**
+
+- Tabela `matches` estava vazia porque o MatchZy não tinha URL de webhook configurada.
+- Adicionado em `/home/ranch/fraghub/linuxgsm/serverfiles/game/csgo/cfg/MatchZy/config.cfg`:
+  ```
+  matchzy_remote_log_url "http://127.0.0.1:3001/api/matches/webhook"
+  matchzy_remote_log_header_key "x-fraghub-secret"
+  matchzy_remote_log_header_value "<secret>"
+  ```
+- A partir do próximo mapa encerrado pelo MatchZy, o resultado é persistido automaticamente.
+
+**Features entregues anteriormente nesta sessão (sem registro SDD):**
+
+| Feature | Arquivos | Status |
+|---------|----------|--------|
+| Páginas de partidas (`/matches`, `/matches/:id`) | `MatchesPage.tsx`, `MatchDetailPage.tsx`, `matchService.ts`, `types/match.ts` | ✅ em produção |
+| Admin Plugin Config (`/admin/config`) | `pages/admin/PluginConfig.tsx` | ✅ em produção |
+| Admin Servers com RCON (`/admin/servers`) | `pages/admin/Servers.tsx` — reescrita completa | ✅ em produção |
+| NavBar com links condicionais por auth | `NavBar.tsx` — PUBLIC + AUTH_NAV_LINKS | ✅ em produção |
+| ProfilePage stats reais | `ProfilePage.tsx`, `playerService.ts` — usa `/players/:id/stats` | ✅ em produção |
+| Admin routes 14 rotas corrigidas | `services/fraghub-api/src/routes/admin.ts` | ✅ deployado |
+
+**Pendências identificadas no review de frontend:**
+
+| Prioridade | Item |
+|-----------|------|
+| CRÍTICO | Queue UI (`/queue`) — rota não existe, NavBar aponta para ela |
+| MÉDIO | Admin pages usam `fetch()` direto — extrair `adminService` |
+| MÉDIO | Sem Error Boundary global |
+| MÉDIO | Filtros do Leaderboard (game/período) ignorados — backend não suporta ainda |
+| BAIXO | Modais admin sem focus trap (acessibilidade) |
+| BAIXO | Winner/loser só por cor (daltônicos) |
+
 ## Próximos passos
 
-1. **v0.4 — Frontend portal:** primeira feature **`frontend-setup`** (Specify → … → Validate) conforme `ROADMAP.md` / `PLANNING.md`.
+1. **Queue UI (`/queue`)** — maior feature pendente para plataforma completa: join/leave, posição, team reveal, map veto, connect string. Backend já existe (POST /join, POST /leave, GET /status, POST /vote-map).
 2. Revisar periodicamente schemas oficiais dos plugins de terceiros e alinhar migracoes locais quando houver mudancas upstream.
 3. E2E remoto Ubuntu para validações de installer ou smoke de API quando a feature o exigir.
 

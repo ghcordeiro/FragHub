@@ -12,19 +12,19 @@ export function PublicProfilePage() {
   const navigate = useNavigate()
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<MatchRecord[]>([])
+  const [matchesTotalPages, setMatchesTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
+  const [isMatchesLoading, setIsMatchesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
+    if (!id) return
     const loadProfile = async () => {
-      if (!id) return
       try {
         setIsLoading(true)
         const playerData = await playerService.getPlayer(id)
         setPlayer(playerData)
-        const matchesData = await playerService.getPlayerMatches(id, currentPage)
-        setMatches(matchesData)
       } catch (err) {
         setError('Jogador não encontrado')
         console.error(err)
@@ -32,8 +32,24 @@ export function PublicProfilePage() {
         setIsLoading(false)
       }
     }
+    void loadProfile()
+  }, [id])
 
-    loadProfile()
+  useEffect(() => {
+    if (!id) return
+    const loadMatches = async () => {
+      try {
+        setIsMatchesLoading(true)
+        const result = await playerService.getPlayerMatches(id, currentPage)
+        setMatches(result.data)
+        setMatchesTotalPages(result.totalPages)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setIsMatchesLoading(false)
+      }
+    }
+    void loadMatches()
   }, [id, currentPage])
 
   const resultClass = (result: MatchRecord['result']) => {
@@ -134,7 +150,7 @@ export function PublicProfilePage() {
               <button
                 className={styles.pageBtn}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || isMatchesLoading}
               >
                 ‹
               </button>
@@ -142,7 +158,7 @@ export function PublicProfilePage() {
               <button
                 className={styles.pageBtn}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                disabled={matches.length < 10}
+                disabled={currentPage >= matchesTotalPages || isMatchesLoading}
               >
                 ›
               </button>

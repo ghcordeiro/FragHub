@@ -37,40 +37,41 @@
 
 ---
 
-### v0.4 — Frontend portal
+### v0.4 — Frontend portal [~]
 > Interface web básica
 
-- [ ] `frontend-setup` — React 18+ + TypeScript + Vite, Zustand, React Router v6
+- [x] `frontend-setup` — React 18+ + TypeScript + Vite, Zustand, React Router v6 *(2026-04-17)*
 - [ ] `nginx-ssl` — reverse proxy Nginx, SSL certbot, headers de segurança
-- [ ] `auth-ui` — Login, Registro, Google OAuth, vinculação Steam, gestão de sessão
-- [ ] `player-profile-ui` — perfil público, stats, histórico, badge nível 1-10
-- [ ] `leaderboard-ui` — ranking público por ELO, paginado, filtros
+- [x] `auth-ui` — Login, Registro, Google OAuth, vinculação Steam, gestão de sessão *(2026-04-17)*
+- [x] `player-profile-ui` — perfil público, stats reais, histórico paginado, badge nível 1-10 *(2026-04-18)*
+- [x] `leaderboard-ui` — ranking público por ELO, paginado *(2026-04-17)*
+- [x] `matches-ui` — listagem de partidas + scorecard detalhado *(2026-04-18)*
 
-**Critério de conclusão**: usuário consegue logar e ver próprio perfil
+**Critério de conclusão**: usuário consegue logar e ver próprio perfil ✅
 
 ---
 
-### v0.5 — Sistema de matchmaking
+### v0.5 — Sistema de matchmaking [~]
 > Queue e balanceamento de times
 
-- [ ] `elo-system` — Glicko-2 simplificado, níveis 1-10 (ELO inicial 1000 = Nível 4)
-- [ ] `matchmaking-queue` — fila 5v5, balanceamento por ELO, map veto, state machine
+- [x] `elo-system` — Glicko-2 simplificado, níveis 1-10 (ELO inicial 1000 = Nível 4) *(2026-04-14)*
+- [ ] `matchmaking-queue-ui` — fila 5v5 UI: join/leave, posição, team reveal, map veto, connect string *(backend pronto)*
 - [ ] `match-notifications` — Discord webhook, banner no portal quando partida pronta
-- [ ] `fraghub-tags-plugin` — plugin CS2 (C#) + CS:GO (SourcePawn) com tags [N]/[ADMIN]
+- [x] `fraghub-tags-plugin` — plugin CS2 (C#) com tags [N]/[ADMIN|N] *(2026-04-15)*
 
 **Critério de conclusão**: queue funcionando, times balanceados, tags in-game
 
 ---
 
-### v0.6 — Painel admin
+### v0.6 — Painel admin [~]
 > Gerenciamento completo
 
-- [ ] `admin-dashboard` — dashboard, CRUD jogadores, ban/unban, criação de contas
-- [ ] `server-management-ui` — start/stop/restart, console RCON via web (isolado)
-- [ ] `admin-logs` — audit log de ações admin, retenção 90 dias
-- [ ] `plugin-config-ui` — edição de .cfg via UI com allowlist de paths
+- [x] `admin-dashboard` — dashboard, CRUD jogadores, ban/unban, criação de contas *(2026-04-18)*
+- [x] `server-management-ui` — start/stop/restart, console RCON via web com quick commands *(2026-04-18)*
+- [x] `admin-logs` — audit log de ações admin *(2026-04-18)*
+- [x] `plugin-config-ui` — edição de .cfg via UI com seleção de servidor/plugin *(2026-04-18)*
 
-**Critério de conclusão**: admin consegue gerenciar tudo pela web
+**Critério de conclusão**: admin consegue gerenciar tudo pela web ✅
 
 ---
 

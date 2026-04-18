@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { AdminLayout } from '@/components/AdminLayout'
+import { NotFoundPage } from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,18 @@ export const router = createBrowserRouter([
         path: '/leaderboard',
         lazy: () => import('@/pages/LeaderboardPage').then((m) => ({ Component: m.LeaderboardPage })),
       },
+      {
+        path: '/matches',
+        lazy: () => import('@/pages/MatchesPage').then((m) => ({ Component: m.MatchesPage })),
+      },
+      {
+        path: '/matches/:id',
+        lazy: () => import('@/pages/MatchDetailPage').then((m) => ({ Component: m.MatchDetailPage })),
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
     ],
   },
   {
@@ -57,6 +70,10 @@ export const router = createBrowserRouter([
       {
         path: 'logs',
         lazy: () => import('@/pages/admin/Logs').then((m) => ({ Component: m.AdminLogs })),
+      },
+      {
+        path: 'config',
+        lazy: () => import('@/pages/admin/PluginConfig').then((m) => ({ Component: m.AdminPluginConfig })),
       },
     ],
   },
