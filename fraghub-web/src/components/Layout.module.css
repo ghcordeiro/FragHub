@@ -3,3 +3,57 @@
   display: flex;
   flex-direction: column;
 }
+
+.matchBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--primary-container, #4d8eff);
+  color: var(--on-primary, #002e6a);
+  font-size: 0.9rem;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.matchBannerIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.matchBannerText {
+  flex: 1;
+}
+
+.matchBannerBtn {
+  padding: 0.3rem 0.9rem;
+  background: rgba(0,0,0,0.15);
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 4px;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.matchBannerBtn:hover {
+  background: rgba(0,0,0,0.25);
+}
+
+.matchBannerClose {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.25rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.matchBannerClose:hover {
+  opacity: 1;
+}

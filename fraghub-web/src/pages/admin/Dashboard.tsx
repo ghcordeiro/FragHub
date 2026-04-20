@@ -1,54 +1,21 @@
 import { useEffect, useState } from 'react'
-import { useSessionStore } from '@/store/sessionStore'
+import { adminService, type DashboardMetrics } from '@/services/adminService'
 import './Admin.css'
 
-interface RecentAuditLog {
-  id: number
-  action_type: string
-  target_type?: string
-  target_id?: number | null
-  created_at: string
-}
-
-interface Metrics {
-  total_players: number
-  matches_today: number
-  servers_online: number
-  recent_logs: RecentAuditLog[]
-}
-
 export function AdminDashboard() {
-  const { accessToken } = useSessionStore()
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const response = await fetch('/api/admin/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to load dashboard metrics')
-        }
-
-        const data = await response.json()
-        setMetrics(data.data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (accessToken) {
-      fetchMetrics()
-    }
-  }, [accessToken])
+    adminService
+      .getDashboard()
+      .then((res) => setMetrics(res.data))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard metrics')
+      )
+      .finally(() => setLoading(false))
+  }, [])
 
   if (loading) return <div className="loading">Loading dashboard...</div>
   if (error) return <div className="error">{error}</div>

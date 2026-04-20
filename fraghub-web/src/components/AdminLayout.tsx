@@ -1,10 +1,13 @@
 import { Link, Navigate, Outlet } from 'react-router-dom'
 import { useSessionStore } from '@/store/sessionStore'
+import { useSession } from '@/hooks/useSession'
 import './AdminLayout.css'
 
 export function AdminLayout() {
-  const { user, clearSession } = useSessionStore()
+  const { user, isLoading } = useSession()
+  const { clearSession } = useSessionStore()
 
+  if (isLoading) return null
   if (!user) return <Navigate to="/login" replace />
   if (user.role !== 'admin') return <Navigate to="/" replace />
 

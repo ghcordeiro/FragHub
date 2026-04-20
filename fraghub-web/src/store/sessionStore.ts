@@ -15,7 +15,7 @@ interface SessionState {
 export const useSessionStore = create<SessionState>((set) => ({
   accessToken: null,
   user: null,
-  isLoading: false,
+  isLoading: true, // true until first refresh attempt resolves
   error: null,
   setSession: (token, user) => set({ accessToken: token, user, error: null }),
   clearSession: () => set({ accessToken: null, user: null }),

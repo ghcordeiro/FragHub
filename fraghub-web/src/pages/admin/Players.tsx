@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useSessionStore } from '@/store/sessionStore'
+import { adminService } from '@/services/adminService'
 import './Admin.css'
 
 interface Player {
@@ -18,7 +18,6 @@ interface PaginationInfo {
 }
 
 export function AdminPlayers() {
-  const { accessToken } = useSessionStore()
   const [players, setPlayers] = useState<Player[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [search, setSearch] = useState('')
@@ -29,90 +28,51 @@ export function AdminPlayers() {
   const [banReason, setBanReason] = useState('')
   const [showBanModal, setShowBanModal] = useState(false)
 
-  const fetchPlayers = useCallback(
-    async (p: number = 1) => {
-      if (!accessToken) return
-      try {
-        setLoading(true)
-        const url = new URL('/api/admin/players', window.location.origin)
-        url.searchParams.set('page', p.toString())
-        url.searchParams.set('limit', '20')
-        if (search) url.searchParams.set('search', search)
-
-        const response = await fetch(url, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-
-        if (!response.ok) throw new Error('Failed to load players')
-
-        const data = await response.json()
-        setPlayers(data.data)
-        setPagination(data.pagination)
-        setPage(p)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    },
-    [accessToken, search]
-  )
+  const fetchPlayers = useCallback(async (p: number = 1) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await adminService.getPlayers({ page: p, limit: 20, search: search || undefined })
+      setPlayers(data.data)
+      setPagination(data.pagination)
+      setPage(p)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load players')
+    } finally {
+      setLoading(false)
+    }
+  }, [search])
 
   useEffect(() => {
-    if (accessToken) {
-      void fetchPlayers(1)
-    }
-  }, [accessToken, search, fetchPlayers])
+    void fetchPlayers(1)
+  }, [fetchPlayers])
 
   const handleBan = async () => {
-    if (!selectedPlayer || !banReason) return
-
+    if (!selectedPlayer || !banReason.trim()) return
     try {
-      const response = await fetch('/api/admin/players/ban', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          player_id: selectedPlayer.id,
-          reason: banReason,
-          duration_days: null,
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to ban player')
-
+      await adminService.banPlayer(selectedPlayer.id, banReason)
       setShowBanModal(false)
       setBanReason('')
       setSelectedPlayer(null)
-      fetchPlayers(page)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      void fetchPlayers(page)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to ban player')
     }
   }
 
-  const handleUnban = async (player_id: number) => {
+  const handleUnban = async (playerId: number) => {
     try {
-      const response = await fetch('/api/admin/players/unban', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ player_id }),
-      })
-
-      if (!response.ok) throw new Error('Failed to unban player')
-
-      fetchPlayers(page)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      await adminService.unbanPlayer(playerId)
+      void fetchPlayers(page)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to unban player')
     }
   }
 
   if (loading && players.length === 0) return <div className="loading">Loading players...</div>
   if (error) return <div className="error">{error}</div>
+
+  const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 1
 
   return (
     <div className="admin-page">
@@ -147,18 +107,12 @@ export function AdminPlayers() {
               <td>{player.banned_at ? 'Banned' : 'Active'}</td>
               <td className="actions">
                 {player.banned_at ? (
-                  <button
-                    onClick={() => handleUnban(player.id)}
-                    className="btn btn-secondary"
-                  >
+                  <button onClick={() => handleUnban(player.id)} className="btn btn-secondary">
                     Unban
                   </button>
                 ) : (
                   <button
-                    onClick={() => {
-                      setSelectedPlayer(player)
-                      setShowBanModal(true)
-                    }}
+                    onClick={() => { setSelectedPlayer(player); setShowBanModal(true) }}
                     className="btn btn-danger"
                   >
                     Ban
@@ -172,14 +126,12 @@ export function AdminPlayers() {
 
       {pagination && (
         <div className="pagination">
-          {pagination.page > 1 && (
-            <button onClick={() => fetchPlayers(pagination.page - 1)}>Previous</button>
+          {page > 1 && (
+            <button onClick={() => fetchPlayers(page - 1)}>Previous</button>
           )}
-          <span>
-            Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
-          </span>
-          {pagination.page < Math.ceil(pagination.total / pagination.limit) && (
-            <button onClick={() => fetchPlayers(pagination.page + 1)}>Next</button>
+          <span>Page {page} of {totalPages}</span>
+          {page < totalPages && (
+            <button onClick={() => fetchPlayers(page + 1)}>Next</button>
           )}
         </div>
       )}
@@ -200,11 +152,7 @@ export function AdminPlayers() {
                 Ban Player
               </button>
               <button
-                onClick={() => {
-                  setShowBanModal(false)
-                  setSelectedPlayer(null)
-                  setBanReason('')
-                }}
+                onClick={() => { setShowBanModal(false); setSelectedPlayer(null); setBanReason('') }}
                 className="btn btn-secondary"
               >
                 Cancel

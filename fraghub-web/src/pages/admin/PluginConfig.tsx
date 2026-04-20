@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useSessionStore } from '@/store/sessionStore'
+import { adminService } from '@/services/adminService'
 import './Admin.css'
 
 const SERVERS = [
@@ -8,7 +8,6 @@ const SERVERS = [
 ]
 
 export function AdminPluginConfig() {
-  const { accessToken } = useSessionStore()
   const [serverId, setServerId] = useState('cs2')
   const [plugins, setPlugins] = useState<string[]>([])
   const [selectedPlugin, setSelectedPlugin] = useState<string>('')
@@ -20,41 +19,33 @@ export function AdminPluginConfig() {
   const [success, setSuccess] = useState<string | null>(null)
 
   const fetchPlugins = useCallback(async (id: string) => {
-    if (!accessToken) return
     try {
-      const res = await fetch(`/api/admin/servers/${id}/config`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!res.ok) throw new Error('Failed to load plugins')
-      const data = await res.json()
-      setPlugins(data.data.plugins ?? [])
+      setError(null)
+      const res = await adminService.getPluginList(id)
+      setPlugins(res.data.plugins ?? [])
       setSelectedPlugin('')
       setContent('')
       setOriginalContent('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load plugins')
     }
-  }, [accessToken])
+  }, [])
 
   useEffect(() => {
     void fetchPlugins(serverId)
   }, [serverId, fetchPlugins])
 
   const loadConfig = async (plugin: string) => {
-    if (!accessToken || !plugin) return
+    if (!plugin) return
     setLoading(true)
     setError(null)
     setSuccess(null)
     try {
-      const res = await fetch(`/api/admin/servers/${serverId}/config/${plugin}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!res.ok) throw new Error('Failed to load config')
-      const data = await res.json()
-      setContent(data.data.content ?? '')
-      setOriginalContent(data.data.content ?? '')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const res = await adminService.getPluginConfig(serverId, plugin)
+      setContent(res.data.content ?? '')
+      setOriginalContent(res.data.content ?? '')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load config')
     } finally {
       setLoading(false)
     }
@@ -66,24 +57,16 @@ export function AdminPluginConfig() {
   }
 
   const handleSave = async () => {
-    if (!accessToken || !selectedPlugin) return
+    if (!selectedPlugin) return
     setSaving(true)
     setError(null)
     setSuccess(null)
     try {
-      const res = await fetch(`/api/admin/servers/${serverId}/config/${selectedPlugin}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      })
-      if (!res.ok) throw new Error('Failed to save config')
+      await adminService.savePluginConfig(serverId, selectedPlugin, content)
       setOriginalContent(content)
       setSuccess('Configuração salva com sucesso.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save config')
     } finally {
       setSaving(false)
     }
@@ -100,14 +83,8 @@ export function AdminPluginConfig() {
           <label style={{ display: 'block', fontSize: '0.75rem', marginBottom: '0.25rem', color: '#888' }}>
             Servidor
           </label>
-          <select
-            className="select-input"
-            value={serverId}
-            onChange={(e) => setServerId(e.target.value)}
-          >
-            {SERVERS.map((s) => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
+          <select className="select-input" value={serverId} onChange={(e) => setServerId(e.target.value)}>
+            {SERVERS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
 
@@ -122,16 +99,13 @@ export function AdminPluginConfig() {
             disabled={plugins.length === 0}
           >
             <option value="">Selecionar plugin…</option>
-            {plugins.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
+            {plugins.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
       </div>
 
       {error && <div className="error" style={{ marginBottom: '1rem' }}>{error}</div>}
       {success && <div style={{ color: '#4ade80', marginBottom: '1rem' }}>{success}</div>}
-
       {loading && <div className="loading">Carregando config…</div>}
 
       {!loading && selectedPlugin && (
@@ -154,24 +128,15 @@ export function AdminPluginConfig() {
             }}
           />
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem', alignItems: 'center' }}>
-            <button
-              className="btn btn-primary"
-              onClick={handleSave}
-              disabled={saving || !isDirty}
-            >
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving || !isDirty}>
               {saving ? 'Salvando…' : 'Salvar'}
             </button>
             {isDirty && (
-              <button
-                className="btn btn-secondary"
-                onClick={() => { setContent(originalContent); setSuccess(null) }}
-              >
+              <button className="btn btn-secondary" onClick={() => { setContent(originalContent); setSuccess(null) }}>
                 Descartar
               </button>
             )}
-            {isDirty && (
-              <span style={{ fontSize: '0.8rem', color: '#f59e0b' }}>Alterações não salvas</span>
-            )}
+            {isDirty && <span style={{ fontSize: '0.8rem', color: '#f59e0b' }}>Alterações não salvas</span>}
           </div>
         </>
       )}

@@ -46,6 +46,10 @@ export const router = createBrowserRouter([
         lazy: () => import('@/pages/MatchDetailPage').then((m) => ({ Component: m.MatchDetailPage })),
       },
       {
+        path: '/queue',
+        lazy: () => import('@/pages/QueuePage').then((m) => ({ Component: m.QueuePage })),
+      },
+      {
         path: '*',
         element: <NotFoundPage />,
       },

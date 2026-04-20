@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { matchService } from '@/services/matchService'
+import { LiveMatchBanner } from '@/components/LiveMatchBanner'
 import { ErrorAlert } from '@/components/ui'
 import type { Match } from '@/types/match'
 import styles from './MatchesPage.module.css'
@@ -56,6 +57,8 @@ export function MatchesPage() {
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Partidas</h1>
+
+      <LiveMatchBanner />
 
       <div className={styles.filters}>
         <div className={styles.filterGroup}>

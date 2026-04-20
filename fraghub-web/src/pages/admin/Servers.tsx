@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useSessionStore } from '@/store/sessionStore'
+import { adminService } from '@/services/adminService'
 import './Admin.css'
 
 interface Server {
@@ -23,14 +23,12 @@ const CS_MAPS = [
 ]
 
 const QUICK_COMMANDS: { label: string; cmd: string; variant?: string }[][] = [
-  // Match
   [
     { label: 'Status', cmd: 'status' },
     { label: 'Reiniciar Partida', cmd: 'mp_restartgame 1', variant: 'secondary' },
     { label: 'Cheats OFF', cmd: 'sv_cheats 0', variant: 'danger' },
     { label: 'Cheats ON', cmd: 'sv_cheats 1', variant: 'danger' },
   ],
-  // Round settings
   [
     { label: '30 Rounds', cmd: 'mp_maxrounds 30' },
     { label: '16 Rounds', cmd: 'mp_maxrounds 16' },
@@ -39,7 +37,6 @@ const QUICK_COMMANDS: { label: string; cmd: string; variant?: string }[][] = [
     { label: 'Buy 20s', cmd: 'mp_buytime 20' },
     { label: 'Buy 45s', cmd: 'mp_buytime 45' },
   ],
-  // Exec presets
   [
     { label: 'Modo Competitivo', cmd: 'exec gamemode_competitive.cfg', variant: 'success' },
     { label: 'Modo Casual', cmd: 'exec gamemode_casual.cfg' },
@@ -47,39 +44,28 @@ const QUICK_COMMANDS: { label: string; cmd: string; variant?: string }[][] = [
 ]
 
 export function AdminServers() {
-  const { accessToken } = useSessionStore()
   const [servers, setServers] = useState<Server[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedServer, setSelectedServer] = useState<string | null>(null)
-
-  // RCON state
   const [rconHistory, setRconHistory] = useState<RconOutput[]>([])
   const [freeCommand, setFreeCommand] = useState('')
   const [rconLoading, setRconLoading] = useState(false)
-
-  // Map change
   const [selectedMap, setSelectedMap] = useState(CS_MAPS[0])
-
-  // Say broadcast
   const [sayMessage, setSayMessage] = useState('')
 
   const fetchServers = useCallback(async () => {
-    if (!accessToken) return
     try {
       setLoading(true)
-      const res = await fetch('/api/admin/servers', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!res.ok) throw new Error('Failed to load servers')
-      const data = await res.json()
-      setServers(data.data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const res = await adminService.getServers()
+      setServers(res.data)
+      setError(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load servers')
     } finally {
       setLoading(false)
     }
-  }, [accessToken])
+  }, [])
 
   useEffect(() => {
     void fetchServers()
@@ -89,14 +75,10 @@ export function AdminServers() {
 
   const handleServerControl = async (serverId: string, action: 'start' | 'stop' | 'restart') => {
     try {
-      const res = await fetch(`/api/admin/servers/${serverId}/${action}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!res.ok) throw new Error(`Failed to ${action} server`)
+      await adminService.controlServer(serverId, action)
       void fetchServers()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `Failed to ${action} server`)
     }
   }
 
@@ -105,22 +87,12 @@ export function AdminServers() {
     setRconLoading(true)
     const ts = new Date().toLocaleTimeString('pt-BR')
     try {
-      const res = await fetch(`/api/admin/servers/${selectedServer}/rcon`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ command: command.trim() }),
-      })
-      if (!res.ok) throw new Error('Command not allowed or server unavailable')
-      const data = await res.json()
-      setRconHistory((h) => [{ command, output: data.data.output ?? '(ok)', ts }, ...h].slice(0, 50))
-    } catch (err) {
-      setRconHistory((h) => [
-        { command, output: `Erro: ${err instanceof Error ? err.message : 'Unknown error'}`, ts },
-        ...h,
-      ].slice(0, 50))
+      const res = await adminService.sendRcon(selectedServer, command.trim())
+      setRconHistory((h) => [{ command, output: res.data.output ?? '(ok)', ts }, ...h].slice(0, 50))
+    } catch (err: unknown) {
+      setRconHistory((h) =>
+        [{ command, output: `Erro: ${err instanceof Error ? err.message : 'Unknown error'}`, ts }, ...h].slice(0, 50)
+      )
     } finally {
       setRconLoading(false)
     }
@@ -138,7 +110,6 @@ export function AdminServers() {
     <div className="admin-page">
       <h1>Server Management</h1>
 
-      {/* Server list */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -153,20 +124,12 @@ export function AdminServers() {
           {servers.map((server) => (
             <tr
               key={server.id}
-              style={{
-                background: selectedServer === server.id ? '#eaf4fb' : undefined,
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                setSelectedServer(server.id)
-                setRconHistory([])
-              }}
+              style={{ background: selectedServer === server.id ? 'var(--surface-container-high)' : undefined, cursor: 'pointer' }}
+              onClick={() => { setSelectedServer(server.id); setRconHistory([]) }}
             >
               <td><strong>{server.name}</strong></td>
               <td>
-                <span className={`status-badge status-${server.status}`}>
-                  {server.status}
-                </span>
+                <span className={`status-badge status-${server.status}`}>{server.status}</span>
               </td>
               <td>{server.players_connected}</td>
               <td>{server.uptime}</td>
@@ -180,89 +143,51 @@ export function AdminServers() {
         </tbody>
       </table>
 
-      {/* RCON panel — visible when server selected */}
       {selectedServer && (
         <div className="rcon-console">
           <h2 style={{ marginTop: 0 }}>
             RCON — {servers.find((s) => s.id === selectedServer)?.name ?? selectedServer}
           </h2>
 
-          {/* Quick commands */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>
-              Match &amp; Status
-            </p>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>Match &amp; Status</p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
               {QUICK_COMMANDS[0].map(({ label, cmd, variant }) => (
-                <button
-                  key={cmd}
-                  className={`btn btn-sm btn-${variant ?? 'primary'}`}
-                  disabled={rconLoading}
-                  onClick={() => void sendCommand(cmd)}
-                  title={cmd}
-                >
+                <button key={cmd} className={`btn btn-sm btn-${variant ?? 'primary'}`} disabled={rconLoading} onClick={() => void sendCommand(cmd)} title={cmd}>
                   {label}
                 </button>
               ))}
             </div>
 
-            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>
-              Configurações de Round
-            </p>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>Configurações de Round</p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
               {QUICK_COMMANDS[1].map(({ label, cmd }) => (
-                <button
-                  key={cmd}
-                  className="btn btn-sm btn-secondary"
-                  disabled={rconLoading}
-                  onClick={() => void sendCommand(cmd)}
-                  title={cmd}
-                >
+                <button key={cmd} className="btn btn-sm btn-secondary" disabled={rconLoading} onClick={() => void sendCommand(cmd)} title={cmd}>
                   {label}
                 </button>
               ))}
             </div>
 
-            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>
-              Modo de Jogo
-            </p>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>Modo de Jogo</p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
               {QUICK_COMMANDS[2].map(({ label, cmd, variant }) => (
-                <button
-                  key={cmd}
-                  className={`btn btn-sm btn-${variant ?? 'secondary'}`}
-                  disabled={rconLoading}
-                  onClick={() => void sendCommand(cmd)}
-                  title={cmd}
-                >
+                <button key={cmd} className={`btn btn-sm btn-${variant ?? 'secondary'}`} disabled={rconLoading} onClick={() => void sendCommand(cmd)} title={cmd}>
                   {label}
                 </button>
               ))}
             </div>
 
-            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>
-              Trocar Mapa
-            </p>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>Trocar Mapa</p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
-              <select
-                className="select-input"
-                value={selectedMap}
-                onChange={(e) => setSelectedMap(e.target.value)}
-              >
+              <select className="select-input" value={selectedMap} onChange={(e) => setSelectedMap(e.target.value)}>
                 {CS_MAPS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
-              <button
-                className="btn btn-sm btn-danger"
-                disabled={rconLoading}
-                onClick={() => void sendCommand(`changelevel ${selectedMap}`)}
-              >
+              <button className="btn btn-sm btn-danger" disabled={rconLoading} onClick={() => void sendCommand(`changelevel ${selectedMap}`)}>
                 Trocar Mapa
               </button>
             </div>
 
-            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>
-              Anúncio no Servidor
-            </p>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>Anúncio no Servidor</p>
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
               <input
                 type="text"
@@ -281,17 +206,13 @@ export function AdminServers() {
               <button
                 className="btn btn-sm btn-primary"
                 disabled={rconLoading || !sayMessage.trim()}
-                onClick={() => {
-                  void sendCommand(`say ${sayMessage.trim()}`)
-                  setSayMessage('')
-                }}
+                onClick={() => { void sendCommand(`say ${sayMessage.trim()}`); setSayMessage('') }}
               >
                 Enviar
               </button>
             </div>
           </div>
 
-          {/* Output history */}
           {rconHistory.length > 0 && (
             <div className="console-output" style={{ height: '180px', marginBottom: '1rem' }}>
               {rconHistory.map((entry, i) => (
@@ -304,10 +225,7 @@ export function AdminServers() {
             </div>
           )}
 
-          {/* Free-text console */}
-          <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>
-            Console Livre
-          </p>
+          <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.85rem', color: '#34495e' }}>Console Livre</p>
           <div className="console-input">
             <input
               type="text"
@@ -317,11 +235,7 @@ export function AdminServers() {
               onChange={(e) => setFreeCommand(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleFreeCommand() }}
             />
-            <button
-              className="btn btn-primary"
-              disabled={rconLoading || !freeCommand.trim()}
-              onClick={handleFreeCommand}
-            >
+            <button className="btn btn-primary" disabled={rconLoading || !freeCommand.trim()} onClick={handleFreeCommand}>
               {rconLoading ? '…' : 'Executar'}
             </button>
           </div>

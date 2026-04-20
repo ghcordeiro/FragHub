@@ -6,6 +6,7 @@ import { PlayerAvatar } from '@/components/PlayerAvatar'
 import { Button } from '@/components/ui'
 import { ErrorAlert } from '@/components/ui'
 import { playerService } from '@/services/playerService'
+import { adminService } from '@/services/adminService'
 import { useSessionStore } from '@/store'
 import type { Player, MatchRecord } from '@/types/player'
 import styles from './ProfilePage.module.css'
@@ -98,10 +99,7 @@ export function ProfilePage() {
     if (!player) return
     if (!window.confirm('Remover vínculo Steam deste jogador?')) return
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/admin/players/${player.id}/steam`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
+      await adminService.unlinkSteam(player.id)
       setPlayer({ ...player, steamId: null })
     } catch {
       setError('Não foi possível remover o vínculo Steam')
@@ -109,9 +107,8 @@ export function ProfilePage() {
   }
 
   const handleSteamLink = () => {
-    const base = import.meta.env.VITE_API_URL
-    if (!base) return
-    const url = new URL(`${base}/auth/steam/link`, window.location.origin)
+    const base = import.meta.env.VITE_API_URL || ''
+    const url = new URL('/auth/steam/link', base || window.location.origin)
     if (accessToken) url.searchParams.set('token', accessToken)
     window.location.href = url.toString()
   }

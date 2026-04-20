@@ -5,13 +5,14 @@ import { z } from 'zod';
 import { loadEnv } from '../config/env';
 import { matchesWebhookLimiter } from '../middleware/rateLimits';
 import { db } from '../db';
-import { notifyDiscordMatchRecorded } from '../services/discordNotify';
+import { notifyMatchComplete } from '../services/discordNotifyService';
 import { updateElo } from '../services/eloUpdateStub';
 import { parseMatchWebhook } from '../services/matchWebhookPayloads';
 import { persistWebhookMatch } from '../services/matchWebhookService';
 import { verifyAccessToken } from '../services/tokenService';
 import { isDuplicateKeyError } from '../utils/dbErrors';
 import * as eloService from '../services/eloService';
+import { setLiveState, clearLiveState } from '../services/liveStateService';
 import logger from '../logger';
 
 const router = Router();
@@ -85,41 +86,97 @@ router.post(
   matchesWebhookLimiter,
   webhookSecretMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
+    logger.info('[WEBHOOK] Received CS2 match event', {
+      event: req.body?.event,
+      matchid: req.body?.matchid,
+      ip: req.ip,
+    });
+
+    // Captura estado ao vivo a cada rodada
+    if (req.body?.event === 'round_end') {
+      try {
+        const b = req.body as Record<string, unknown>;
+        const parseTeam = (t: Record<string, unknown>) => ({
+          name: String(t.name ?? ''),
+          score: Number(t.score ?? 0),
+          players: ((t.players as Array<Record<string, unknown>>) ?? []).map((p) => {
+            const s = (p.stats ?? {}) as Record<string, unknown>;
+            return {
+              steamId: String(p.steamid ?? ''),
+              name: typeof p.name === 'string' ? p.name : null,
+              kills: Number(s.kills ?? 0),
+              deaths: Number(s.deaths ?? 0),
+              assists: Number(s.assists ?? 0),
+              headshots: Number(s.headshot_kills ?? 0),
+              score: Number(s.score ?? 0),
+              mvp: Number(s.mvp ?? 0),
+            };
+          }),
+        });
+        setLiveState({
+          matchId: Number(b.matchid),
+          mapNumber: Number(b.map_number ?? 0),
+          mapName: typeof b.map_name === 'string' ? b.map_name : undefined,
+          round: Number(b.round_number ?? 0),
+          team1: parseTeam(b.team1 as Record<string, unknown>),
+          team2: parseTeam(b.team2 as Record<string, unknown>),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch {
+        // non-blocking
+      }
+      res.status(200).json({ ok: true });
+      return;
+    }
+
     let normalized;
     try {
       normalized = parseMatchWebhook(req.body);
+      logger.info('[WEBHOOK] Parsed match payload', {
+        game: normalized.game,
+        source: normalized.source,
+        externalMatchId: normalized.externalMatchId,
+        map: normalized.map,
+        winner: normalized.winner,
+        score: `${normalized.team1Score}-${normalized.team2Score}`,
+        players: normalized.players.length,
+      });
     } catch (e) {
+      logger.warn('[WEBHOOK] Failed to parse payload', { error: e instanceof Error ? e.message : String(e), body: req.body });
       res.status(400).json({ error: e instanceof Error ? e.message : 'Invalid payload' });
       return;
     }
     try {
       const matchId = await db.transaction(async (trx) => persistWebhookMatch(trx, req.body, normalized));
+      clearLiveState();
+      logger.info('[WEBHOOK] Match persisted to DB', { matchId, statsInserted: normalized.players.length });
       try {
         updateElo(matchId);
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[matches] updateElo stub failed', e);
+        logger.warn('[matches] updateElo stub failed', { error: e instanceof Error ? e.message : String(e) });
       }
       // Phase 5: Update ELO ratings from eloService
+      let eloChanges: Awaited<ReturnType<typeof eloService.updatePlayerEloOnMatch>> = [];
       try {
-        await eloService.updatePlayerEloOnMatch(String(matchId), req.body, db);
+        eloChanges = await eloService.updatePlayerEloOnMatch(String(matchId), req.body, db);
       } catch (e) {
         logger.warn('[matches] ELO update failed (non-blocking):', e);
       }
-      const top = [...normalized.players].sort((a, b) => b.kills - a.kills)[0];
-      try {
-        const env = loadEnv();
-        await notifyDiscordMatchRecorded(env, {
-          map: normalized.map,
-          team1Score: normalized.team1Score,
-          team2Score: normalized.team2Score,
-          winner: normalized.winner,
-          topFragger: top?.displayName ?? top?.steamId64 ?? '—',
-        });
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[matches] discord notify failed', e);
-      }
+      const sortedByKills = [...normalized.players].sort((a, b) => b.kills - a.kills);
+      const mvpPlayer = sortedByKills[0];
+      const winnerTeam = normalized.winner === 'team1' ? 'TEAM_A' : 'TEAM_B';
+      notifyMatchComplete({
+        winner: winnerTeam as 'TEAM_A' | 'TEAM_B',
+        score: { teamA: normalized.team1Score, teamB: normalized.team2Score },
+        mvp: {
+          id: mvpPlayer?.steamId64 ?? '',
+          displayName: mvpPlayer?.displayName ?? mvpPlayer?.steamId64 ?? '—',
+        },
+        eloChanges: eloChanges.map(ec => ({
+          user: { id: ec.userId, displayName: ec.displayName ?? ec.userId },
+          change: ec.change,
+        })),
+      });
       res.status(200).json({ matchId });
     } catch (e) {
       if (isDuplicateKeyError(e)) {

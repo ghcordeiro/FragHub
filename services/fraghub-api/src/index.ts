@@ -6,6 +6,7 @@ import { loadEnv } from './config/env';
 import { assertDatabaseConnection, getKnex } from './db';
 import adminRouter from './routes/admin';
 import authRouter from './routes/auth';
+import liveRouter from './routes/live';
 import matchesRouter from './routes/matches';
 import playersRouter from './routes/players';
 import steamRouter from './routes/steam';
@@ -34,6 +35,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/auth', authRouter);
 app.use('/auth', steamRouter);
+app.use('/api', liveRouter);
 app.use('/api', matchesRouter);
 app.use('/api', playersRouter);
 app.use('/api/queue', (_req, _res, next) => {

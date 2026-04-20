@@ -1,0 +1,374 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.centered {
+  padding: 4rem 0;
+  text-align: center;
+  color: var(--on-surface-variant);
+}
+
+/* Card (not-in-queue, waiting, found, progress, finished) */
+.card {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.cardIcon {
+  font-size: 2.5rem;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.cardTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.cardDesc {
+  color: var(--on-surface-variant);
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.steamWarning {
+  color: var(--tertiary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Buttons */
+.btnPrimary {
+  padding: 0.65rem 1.75rem;
+  background: var(--primary-container);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnPrimary:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+.btnGhost {
+  padding: 0.6rem 1.5rem;
+  background: transparent;
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btnGhost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnGhost:not(:disabled):hover {
+  background: var(--surface-container-high);
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  padding: 0;
+}
+
+/* Waiting state */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--outline-variant);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.queueBar {
+  width: 100%;
+  max-width: 280px;
+  height: 6px;
+  background: var(--outline-variant);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.queueBarFill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.queueCount {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.queuePos {
+  font-size: 0.85rem;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+/* Veto layout */
+.vetoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.teamsRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.vetoDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  padding-top: 1.5rem;
+}
+
+.teamCard {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+
+.teamCardActive {
+  border-color: var(--primary);
+}
+
+.teamLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--on-surface-variant);
+  margin-bottom: 0.25rem;
+}
+
+.teamAvgElo {
+  font-size: 0.8rem;
+  color: var(--on-surface-variant);
+  margin-bottom: 0.75rem;
+}
+
+.playerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.playerName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerElo {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Veto status */
+.vetoStatus {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.vetoYourTurn {
+  color: var(--primary);
+}
+
+.vetoWaiting {
+  color: var(--on-surface-variant);
+}
+
+/* Map pool */
+.mapPool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.mapBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.7rem 1.1rem;
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  color: var(--on-surface);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 90px;
+}
+
+.mapBtn:not(:disabled):hover {
+  background: var(--surface-container-high);
+  border-color: var(--error);
+}
+
+.mapBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mapName {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.mapBanLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--error);
+}
+
+/* Ban history */
+.banHistory {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--on-surface-variant);
+  justify-content: center;
+}
+
+.banHistoryLabel {
+  font-weight: 700;
+  color: var(--on-surface-variant);
+}
+
+.banEntry {
+  background: var(--surface-container-high);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.5rem;
+}
+
+.banTeam {
+  font-weight: 700;
+  color: var(--on-surface-variant);
+}
+
+/* Connect string */
+.connectBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.connectString {
+  flex: 1;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--primary);
+  font-family: 'Courier New', monospace;
+}
+
+.copyBtn {
+  padding: 0.3rem 0.7rem;
+  background: var(--surface-container-highest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  color: var(--on-surface);
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.copyBtn:hover {
+  background: var(--surface-bright);
+}
+
+.connectHint {
+  font-size: 0.8rem;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .teamsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .vetoDivider {
+    display: none;
+  }
+}

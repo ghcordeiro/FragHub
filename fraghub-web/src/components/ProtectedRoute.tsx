@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { useSession } from '@/hooks'
+import { useSessionStore } from '@/store'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -7,8 +7,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, redirectPath = '/login' }: ProtectedRouteProps) {
-  const { isAuthenticated } = useSession()
+  const { accessToken, user, isLoading } = useSessionStore()
+  const isAuthenticated = !!accessToken && !!user
   const location = useLocation()
+
+  if (isLoading) return null
 
   if (!isAuthenticated) {
     const redirect = `${redirectPath}?redirect=${encodeURIComponent(location.pathname)}`

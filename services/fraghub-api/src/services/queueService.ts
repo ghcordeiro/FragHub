@@ -1,6 +1,8 @@
 import { Knex } from 'knex';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../logger';
+import { loadEnv } from '../config/env';
+import { notifyMatchReady } from './discordNotifyService';
 
 /**
  * Queue Service (Phase 5 Matchmaking)
@@ -20,6 +22,8 @@ export enum QueueState {
 
 export interface QueueStatusResponse {
   state: string; // 'NOT_IN_QUEUE' or QueueState
+  queueSessionId?: string;
+  matchReady?: boolean;
   position?: number;
   totalInQueue?: number;
   teamA?: any[];
@@ -209,6 +213,7 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
 
   const response: QueueStatusResponse = {
     state,
+    queueSessionId,
     position,
     totalInQueue,
   };
@@ -272,8 +277,9 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
     }
   }
 
-  // Add connect string if in-progress
+  // Add connect string and matchReady if in-progress
   if (state === QueueState.IN_PROGRESS) {
+    response.matchReady = true;
     response.connectString = queuePlayer.connect_string;
     response.mapSelected = queuePlayer.map_selected;
   }
@@ -428,9 +434,29 @@ export async function advanceQueueState(
     });
     logger.info(`[QUEUE] Veto started for session ${queueSessionId}`);
   } else if (nextState === QueueState.IN_PROGRESS) {
-    // Fire match ready notification (caller responsibility via discordNotifyService)
     const session = await knex('queue_sessions').where('id', queueSessionId).first();
+    const env = loadEnv();
+    const connectString = env.GAME_SERVER_CONNECT ?? 'connect <server-ip>:27015';
+
+    // Persist connect_string so GET /queue/status can return it
+    await knex('queue_sessions').where('id', queueSessionId).update({ connect_string: connectString });
+
     logger.info(`[QUEUE] Match ready: session ${queueSessionId}, map: ${session.map_selected}`);
+
+    // Fire-and-forget Discord notification (NOTIF-REQ-001)
+    const allPlayers = await knex('queue_players as qp')
+      .join('users as u', 'qp.user_id', 'u.id')
+      .where('qp.queue_session_id', queueSessionId)
+      .select('qp.team_assignment', 'u.id', 'u.displayName', 'u.elo_rating');
+
+    const teamA = allPlayers.filter((p: any) => p.team_assignment === 'TEAM_A');
+    const teamB = allPlayers.filter((p: any) => p.team_assignment === 'TEAM_B');
+
+    notifyMatchReady(
+      { teamA, teamB },
+      session?.map_selected ?? 'unknown',
+      connectString,
+    );
   } else if (nextState === QueueState.FINISHED) {
     // Clean up veto state and queue_players
     vetoStates.delete(queueSessionId);

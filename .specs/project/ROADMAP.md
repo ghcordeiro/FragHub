@@ -41,7 +41,7 @@
 > Interface web básica
 
 - [x] `frontend-setup` — React 18+ + TypeScript + Vite, Zustand, React Router v6 *(2026-04-17)*
-- [ ] `nginx-ssl` — reverse proxy Nginx, SSL certbot, headers de segurança
+- [x] `nginx-ssl` — reverse proxy Nginx, SSL certbot, headers de segurança *(Validate 2026-04-14)*
 - [x] `auth-ui` — Login, Registro, Google OAuth, vinculação Steam, gestão de sessão *(2026-04-17)*
 - [x] `player-profile-ui` — perfil público, stats reais, histórico paginado, badge nível 1-10 *(2026-04-18)*
 - [x] `leaderboard-ui` — ranking público por ELO, paginado *(2026-04-17)*
@@ -55,8 +55,8 @@
 > Queue e balanceamento de times
 
 - [x] `elo-system` — Glicko-2 simplificado, níveis 1-10 (ELO inicial 1000 = Nível 4) *(2026-04-14)*
-- [ ] `matchmaking-queue-ui` — fila 5v5 UI: join/leave, posição, team reveal, map veto, connect string *(backend pronto)*
-- [ ] `match-notifications` — Discord webhook, banner no portal quando partida pronta
+- [x] `matchmaking-queue-ui` — fila 5v5 UI: join/leave, posição, team reveal, map veto, connect string *(2026-04-18)*
+- [x] `match-notifications` — Discord webhook, banner no portal quando partida pronta *(2026-04-18)*
 - [x] `fraghub-tags-plugin` — plugin CS2 (C#) com tags [N]/[ADMIN|N] *(2026-04-15)*
 
 **Critério de conclusão**: queue funcionando, times balanceados, tags in-game

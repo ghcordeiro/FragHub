@@ -456,7 +456,7 @@
 
 ## Próximos passos
 
-1. **Queue UI (`/queue`)** — maior feature pendente para plataforma completa: join/leave, posição, team reveal, map veto, connect string. Backend já existe (POST /join, POST /leave, GET /status, POST /vote-map).
+1. **v1.0**: `upgrade-command`, `ci-cd`, `tests-suite`, `security-audit`, `docs-release`, `landing-page`.
 2. Revisar periodicamente schemas oficiais dos plugins de terceiros e alinhar migracoes locais quando houver mudancas upstream.
 3. E2E remoto Ubuntu para validações de installer ou smoke de API quando a feature o exigir.
 
