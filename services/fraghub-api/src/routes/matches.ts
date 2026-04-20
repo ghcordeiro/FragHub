@@ -17,6 +17,27 @@ import logger from '../logger';
 
 const router = Router();
 
+// Tracks recently finished matchIds to block late round_end events from re-setting live state.
+// Capped at 20 entries; each entry expires after 10 minutes.
+const finishedMatches = new Map<number, number>();
+const FINISHED_TTL_MS = 10 * 60 * 1000;
+function markMatchFinished(matchId: number): void {
+  finishedMatches.set(matchId, Date.now());
+  if (finishedMatches.size > 20) {
+    const oldest = [...finishedMatches.entries()].sort((a, b) => a[1] - b[1])[0][0];
+    finishedMatches.delete(oldest);
+  }
+}
+function isMatchFinished(matchId: number): boolean {
+  const ts = finishedMatches.get(matchId);
+  if (!ts) return false;
+  if (Date.now() - ts > FINISHED_TTL_MS) {
+    finishedMatches.delete(matchId);
+    return false;
+  }
+  return true;
+}
+
 function timingSafeStringEqual(a: string, b: string): boolean {
   if (a.length !== b.length) {
     return false;
@@ -94,6 +115,11 @@ router.post(
 
     // Captura estado ao vivo a cada rodada
     if (req.body?.event === 'round_end') {
+      const roundMatchId = Number((req.body as Record<string, unknown>).matchid);
+      if (isMatchFinished(roundMatchId)) {
+        res.status(200).json({ ok: true });
+        return;
+      }
       try {
         const b = req.body as Record<string, unknown>;
         const parseTeam = (t: Record<string, unknown>) => ({
@@ -146,9 +172,13 @@ router.post(
       res.status(400).json({ error: e instanceof Error ? e.message : 'Invalid payload' });
       return;
     }
+    // Clear live state before persisting — match event arrived means match is over
+    // regardless of whether DB persistence succeeds (avoids infinite live banner on DB errors).
+    const incomingMatchId = Number((req.body as Record<string, unknown>).matchid);
+    clearLiveState();
+    markMatchFinished(incomingMatchId);
     try {
       const matchId = await db.transaction(async (trx) => persistWebhookMatch(trx, req.body, normalized));
-      clearLiveState();
       logger.info('[WEBHOOK] Match persisted to DB', { matchId, statsInserted: normalized.players.length });
       try {
         updateElo(matchId);
