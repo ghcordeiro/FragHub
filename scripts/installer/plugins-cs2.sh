@@ -71,6 +71,7 @@ fraghub_chown_game_subtree() {
 
 install_plugin_marker() {
   local plugin_name="$1"
+  local version="${2:-}"
   local plugin_dir="${CS2_PLUGIN_ROOT}/${plugin_name}"
   mkdir -p "$plugin_dir"
   umask 077
@@ -78,6 +79,7 @@ install_plugin_marker() {
     printf 'PLUGIN=%s\n' "$plugin_name"
     printf 'GAME=cs2\n'
     printf 'STAMP=%s\n' "$(date -Iseconds)"
+    [[ -n "$version" ]] && printf 'VERSION=%s\n' "$version"
   } >"${plugin_dir}/.installed"
   chmod 600 "${plugin_dir}/.installed"
 }
@@ -110,11 +112,13 @@ PYEOF
 
 install_metamod_cs2() {
   local dst="$1"
+  local version=""
   if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
     fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do Metamod:Source."
   else
     local url tmp
     url="$(fraghub_metamod_tar_url)" || fail "Falha ao obter URL do Metamod:Source (AlliedModders)."
+    version="$(printf '%s' "$url" | grep -oE 'mmsource-[0-9]+\.[0-9]+\.[0-9]+-[a-z0-9]+' | head -n1 || true)"
     tmp="$(mktemp -d)"
     fraghub_log "INFO" "A descarregar Metamod:Source: ${url}"
     curl -fsSL "$url" -o "${tmp}/metamod.tar.gz"
@@ -125,16 +129,18 @@ install_metamod_cs2() {
   fi
   patch_gameinfo_gi "${dst}/gameinfo.gi"
   fraghub_chown_game_subtree "${dst}/addons/metamod"
-  install_plugin_marker "metamod"
+  install_plugin_marker "metamod" "$version"
 }
 
 install_css_cs2() {
   local dst="$1"
+  local version=""
   if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
     fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do CounterStrikeSharp."
   else
     local url tmp unst
     url="$(fraghub_css_zip_url)" || fail "Falha ao obter URL do CounterStrikeSharp (GitHub)."
+    version="$(printf '%s' "$url" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
     tmp="$(mktemp -d)"
     unst="${tmp}/extract"
     mkdir -p "$unst"
@@ -148,17 +154,19 @@ install_css_cs2() {
     fraghub_log "INFO" "CounterStrikeSharp extraido para ${dst}/addons/counterstrikesharp/"
   fi
   fraghub_chown_game_subtree "${dst}/addons/counterstrikesharp"
-  install_plugin_marker "counterstrikesharp"
+  install_plugin_marker "counterstrikesharp" "$version"
 }
 
 install_matchzy_cs2() {
   local dst="$1"
   local plugin_dir="${dst}/addons/counterstrikesharp/plugins/MatchZy"
+  local version=""
   if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
     fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do MatchZy."
   else
     local url tmp unst
     url="$(fraghub_matchzy_zip_url)" || fail "Falha ao obter URL do MatchZy (GitHub)."
+    version="$(printf '%s' "$url" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
     tmp="$(mktemp -d)"
     unst="${tmp}/extract"
     mkdir -p "$unst"
@@ -174,17 +182,19 @@ install_matchzy_cs2() {
     fraghub_log "INFO" "MatchZy extraido para ${plugin_dir}/"
   fi
   fraghub_chown_game_subtree "$plugin_dir"
-  install_plugin_marker "matchzy"
+  install_plugin_marker "matchzy" "$version"
 }
 
 install_weaponpaints_cs2() {
   local dst="$1"
   local plugin_dir="${dst}/addons/counterstrikesharp/plugins/WeaponPaints"
+  local version=""
   if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" == "1" ]]; then
     fraghub_log "WARN" "FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD=1: a saltar download do WeaponPaints."
   else
     local url tmp unst
     url="$(fraghub_github_weaponpaints_zip_url)" || fail "Falha ao obter URL do WeaponPaints (GitHub)."
+    version="$(printf '%s' "$url" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
     tmp="$(mktemp -d)"
     unst="${tmp}/extract"
     mkdir -p "$unst"
@@ -200,7 +210,7 @@ install_weaponpaints_cs2() {
     fraghub_log "INFO" "WeaponPaints extraido para ${plugin_dir}/"
   fi
   fraghub_chown_game_subtree "$plugin_dir"
-  install_plugin_marker "weaponpaints"
+  install_plugin_marker "weaponpaints" "$version"
 }
 
 install_fraghub_tags_cs2() {
@@ -253,7 +263,9 @@ run_plugins_cs2() {
   require_tools
 
   if [[ "${FRAGHUB_CS2_SKIP_GITHUB_DOWNLOAD:-0}" != "1" ]]; then
-    curl -fsSIL https://api.github.com >/dev/null 2>&1 || fail "Sem conectividade com GitHub."
+    local gh_http
+    gh_http="$(curl -sSIL -o /dev/null -w '%{http_code}' --max-time 10 https://api.github.com 2>/dev/null || true)"
+    [[ "${gh_http}" == "000" ]] && fail "Sem conectividade com GitHub (timeout/DNS)."
   fi
 
   local dst

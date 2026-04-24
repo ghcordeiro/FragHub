@@ -1,0 +1,77 @@
+name: CS2 Plugin Version Watch
+
+on:
+  schedule:
+    # Daily at 08:00 UTC
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-plugin-versions:
+    name: Check CS2 plugin latest versions
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Query GitHub releases for all CS2 plugins
+        id: versions
+        run: |
+          fetch_latest() {
+            local repo="$1"
+            local tag
+            tag="$(curl -fsSL \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ github.token }}" \
+              "https://api.github.com/repos/${repo}/releases/latest" \
+              | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tag_name','unknown'))" 2>/dev/null || echo 'error')"
+            printf '%s' "$tag"
+          }
+
+          echo "## CS2 Plugin Version Report — $(date -u '+%Y-%m-%d %H:%M UTC')" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Plugin | Latest Release |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|---------------|" >> "$GITHUB_STEP_SUMMARY"
+
+          declare -A PLUGINS=(
+            ["Metamod:Source"]="alliedmodders/metamod-source"
+            ["CounterStrikeSharp"]="roflmuffin/CounterStrikeSharp"
+            ["MatchZy"]="shobhit-pathak/MatchZy"
+            ["WeaponPaints"]="Nereziel/cs2-WeaponPaints"
+            ["CS2-SimpleAdmin"]="daffyyyy/CS2-SimpleAdmin"
+            ["AnyBaseLibCS2"]="NickFox007/AnyBaseLibCS2"
+            ["PlayerSettingsCS2"]="NickFox007/PlayerSettingsCS2"
+            ["MenuManagerCS2"]="NickFox007/MenuManagerCS2"
+          )
+
+          HAS_ERROR=0
+          for name in "${!PLUGINS[@]}"; do
+            repo="${PLUGINS[$name]}"
+            tag="$(fetch_latest "$repo")"
+            echo "| ${name} | \`${tag}\` |" >> "$GITHUB_STEP_SUMMARY"
+            if [[ "$tag" == "error" ]]; then
+              HAS_ERROR=1
+              echo "::warning::Failed to fetch latest version for ${name} (${repo})"
+            else
+              echo "::notice::${name}: latest=${tag}"
+            fi
+          done
+
+          echo "HAS_ERROR=${HAS_ERROR}" >> "$GITHUB_OUTPUT"
+
+      - name: Create issue if fetch errors occurred
+        if: steps.versions.outputs.HAS_ERROR == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          EXISTING="$(gh issue list --label "cs2-plugins" --state open --json number --jq '.[0].number' 2>/dev/null || echo '')"
+          if [[ -z "$EXISTING" ]]; then
+            gh issue create \
+              --title "CS2 Plugin Watch: erro ao consultar versões ($(date -u '+%Y-%m-%d'))" \
+              --body "O workflow CS2 Plugin Watch encontrou erros ao consultar versões de plugins no GitHub.
+
+Verifique o [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) para detalhes.
+
+**Ação necessária:** verificar se os repositórios dos plugins estão acessíveis." \
+              --label "cs2-plugins,maintenance"
+          fi

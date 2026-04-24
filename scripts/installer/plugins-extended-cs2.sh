@@ -73,16 +73,26 @@ require_preconditions() {
   free_mb="$(df -Pm "${FRAGHUB_GAME_ROOT}" | awk 'NR==2 {print $4}')"
   [[ "${free_mb:-0}" =~ ^[0-9]+$ ]] || fail "Nao foi possivel validar espaco em disco."
   (( free_mb >= 3072 )) || fail "Espaco insuficiente para plugins+demos (${free_mb}MB, minimo: 3072MB)."
-  curl -fsSIL https://api.github.com >/dev/null || fail "Sem conectividade com GitHub releases."
+  # Accept 403 (rate-limited but reachable); only fail on timeout/DNS (code 000).
+  local gh_http
+  gh_http="$(curl -sSIL -o /dev/null -w '%{http_code}' --max-time 10 https://api.github.com 2>/dev/null || true)"
+  [[ "${gh_http}" == "000" ]] && fail "Sem conectividade com GitHub releases (timeout/DNS)."
   mysql_app_exec "SELECT 1;" >/dev/null || fail "Conexao ao banco via fraghub_app falhou."
   fraghub_lgsm_game_csgo_dir >/dev/null ||
     fail "Diretorio game/csgo do servidor nao encontrado (tentou-se \${LGSM}/\${FRAGHUB_CS2_INSTANCE}/serverfiles/game/csgo e \${LGSM}/serverfiles/game/csgo). Conclua game_bootstrap ou defina FRAGHUB_LGSM_GAME_CSGO_ROOT."
 }
 
+fraghub_gh_auth_header() {
+  [[ -n "${GITHUB_TOKEN:-}" ]] && printf '%s' "Authorization: Bearer ${GITHUB_TOKEN}" || printf ''
+}
+
 latest_tag() {
   local repo="$1"
-  local tag
-  tag="$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -n1 || true)"
+  local tag auth_header curl_args=()
+  auth_header="$(fraghub_gh_auth_header)"
+  [[ -n "$auth_header" ]] && curl_args+=(-H "$auth_header")
+  tag="$(curl -fsSL "${curl_args[@]}" "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null \
+    | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -n1 || true)"
   [[ -n "${tag}" ]] || tag="unknown"
   printf '%s' "$tag"
 }
@@ -119,9 +129,17 @@ install_addons_zip_plugin() {
   fraghub_log "INFO" "${name} instalado em ${dst}/addons/"
 }
 
+fraghub_curl_gh_api() {
+  local url="$1"
+  local auth_header curl_args=()
+  auth_header="$(fraghub_gh_auth_header)"
+  [[ -n "$auth_header" ]] && curl_args+=(-H "$auth_header")
+  curl -fsSL "${curl_args[@]}" "$url"
+}
+
 install_cs2_anybaselib_release() {
   local url
-  url="$(curl -fsSL "https://api.github.com/repos/NickFox007/AnyBaseLibCS2/releases/latest" 2>/dev/null \
+  url="$(fraghub_curl_gh_api "https://api.github.com/repos/NickFox007/AnyBaseLibCS2/releases/latest" 2>/dev/null \
     | sed -nE 's/.*"browser_download_url":[[:space:]]*"([^"]+AnyBaseLib\.zip)".*/\1/p' | head -n1)"
   [[ -n "$url" ]] || fail "Falha ao obter URL do AnyBaseLibCS2 (GitHub)."
   local dst
@@ -131,7 +149,7 @@ install_cs2_anybaselib_release() {
 
 install_cs2_playersettings_release() {
   local url
-  url="$(curl -fsSL "https://api.github.com/repos/NickFox007/PlayerSettingsCS2/releases/latest" 2>/dev/null \
+  url="$(fraghub_curl_gh_api "https://api.github.com/repos/NickFox007/PlayerSettingsCS2/releases/latest" 2>/dev/null \
     | sed -nE 's/.*"browser_download_url":[[:space:]]*"([^"]+PlayerSettings\.zip)".*/\1/p' | head -n1)"
   [[ -n "$url" ]] || fail "Falha ao obter URL do PlayerSettingsCS2 (GitHub)."
   local dst
@@ -141,7 +159,7 @@ install_cs2_playersettings_release() {
 
 install_cs2_menumanager_release() {
   local url
-  url="$(curl -fsSL "https://api.github.com/repos/NickFox007/MenuManagerCS2/releases/latest" 2>/dev/null \
+  url="$(fraghub_curl_gh_api "https://api.github.com/repos/NickFox007/MenuManagerCS2/releases/latest" 2>/dev/null \
     | sed -nE 's/.*"browser_download_url":[[:space:]]*"([^"]+MenuManager\.zip)".*/\1/p' | head -n1)"
   [[ -n "$url" ]] || fail "Falha ao obter URL do MenuManagerCS2 (GitHub)."
   local dst
@@ -287,12 +305,16 @@ PYEOF
 configure_demo_recorder() {
   local owner_user
   owner_user="${FRAGHUB_INSTALL_USER:-$(id -un)}"
-  command -v sudo >/dev/null 2>&1 || fail "sudo necessario para provisionar diretorios em /opt."
-  fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel. Execute sudo -v ou defina FRAGHUB_SUDO_PASSWORD (ambientes controlados)."
-  sudo mkdir -p "$FRAGHUB_DEMOS_CS2_DIR"
-  sudo mkdir -p "$FRAGHUB_STATE_DIR"
-  sudo chown -R "$owner_user":"$owner_user" "$FRAGHUB_DEMOS_CS2_DIR" "$FRAGHUB_STATE_DIR"
-  sudo chmod 750 "$FRAGHUB_DEMOS_CS2_DIR"
+  # Dirs may already exist from initial install (e.g. during plugin recovery).
+  # Only run privileged mkdir/chown when they are absent.
+  if [[ ! -d "$FRAGHUB_DEMOS_CS2_DIR" ]] || [[ ! -d "$FRAGHUB_STATE_DIR" ]]; then
+    command -v sudo >/dev/null 2>&1 || fail "sudo necessario para provisionar diretorios em /opt."
+    fraghub_sudo_noninteractive_ok || fail "sudo sem password nao disponivel. Execute sudo -v ou defina FRAGHUB_SUDO_PASSWORD (ambientes controlados)."
+    sudo mkdir -p "$FRAGHUB_DEMOS_CS2_DIR"
+    sudo mkdir -p "$FRAGHUB_STATE_DIR"
+    sudo chown -R "$owner_user":"$owner_user" "$FRAGHUB_DEMOS_CS2_DIR" "$FRAGHUB_STATE_DIR"
+    sudo chmod 750 "$FRAGHUB_DEMOS_CS2_DIR"
+  fi
 
   cat >"$FRAGHUB_MATCHZY_HOOK_FILE" <<EOF
 # MatchZy demo hook (FragHub)
@@ -330,6 +352,7 @@ verify_installation() {
   local dst
   dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
   local css="${dst}/addons/counterstrikesharp"
+  local core_json="${css}/configs/core.json"
 
   # Dependencias do WeaponPaints
   [[ -f "${css}/shared/AnyBaseLib/AnyBaseLib.dll" ]] ||
@@ -361,13 +384,17 @@ sys.exit(0 if 'CAttributeList_SetOrAddAttributeValueByName' in d else 1)
 " "${css}/gamedata/gamedata.json" ||
     fail "Assinatura CAttributeList_SetOrAddAttributeValueByName ausente em gamedata.json."
 
-  # CSS core
-  python3 -c "
+  # CSS core (algumas versoes nao materializam core.json por defeito)
+  if [[ -f "$core_json" ]]; then
+    python3 -c "
 import json, sys
 d = json.load(open(sys.argv[1]))
 sys.exit(0 if d.get('FollowCS2ServerGuidelines') == False else 1)
-" "${css}/configs/core.json" ||
-    fail "FollowCS2ServerGuidelines nao esta definido como false em core.json."
+" "$core_json" ||
+      fail "FollowCS2ServerGuidelines nao esta definido como false em core.json."
+  else
+    fraghub_log "WARN" "core.json ausente em ${core_json}; verificação de FollowCS2ServerGuidelines ignorada."
+  fi
 
   # Infra
   [[ -d "$FRAGHUB_DEMOS_CS2_DIR" ]] || fail "Diretorio de demos ausente."
