@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { hashRefreshToken, insertRefreshToken, revokeRefreshByHash, revokeAllForUser, revokeRefreshForDevice, findRefreshByHash } from './refreshTokenService';
+import {
+  hashRefreshToken,
+  insertRefreshToken,
+  revokeRefreshByHash,
+  revokeAllForUser,
+  revokeRefreshForDevice,
+  findRefreshByHash,
+} from './refreshTokenService';
 
 // Minimal Knex mock builder
-function makeKnex(opts: {
-  insertResult?: unknown;
-  updateResult?: unknown;
-  firstResult?: unknown;
-}) {
+function makeKnex(opts: { insertResult?: unknown; updateResult?: unknown; firstResult?: unknown }) {
   const chainable = {
     insert: vi.fn().mockResolvedValue(opts.insertResult ?? [1]),
     where: vi.fn(),

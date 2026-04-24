@@ -29,10 +29,17 @@ export async function revokeRefreshByHash(trx: Knex, tokenHash: string): Promise
 }
 
 export async function revokeAllForUser(trx: Knex, userId: number): Promise<void> {
-  await trx('refresh_tokens').where({ user_id: userId }).whereNull('revoked_at').update({ revoked_at: trx.fn.now() });
+  await trx('refresh_tokens')
+    .where({ user_id: userId })
+    .whereNull('revoked_at')
+    .update({ revoked_at: trx.fn.now() });
 }
 
-export async function revokeRefreshForDevice(trx: Knex, userId: number, deviceId: string): Promise<void> {
+export async function revokeRefreshForDevice(
+  trx: Knex,
+  userId: number,
+  deviceId: string,
+): Promise<void> {
   await trx('refresh_tokens')
     .where({ user_id: userId, device_id: deviceId })
     .whereNull('revoked_at')

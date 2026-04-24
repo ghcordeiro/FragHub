@@ -44,7 +44,7 @@ function getLevelFromElo(elo: number | undefined): number {
  */
 async function fetchWithTimeout(
   url: string,
-  options: RequestInit & { timeout?: number }
+  options: RequestInit & { timeout?: number },
 ): Promise<Response> {
   const timeout = options.timeout || 5000;
   const controller = new AbortController();
@@ -83,7 +83,7 @@ function maskUrl(url: string): string {
 export async function notifyMatchReady(
   teams: TeamComposition,
   map: string,
-  connectString: string
+  connectString: string,
 ): Promise<void> {
   const env = loadEnv();
 
@@ -100,20 +100,14 @@ export async function notifyMatchReady(
       {
         name: 'Team A',
         value: teams.teamA
-          .map(
-            (p) =>
-              `${p.displayName} [${getLevelFromElo(p.elo_rating)}]`
-          )
+          .map((p) => `${p.displayName} [${getLevelFromElo(p.elo_rating)}]`)
           .join('\n'),
         inline: true,
       },
       {
         name: 'Team B',
         value: teams.teamB
-          .map(
-            (p) =>
-              `${p.displayName} [${getLevelFromElo(p.elo_rating)}]`
-          )
+          .map((p) => `${p.displayName} [${getLevelFromElo(p.elo_rating)}]`)
           .join('\n'),
         inline: true,
       },
@@ -141,7 +135,7 @@ export async function notifyMatchReady(
     .then((response) => {
       if (!response.ok) {
         logger.warn(
-          `[Discord] Match ready notification failed: HTTP ${response.status} from ${maskUrl(env.DISCORD_WEBHOOK_URL!)}`
+          `[Discord] Match ready notification failed: HTTP ${response.status} from ${maskUrl(env.DISCORD_WEBHOOK_URL!)}`,
         );
       } else {
         logger.debug('[Discord] Match ready notification sent');
@@ -149,7 +143,7 @@ export async function notifyMatchReady(
     })
     .catch((error) => {
       logger.warn(
-        `[Discord] Match ready notification failed: ${error instanceof Error ? error.message : String(error)}`
+        `[Discord] Match ready notification failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
 }
@@ -224,7 +218,7 @@ export async function notifyMatchComplete(result: MatchCompleteResult): Promise<
     .then((response) => {
       if (!response.ok) {
         logger.warn(
-          `[Discord] Match complete notification failed: HTTP ${response.status} from ${maskUrl(env.DISCORD_WEBHOOK_URL!)}`
+          `[Discord] Match complete notification failed: HTTP ${response.status} from ${maskUrl(env.DISCORD_WEBHOOK_URL!)}`,
         );
       } else {
         logger.debug('[Discord] Match complete notification sent');
@@ -232,7 +226,7 @@ export async function notifyMatchComplete(result: MatchCompleteResult): Promise<
     })
     .catch((error) => {
       logger.warn(
-        `[Discord] Match complete notification failed: ${error instanceof Error ? error.message : String(error)}`
+        `[Discord] Match complete notification failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
 }

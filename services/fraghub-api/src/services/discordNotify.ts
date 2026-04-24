@@ -8,7 +8,10 @@ export type MatchDiscordSummary = {
   topFragger: string;
 };
 
-export async function notifyDiscordMatchRecorded(env: Env, summary: MatchDiscordSummary): Promise<void> {
+export async function notifyDiscordMatchRecorded(
+  env: Env,
+  summary: MatchDiscordSummary,
+): Promise<void> {
   const url = env.DISCORD_WEBHOOK_URL;
   if (!url) {
     return;
@@ -21,11 +24,9 @@ export async function notifyDiscordMatchRecorded(env: Env, summary: MatchDiscord
       body: JSON.stringify({ content }),
     });
     if (!res.ok) {
-      // eslint-disable-next-line no-console -- falha externa não bloqueante
       console.warn(`[discord] HTTP ${String(res.status)} ao enviar notificação`);
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[discord] falha ao enviar notificação', e);
   }
 }

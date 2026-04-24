@@ -57,14 +57,22 @@ function webhookSecretMiddleware(req: Request, res: Response, next: NextFunction
 
 const listMatchesQuery = z.object({
   page: z.coerce.number().int().positive(),
-  limit: z.coerce.number().int().positive().transform((n) => Math.min(50, n)),
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .transform((n) => Math.min(50, n)),
   game: z.enum(['cs2', 'csgo']).optional(),
   map: z.string().max(64).optional(),
 });
 
 const listPlayerMatchesQuery = z.object({
   page: z.coerce.number().int().positive(),
-  limit: z.coerce.number().int().positive().transform((n) => Math.min(50, n)),
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .transform((n) => Math.min(50, n)),
   game: z.enum(['cs2', 'csgo']).optional(),
 });
 
@@ -168,7 +176,10 @@ router.post(
         players: normalized.players.length,
       });
     } catch (e) {
-      logger.warn('[WEBHOOK] Failed to parse payload', { error: e instanceof Error ? e.message : String(e), body: req.body });
+      logger.warn('[WEBHOOK] Failed to parse payload', {
+        error: e instanceof Error ? e.message : String(e),
+        body: req.body,
+      });
       res.status(400).json({ error: e instanceof Error ? e.message : 'Invalid payload' });
       return;
     }
@@ -178,12 +189,19 @@ router.post(
     clearLiveState();
     markMatchFinished(incomingMatchId);
     try {
-      const matchId = await db.transaction(async (trx) => persistWebhookMatch(trx, req.body, normalized));
-      logger.info('[WEBHOOK] Match persisted to DB', { matchId, statsInserted: normalized.players.length });
+      const matchId = await db.transaction(async (trx) =>
+        persistWebhookMatch(trx, req.body, normalized),
+      );
+      logger.info('[WEBHOOK] Match persisted to DB', {
+        matchId,
+        statsInserted: normalized.players.length,
+      });
       try {
         updateElo(matchId);
       } catch (e) {
-        logger.warn('[matches] updateElo stub failed', { error: e instanceof Error ? e.message : String(e) });
+        logger.warn('[matches] updateElo stub failed', {
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
       // Phase 5: Update ELO ratings from eloService
       let eloChanges: Awaited<ReturnType<typeof eloService.updatePlayerEloOnMatch>> = [];
@@ -202,7 +220,7 @@ router.post(
           id: mvpPlayer?.steamId64 ?? '',
           displayName: mvpPlayer?.displayName ?? mvpPlayer?.steamId64 ?? '—',
         },
-        eloChanges: eloChanges.map(ec => ({
+        eloChanges: eloChanges.map((ec) => ({
           user: { id: ec.userId, displayName: ec.displayName ?? ec.userId },
           change: ec.change,
         })),
@@ -399,7 +417,11 @@ router.get('/players/:id/matches', async (req: Request, res: Response, next: Nex
     if (game) {
       base = base.andWhere('m.game', game);
     }
-    const countRow = await base.clone().clearSelect().select(db.raw('COUNT(DISTINCT m.id) AS c')).first();
+    const countRow = await base
+      .clone()
+      .clearSelect()
+      .select(db.raw('COUNT(DISTINCT m.id) AS c'))
+      .first();
     const total = Number((countRow as { c?: string | number } | undefined)?.c ?? 0);
     const rows = await base
       .clone()

@@ -73,10 +73,13 @@ export async function controlServer(
 
     // In production, would call: systemctl {action} {service}
     // For v0.6, log and return mock response
-    logger.info(`[SERVER] ${action.toUpperCase()} server ${server_id} (service: ${config.service})`);
+    logger.info(
+      `[SERVER] ${action.toUpperCase()} server ${server_id} (service: ${config.service})`,
+    );
 
     // Log audit
-    const action_type = action === 'start' ? 'server_start' : action === 'stop' ? 'server_stop' : 'server_restart';
+    const action_type =
+      action === 'start' ? 'server_start' : action === 'stop' ? 'server_stop' : 'server_restart';
     await adminService.createAuditLog(
       db,
       admin_id,

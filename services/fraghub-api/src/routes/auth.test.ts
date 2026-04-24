@@ -70,7 +70,7 @@ vi.mock('../db', () => {
         }),
         insert: vi.fn(async (row: Record<string, unknown>) => {
           const newUser = { ...row, id: ctx.nextId++ };
-          ctx.users.push(newUser as typeof ctx.users[0]);
+          ctx.users.push(newUser as (typeof ctx.users)[0]);
           return [newUser.id];
         }),
       };
@@ -173,13 +173,17 @@ afterEach(() => {
 
 describe('POST /auth/register', () => {
   it('returns 400 for invalid email', async () => {
-    const res = await request(app).post('/auth/register').send({ email: 'bad', password: 'Password1' });
+    const res = await request(app)
+      .post('/auth/register')
+      .send({ email: 'bad', password: 'Password1' });
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
   });
 
   it('returns 400 for weak password', async () => {
-    const res = await request(app).post('/auth/register').send({ email: 'a@b.com', password: 'short' });
+    const res = await request(app)
+      .post('/auth/register')
+      .send({ email: 'a@b.com', password: 'short' });
     expect(res.status).toBe(400);
   });
 

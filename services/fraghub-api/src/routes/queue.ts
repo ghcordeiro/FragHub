@@ -18,7 +18,7 @@ export function createQueueRouter(knex: Knex): Router {
   const queueConfig = {
     maxQueueSize: 10,
     maxEloDiff: env.MAX_ELO_DIFF,
-    mapPool: env.QUEUE_MAP_POOL.split(',').map(m => m.trim()),
+    mapPool: env.QUEUE_MAP_POOL.split(',').map((m) => m.trim()),
     vetoTimeoutSeconds: env.VETO_TIMEOUT_SECONDS,
   };
 
@@ -37,7 +37,9 @@ export function createQueueRouter(knex: Knex): Router {
     (req: any, res: Response, next: NextFunction) => {
       // Middleware: authMiddleware (assumed to be applied globally)
       if (!req.user?.id) {
-        return res.status(401).json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
+        return res
+          .status(401)
+          .json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
       }
       next();
     },
@@ -47,7 +49,9 @@ export function createQueueRouter(knex: Knex): Router {
         const userId = req.user.id;
         const result = await queueService.joinQueue(userId, knex, queueConfig);
 
-        logger.info(`[API] Player ${userId} joined queue: position ${result.position}/${result.totalInQueue}`);
+        logger.info(
+          `[API] Player ${userId} joined queue: position ${result.position}/${result.totalInQueue}`,
+        );
         res.status(200).json(result);
       } catch (error: any) {
         if (error.statusCode) {
@@ -58,98 +62,118 @@ export function createQueueRouter(knex: Knex): Router {
           });
         }
         logger.error('[API] /queue/join error:', error);
-        res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
+        res
+          .status(500)
+          .json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
       }
-    }
+    },
   );
 
   // POST /api/queue/leave
-  router.post('/leave', (req: any, res: Response, next: NextFunction) => {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
-    }
-    next();
-  },
-  async (req: any, res: Response) => {
-    try {
-      const userId = req.user.id;
-      await queueService.leaveQueue(userId, knex);
+  router.post(
+    '/leave',
+    (req: any, res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        return res
+          .status(401)
+          .json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
+      }
+      next();
+    },
+    async (req: any, res: Response) => {
+      try {
+        const userId = req.user.id;
+        await queueService.leaveQueue(userId, knex);
 
-      logger.info(`[API] Player ${userId} left queue`);
-      res.status(200).json({ message: 'left queue' });
-    } catch (error: any) {
-      logger.error('[API] /queue/leave error:', error);
-      res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
-    }
-  }
+        logger.info(`[API] Player ${userId} left queue`);
+        res.status(200).json({ message: 'left queue' });
+      } catch (error: any) {
+        logger.error('[API] /queue/leave error:', error);
+        res
+          .status(500)
+          .json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
+      }
+    },
   );
 
   // GET /api/queue/status
-  router.get('/status', (req: any, res: Response, next: NextFunction) => {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
-    }
-    next();
-  },
-  async (req: any, res: Response) => {
-    try {
-      const userId = req.user.id;
-      const status = await queueService.getQueueStatus(userId, knex);
+  router.get(
+    '/status',
+    (req: any, res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        return res
+          .status(401)
+          .json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
+      }
+      next();
+    },
+    async (req: any, res: Response) => {
+      try {
+        const userId = req.user.id;
+        const status = await queueService.getQueueStatus(userId, knex);
 
-      res.status(200).json(status);
-    } catch (error: any) {
-      logger.error('[API] /queue/status error:', error);
-      res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
-    }
-  }
+        res.status(200).json(status);
+      } catch (error: any) {
+        logger.error('[API] /queue/status error:', error);
+        res
+          .status(500)
+          .json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
+      }
+    },
   );
 
   // POST /api/queue/vote-map
-  router.post('/vote-map', (req: any, res: Response, next: NextFunction) => {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
-    }
-    next();
-  },
-  async (req: any, res: Response) => {
-    try {
-      const userId = req.user.id;
-      const { action, map, queueSessionId } = req.body;
-
-      if (!action || !map || !queueSessionId) {
-        return res.status(400).json({
-          error: 'Missing required fields: action, map, queueSessionId',
-          code: 'MISSING_FIELDS',
-          statusCode: 400,
-        });
+  router.post(
+    '/vote-map',
+    (req: any, res: Response, next: NextFunction) => {
+      if (!req.user?.id) {
+        return res
+          .status(401)
+          .json({ error: 'Not authenticated', code: 'NOT_AUTHENTICATED', statusCode: 401 });
       }
+      next();
+    },
+    async (req: any, res: Response) => {
+      try {
+        const userId = req.user.id;
+        const { action, map, queueSessionId } = req.body;
 
-      if (action !== 'ban') {
-        return res.status(400).json({
-          error: 'Invalid action (must be "ban")',
-          code: 'INVALID_ACTION',
-          statusCode: 400,
+        if (!action || !map || !queueSessionId) {
+          return res.status(400).json({
+            error: 'Missing required fields: action, map, queueSessionId',
+            code: 'MISSING_FIELDS',
+            statusCode: 400,
+          });
+        }
+
+        if (action !== 'ban') {
+          return res.status(400).json({
+            error: 'Invalid action (must be "ban")',
+            code: 'INVALID_ACTION',
+            statusCode: 400,
+          });
+        }
+
+        await queueService.voteMap(userId, action, map, queueSessionId, knex, {
+          vetoTimeoutSeconds: queueConfig.vetoTimeoutSeconds,
         });
-      }
 
-      await queueService.voteMap(userId, action, map, queueSessionId, knex, {
-        vetoTimeoutSeconds: queueConfig.vetoTimeoutSeconds,
-      });
-
-      logger.info(`[API] Player ${userId} voted to ban ${map}`);
-      res.status(200).json({ message: 'vote recorded' });
-    } catch (error: any) {
-      if (error.statusCode) {
-        return res.status(error.statusCode).json({
-          error: error.error,
-          code: error.code,
-          statusCode: error.statusCode,
-        });
+        logger.info(`[API] Player ${userId} voted to ban ${map}`);
+        res.status(200).json({ message: 'vote recorded' });
+      } catch (error: any) {
+        if (error.statusCode) {
+          return res.status(error.statusCode).json({
+            error: error.error,
+            code: error.code,
+            statusCode: error.statusCode,
+          });
+        }
+        logger.error('[API] /queue/vote-map error:', error);
+        res
+          .status(500)
+          .json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
       }
-      logger.error('[API] /queue/vote-map error:', error);
-      res.status(500).json({ error: 'Internal server error', code: 'INTERNAL_ERROR', statusCode: 500 });
-    }
-  }
+    },
   );
 
   return router;

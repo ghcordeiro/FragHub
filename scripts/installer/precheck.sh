@@ -90,8 +90,8 @@ check_sudo_access() {
     if ! echo "${FRAGHUB_SUDO_PASSWORD}" | sudo -S -p '' true 2>/dev/null; then
       fail "sudo com FRAGHUB_SUDO_PASSWORD falhou."
     fi
-  elif ! sudo -n true 2>/dev/null; then
-    fail "Permissao sudo sem prompt nao disponivel. Execute 'sudo -v' ou defina FRAGHUB_SUDO_PASSWORD (apenas ambientes controlados)."
+  elif ! sudo -v; then
+    fail "sudo nao disponivel ou autenticacao falhou. Confirme que o seu utilizador pode usar sudo."
   fi
   log "INFO" "Sudo validado."
 }

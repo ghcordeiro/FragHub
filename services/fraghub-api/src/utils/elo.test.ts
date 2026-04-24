@@ -101,7 +101,7 @@ describe('ELO System', () => {
       // Victory scenario: winner gets +K, loser gets -K
       // Both should still map to valid levels using lookup table
       const winnerElo = 1100; // Level 5: 1051–1200
-      const loserElo = 950;   // Level 4: 901–1050
+      const loserElo = 950; // Level 4: 901–1050
       expect(levelFromEloRating(winnerElo)).toBe(5);
       expect(levelFromEloRating(loserElo)).toBe(4);
     });

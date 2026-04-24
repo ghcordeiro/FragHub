@@ -281,12 +281,10 @@ export async function unbanPlayer(
     const now = new Date();
 
     // Update player_bans record with unbanned_at
-    await db('player_bans')
-      .where({ player_id, unbanned_at: null })
-      .update({
-        unbanned_at: now,
-        unbanned_by_id: admin_id,
-      });
+    await db('player_bans').where({ player_id, unbanned_at: null }).update({
+      unbanned_at: now,
+      unbanned_by_id: admin_id,
+    });
 
     // Clear banned_at on user
     await db('users').where({ id: player_id }).update({
@@ -401,11 +399,7 @@ export async function getAuditLogs(
     const totalCount = Number(total?.count ?? 0);
 
     const offset = (page - 1) * limit;
-    const logs = await query
-      .select('*')
-      .orderBy('created_at', 'desc')
-      .limit(limit)
-      .offset(offset);
+    const logs = await query.select('*').orderBy('created_at', 'desc').limit(limit).offset(offset);
 
     // Parse details JSON
     const parsed = logs.map((log: any) => ({

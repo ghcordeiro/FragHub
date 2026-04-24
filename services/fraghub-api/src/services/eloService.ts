@@ -69,7 +69,9 @@ export async function updatePlayerEloOnMatch(
     const team2 = stats.filter((s: { team: string }) => s.team === 'team2');
 
     if (team1.length === 0 || team2.length === 0) {
-      logger.warn(`[ELO] Match ${matchId} has no registered players on one or both teams; skipping`);
+      logger.warn(
+        `[ELO] Match ${matchId} has no registered players on one or both teams; skipping`,
+      );
       return [];
     }
 
@@ -77,7 +79,9 @@ export async function updatePlayerEloOnMatch(
     const users = await knex('users')
       .whereIn('id', userIds)
       .select('id', 'elo_rating', 'display_name');
-    const userMap = new Map(users.map((u: { id: number; elo_rating: number; display_name: string | null }) => [u.id, u]));
+    const userMap = new Map(
+      users.map((u: { id: number; elo_rating: number; display_name: string | null }) => [u.id, u]),
+    );
 
     const eloChanges: EloChange[] = [];
 
@@ -100,7 +104,12 @@ export async function updatePlayerEloOnMatch(
           .first();
         const playerMatchesCount = Number(matchCount?.cnt ?? 0);
 
-        const delta = calculateEloChange(currentElo, playerMatchesCount, opponentAvgElo, playerResult);
+        const delta = calculateEloChange(
+          currentElo,
+          playerMatchesCount,
+          opponentAvgElo,
+          playerResult,
+        );
         const newElo = Math.max(0, currentElo + delta);
 
         await trx('users').where('id', stat.user_id).update({ elo_rating: newElo });

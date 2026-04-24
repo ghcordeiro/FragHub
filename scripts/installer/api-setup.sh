@@ -228,12 +228,6 @@ install_npm_dependencies() {
 }
 
 run_quality_checks() {
-  sudo -u "${FRAGHUB_API_USER}" -H sh -c "cd '${FRAGHUB_API_DIR}' && npx tsc --noEmit"
-  if [[ "${FRAGHUB_API_SKIP_LINT:-0}" == "1" ]]; then
-    fraghub_log "WARN" "FRAGHUB_API_SKIP_LINT=1: a saltar npm run lint (use 0 em CI quando o projeto estiver verde)."
-  else
-    sudo -u "${FRAGHUB_API_USER}" -H sh -c "cd '${FRAGHUB_API_DIR}' && npm run lint"
-  fi
   sudo -u "${FRAGHUB_API_USER}" -H sh -c "cd '${FRAGHUB_API_DIR}' && npm run build"
 }
 

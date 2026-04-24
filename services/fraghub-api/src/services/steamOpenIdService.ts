@@ -21,12 +21,12 @@ export function buildSteamOpenIdRedirectUrl(returnTo: string, realm: string): st
   return `${STEAM_OPENID_LOGIN}?${p.toString()}`;
 }
 
-export type SteamOpenIdVerifyResult =
-  | { ok: true }
-  | { ok: false; kind: 'invalid' | 'unavailable' };
+export type SteamOpenIdVerifyResult = { ok: true } | { ok: false; kind: 'invalid' | 'unavailable' };
 
 /** POST `check_authentication` with the same key/value pairs Steam returned (plus overridden mode). */
-export async function verifySteamOpenIdAssertion(params: URLSearchParams): Promise<SteamOpenIdVerifyResult> {
+export async function verifySteamOpenIdAssertion(
+  params: URLSearchParams,
+): Promise<SteamOpenIdVerifyResult> {
   const form = new URLSearchParams(params);
   form.set('openid.mode', 'check_authentication');
 

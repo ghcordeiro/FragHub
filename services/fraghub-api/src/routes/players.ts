@@ -39,7 +39,11 @@ function singleQueryParam(v: unknown): string | undefined {
 /** PLAYAPI-REQ-009 — query string → tipos seguros (zod) */
 const listQuerySchema = z.object({
   page: z.coerce.number().int().positive(),
-  limit: z.coerce.number().int().positive().transform((n) => Math.min(100, n)),
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .transform((n) => Math.min(100, n)),
   sort: z.enum(['elo_desc', 'elo_asc', 'name_asc']),
 });
 
@@ -69,7 +73,11 @@ router.get('/players', async (req: Request, res: Response, next: NextFunction) =
   const { page, limit, sort } = parsed.data;
   try {
     const total = await countPublicUsers(db);
-    const rows = await listPublicPlayersWithStats(db, { page, limit, sort: sort as PublicListSort });
+    const rows = await listPublicPlayersWithStats(db, {
+      page,
+      limit,
+      sort: sort as PublicListSort,
+    });
     const totalPages = Math.max(1, Math.ceil(total / limit));
     res.status(200).json({
       data: rows.map((r) => ({
@@ -92,69 +100,77 @@ router.get('/players', async (req: Request, res: Response, next: NextFunction) =
 });
 
 /** PLAYAPI: perfil do utilizador autenticado (deve ficar antes de GET /players/:id para não capturar "me"). */
-router.get('/players/me', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  const uid = req.user!.id;
-  try {
-    const row = await findPublicProfileById(db, uid);
-    if (!row) {
-      res.status(404).json({ error: 'Player not found' });
-      return;
+router.get(
+  '/players/me',
+  authMiddleware,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const uid = req.user!.id;
+    try {
+      const row = await findPublicProfileById(db, uid);
+      if (!row) {
+        res.status(404).json({ error: 'Player not found' });
+        return;
+      }
+      const { user, stats } = row;
+      const kdr = kdrOf(stats.kills, stats.deaths);
+      res.status(200).json({
+        id: user.id,
+        displayName: user.display_name,
+        level: levelFromEloRating(user.elo_rating),
+        eloRating: user.elo_rating,
+        steamId: user.steam_id,
+        role: user.role,
+        createdAt: user.created_at,
+        stats: {
+          wins: 0,
+          losses: 0,
+          draws: 0,
+          kills: stats.kills,
+          deaths: stats.deaths,
+          assists: stats.assists,
+          kdr,
+          headshots: 0,
+          hsPercent: 0,
+          mvps: 0,
+          matchesPlayed: stats.matches_played,
+        },
+      });
+    } catch (e) {
+      next(e);
     }
-    const { user, stats } = row;
-    const kdr = kdrOf(stats.kills, stats.deaths);
-    res.status(200).json({
-      id: user.id,
-      displayName: user.display_name,
-      level: levelFromEloRating(user.elo_rating),
-      eloRating: user.elo_rating,
-      steamId: user.steam_id,
-      role: user.role,
-      createdAt: user.created_at,
-      stats: {
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        kills: stats.kills,
-        deaths: stats.deaths,
-        assists: stats.assists,
-        kdr,
-        headshots: 0,
-        hsPercent: 0,
-        mvps: 0,
-        matchesPlayed: stats.matches_played,
-      },
-    });
-  } catch (e) {
-    next(e);
-  }
-});
+  },
+);
 
-router.patch('/players/me', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  const parsed = patchMeSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(422).json({ error: 'Validation failed', details: parsed.error.flatten() });
-    return;
-  }
-  const uid = req.user!.id;
-  try {
-    await updateUserDisplayName(db, uid, parsed.data.displayName);
-    const fresh = await findUserById(db, uid);
-    if (!fresh) {
-      res.status(401).json({ error: 'Unauthorized' });
+router.patch(
+  '/players/me',
+  authMiddleware,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = patchMeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(422).json({ error: 'Validation failed', details: parsed.error.flatten() });
       return;
     }
-    res.status(200).json({
-      id: fresh.id,
-      displayName: fresh.display_name,
-      level: levelFromEloRating(fresh.elo_rating),
-      eloRating: fresh.elo_rating,
-      steamId: fresh.steam_id,
-      role: fresh.role,
-    });
-  } catch (e) {
-    next(e);
-  }
-});
+    const uid = req.user!.id;
+    try {
+      await updateUserDisplayName(db, uid, parsed.data.displayName);
+      const fresh = await findUserById(db, uid);
+      if (!fresh) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      res.status(200).json({
+        id: fresh.id,
+        displayName: fresh.display_name,
+        level: levelFromEloRating(fresh.elo_rating),
+        eloRating: fresh.elo_rating,
+        steamId: fresh.steam_id,
+        role: fresh.role,
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 router.get('/players/:id', async (req: Request, res: Response, next: NextFunction) => {
   const id = Number.parseInt(req.params.id, 10);
@@ -211,7 +227,9 @@ router.delete(
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    const bodyParsed = banBodySchema.safeParse(req.body && typeof req.body === 'object' ? req.body : {});
+    const bodyParsed = banBodySchema.safeParse(
+      req.body && typeof req.body === 'object' ? req.body : {},
+    );
     if (!bodyParsed.success) {
       res.status(400).json({ error: 'Invalid body', details: bodyParsed.error.flatten() });
       return;
@@ -234,28 +252,32 @@ router.delete(
   },
 );
 
-router.get('/player/:steamid', playerPublicLimiter, async (req: Request, res: Response, next: NextFunction) => {
-  const steamid = req.params.steamid;
-  if (!/^\d{17}$/.test(steamid)) {
-    res.status(404).json({ error: 'Player not found' });
-    return;
-  }
-  try {
-    const row = await findPlayerPublicBySteamId(db, steamid);
-    if (!row) {
+router.get(
+  '/player/:steamid',
+  playerPublicLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const steamid = req.params.steamid;
+    if (!/^\d{17}$/.test(steamid)) {
       res.status(404).json({ error: 'Player not found' });
       return;
     }
-    res.setHeader('Cache-Control', 'max-age=60');
-    res.status(200).json({
-      steamId: row.steam_id,
-      displayName: row.display_name,
-      level: levelFromEloRating(row.elo_rating),
-      role: row.role,
-    });
-  } catch (e) {
-    next(e);
-  }
-});
+    try {
+      const row = await findPlayerPublicBySteamId(db, steamid);
+      if (!row) {
+        res.status(404).json({ error: 'Player not found' });
+        return;
+      }
+      res.setHeader('Cache-Control', 'max-age=60');
+      res.status(200).json({
+        steamId: row.steam_id,
+        displayName: row.display_name,
+        level: levelFromEloRating(row.elo_rating),
+        role: row.role,
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 export default router;

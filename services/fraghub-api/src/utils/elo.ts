@@ -29,6 +29,6 @@ export function levelFromEloRating(elo: number | null | undefined): number | nul
   if (elo == null || Number.isNaN(elo)) {
     return null;
   }
-  const bracket = ELO_LEVEL_BRACKETS.find(b => elo >= b.min && elo <= b.max);
+  const bracket = ELO_LEVEL_BRACKETS.find((b) => elo >= b.min && elo <= b.max);
   return bracket ? bracket.level : null;
 }

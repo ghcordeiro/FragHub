@@ -11,6 +11,7 @@ export type NormalizedMatchPlayer = {
   headshots: number;
   mvps: number;
   score: number;
+  adr: number | null;
   pingAvg: number | null;
   displayName: string | null;
 };
@@ -164,7 +165,9 @@ function parseGet5SeriesEnd(body: unknown): NormalizedMatch {
   const t1Raw = b.team1.stats?.players ?? b.team1.players;
   const t2Raw = b.team2.stats?.players ?? b.team2.players;
   if (!t1Raw || !t2Raw) {
-    throw new Error('Invalid series_end: team players missing (use team.stats.players or team.players)');
+    throw new Error(
+      'Invalid series_end: team players missing (use team.stats.players or team.players)',
+    );
   }
   const t1Score = b.team1.series_score ?? b.team1.score ?? 0;
   const t2Score = b.team2.series_score ?? b.team2.score ?? 0;
@@ -185,7 +188,10 @@ function parseGet5SeriesEnd(body: unknown): NormalizedMatch {
   };
 }
 
-function normalizePlayer(row: z.infer<typeof playerRowArray>, team: 'team1' | 'team2'): NormalizedMatchPlayer {
+function normalizePlayer(
+  row: z.infer<typeof playerRowArray>,
+  team: 'team1' | 'team2',
+): NormalizedMatchPlayer {
   const st = row.stats;
   const headshots = Math.trunc(st.headshots ?? 0);
   const mvps = Math.trunc(st.mvps ?? st.mvp ?? 0);
@@ -201,6 +207,7 @@ function normalizePlayer(row: z.infer<typeof playerRowArray>, team: 'team1' | 't
     score: Math.trunc(st.score),
     pingAvg: ping !== undefined ? Math.trunc(ping) : null,
     displayName: row.name ?? null,
+    adr: null,
   };
 }
 
@@ -221,7 +228,8 @@ export function parseMatchWebhook(body: unknown): NormalizedMatch {
   const game: 'cs2' | 'csgo' = get5Style ? 'csgo' : 'cs2';
   const team1PlayersNorm = b.team1.players.map((p) => normalizePlayer(p, 'team1'));
   const team2PlayersNorm = b.team2.players.map((p) => normalizePlayer(p, 'team2'));
-  const winner: 'team1' | 'team2' | 'draw' = b.winner?.team ?? winnerFromScores(b.team1.score, b.team2.score);
+  const winner: 'team1' | 'team2' | 'draw' =
+    b.winner?.team ?? winnerFromScores(b.team1.score, b.team2.score);
   const map = b.map_name?.trim() || 'unknown';
   const externalMatchId = `${String(b.matchid)}-${String(b.map_number)}`;
 

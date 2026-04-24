@@ -41,7 +41,10 @@ const BCRYPT_COST = 12;
 const passwordSchema = z
   .string()
   .min(8)
-  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must include uppercase, lowercase, and digit');
+  .regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    'Password must include uppercase, lowercase, and digit',
+  );
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -123,69 +126,79 @@ function clearRefreshCookie(res: Response): void {
 
 const router = Router();
 
-router.post('/register', loginRegisterLimiter, async (req: Request, res: Response, next: NextFunction) => {
-  const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Invalid request' });
-    return;
-  }
-  const { email, password, displayName } = parsed.data;
-  const name = displayName?.trim() || email.split('@')[0] || 'User';
-  try {
-    await db.transaction(async (trx) => {
-      const hash = await bcrypt.hash(password, BCRYPT_COST);
-      const id = await insertUser(trx, {
-        email,
-        password_hash: hash,
-        display_name: name,
-        role: 'player',
-      });
-      const user = await findUserById(trx, id);
-      if (!user) {
-        throw new Error('User not found after insert');
-      }
-      const { accessToken } = await issueSession(trx, user, undefined, res, {});
-      res.status(201).json({ accessToken, user: toPublicUser(user) });
-    });
-  } catch (e) {
-    if (isDuplicateKeyError(e)) {
-      res.status(409).json({ error: 'Email already registered' });
+router.post(
+  '/register',
+  loginRegisterLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid request' });
       return;
     }
-    next(e);
-  }
-});
-
-router.post('/login', loginRegisterLimiter, async (req: Request, res: Response, next: NextFunction) => {
-  const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Invalid request' });
-    return;
-  }
-  const { email, password, deviceId } = parsed.data;
-  const user = await findUserByEmail(db, email);
-  if (!user) {
-    res.status(401).json(INVALID_CREDENTIALS);
-    return;
-  }
-  const ok = await bcrypt.compare(password, user.password_hash);
-  if (!ok) {
-    res.status(401).json(INVALID_CREDENTIALS);
-    return;
-  }
-  try {
-    await db.transaction(async (trx) => {
-      const fresh = await findUserById(trx, user.id);
-      if (!fresh) {
-        throw new Error('User not found');
+    const { email, password, displayName } = parsed.data;
+    const name = displayName?.trim() || email.split('@')[0] || 'User';
+    try {
+      await db.transaction(async (trx) => {
+        const hash = await bcrypt.hash(password, BCRYPT_COST);
+        const id = await insertUser(trx, {
+          email,
+          password_hash: hash,
+          display_name: name,
+          role: 'player',
+        });
+        const user = await findUserById(trx, id);
+        if (!user) {
+          throw new Error('User not found after insert');
+        }
+        const { accessToken } = await issueSession(trx, user, undefined, res, {});
+        res.status(201).json({ accessToken, user: toPublicUser(user) });
+      });
+    } catch (e) {
+      if (isDuplicateKeyError(e)) {
+        res.status(409).json({ error: 'Email already registered' });
+        return;
       }
-      const { accessToken } = await issueSession(trx, fresh, deviceId, res, { revokeDeviceFirst: true });
-      res.status(200).json({ accessToken, user: toPublicUser(fresh) });
-    });
-  } catch (e) {
-    next(e);
-  }
-});
+      next(e);
+    }
+  },
+);
+
+router.post(
+  '/login',
+  loginRegisterLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    const { email, password, deviceId } = parsed.data;
+    const user = await findUserByEmail(db, email);
+    if (!user) {
+      res.status(401).json(INVALID_CREDENTIALS);
+      return;
+    }
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      res.status(401).json(INVALID_CREDENTIALS);
+      return;
+    }
+    try {
+      await db.transaction(async (trx) => {
+        const fresh = await findUserById(trx, user.id);
+        if (!fresh) {
+          throw new Error('User not found');
+        }
+        const { accessToken } = await issueSession(trx, fresh, deviceId, res, {
+          revokeDeviceFirst: true,
+        });
+        res.status(200).json({ accessToken, user: toPublicUser(fresh) });
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 router.post('/refresh', refreshLimiter, async (req: Request, res: Response, next: NextFunction) => {
   const raw = req.cookies?.refresh_token as string | undefined;
@@ -208,7 +221,12 @@ router.post('/refresh', refreshLimiter, async (req: Request, res: Response, next
       async (
         trx: Knex,
       ): Promise<
-        | { ok: true; accessToken: string; user: ReturnType<typeof toPublicUser>; rawRefresh: string }
+        | {
+            ok: true;
+            accessToken: string;
+            user: ReturnType<typeof toPublicUser>;
+            rawRefresh: string;
+          }
         | { ok: false }
       > => {
         const row = await findRefreshByHash(trx, tokenHash);

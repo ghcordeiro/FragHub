@@ -66,7 +66,7 @@ export type QueueRuntimeConfig = {
 export async function joinQueue(
   userId: string,
   knex: Knex,
-  config: QueueRuntimeConfig
+  config: QueueRuntimeConfig,
 ): Promise<{ position: number; totalInQueue: number }> {
   // Validate user exists and has Steam linked
   const user = await knex('users').where('id', userId).first();
@@ -130,7 +130,7 @@ export async function joinQueue(
     .where('queue_session_id', queueSession.id)
     .orderBy('joined_at', 'asc');
 
-  const position = playersInQueue.findIndex(p => p.user_id === userId) + 1;
+  const position = playersInQueue.findIndex((p) => p.user_id === userId) + 1;
   const totalInQueue = playersInQueue.length;
 
   logger.info(`[QUEUE] Player ${userId} joined queue: position ${position}/${totalInQueue}`);
@@ -142,7 +142,7 @@ export async function joinQueue(
       QueueState.PLAYERS_FOUND,
       queueSession.id,
       knex,
-      config
+      config,
     );
   }
 
@@ -208,7 +208,7 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
     .where('qp.queue_session_id', queueSessionId)
     .select('qp.*', 'u.id', 'u.displayName', 'u.elo_rating', 'u.role');
 
-  const position = allPlayers.findIndex(p => p.user_id === userId) + 1;
+  const position = allPlayers.findIndex((p) => p.user_id === userId) + 1;
   const totalInQueue = allPlayers.length;
 
   const response: QueueStatusResponse = {
@@ -224,17 +224,17 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
     state === QueueState.MAP_VOTE ||
     state === QueueState.IN_PROGRESS
   ) {
-    const teamAPlayers = allPlayers.filter(p => p.team_assignment === 'TEAM_A');
-    const teamBPlayers = allPlayers.filter(p => p.team_assignment === 'TEAM_B');
+    const teamAPlayers = allPlayers.filter((p) => p.team_assignment === 'TEAM_A');
+    const teamBPlayers = allPlayers.filter((p) => p.team_assignment === 'TEAM_B');
 
-    response.teamA = teamAPlayers.map(p => ({
+    response.teamA = teamAPlayers.map((p) => ({
       id: p.user_id,
       displayName: p.displayName,
       elo: p.elo_rating,
       level: Math.max(1, Math.min(10, Math.floor((p.elo_rating - 600) / 80) + 1)),
     }));
 
-    response.teamB = teamBPlayers.map(p => ({
+    response.teamB = teamBPlayers.map((p) => ({
       id: p.user_id,
       displayName: p.displayName,
       elo: p.elo_rating,
@@ -242,11 +242,13 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
     }));
 
     if (teamAPlayers.length > 0) {
-      const avgEloA = teamAPlayers.reduce((sum, p) => sum + (p.elo_rating || 1000), 0) / teamAPlayers.length;
+      const avgEloA =
+        teamAPlayers.reduce((sum, p) => sum + (p.elo_rating || 1000), 0) / teamAPlayers.length;
       response.avgEloA = Math.round(avgEloA);
     }
     if (teamBPlayers.length > 0) {
-      const avgEloB = teamBPlayers.reduce((sum, p) => sum + (p.elo_rating || 1000), 0) / teamBPlayers.length;
+      const avgEloB =
+        teamBPlayers.reduce((sum, p) => sum + (p.elo_rating || 1000), 0) / teamBPlayers.length;
       response.avgEloB = Math.round(avgEloB);
     }
   }
@@ -256,16 +258,16 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
     const vetoState = vetoStates.get(queueSessionId);
     if (vetoState) {
       const userTeam =
-        allPlayers.find(p => p.user_id === userId)?.team_assignment === 'TEAM_A'
+        allPlayers.find((p) => p.user_id === userId)?.team_assignment === 'TEAM_A'
           ? 'TEAM_A'
           : 'TEAM_B';
       const captains =
         userTeam === 'TEAM_A'
           ? allPlayers
-              .filter(p => p.team_assignment === 'TEAM_A')
+              .filter((p) => p.team_assignment === 'TEAM_A')
               .sort((a, b) => (b.elo_rating || 0) - (a.elo_rating || 0))[0]
           : allPlayers
-              .filter(p => p.team_assignment === 'TEAM_B')
+              .filter((p) => p.team_assignment === 'TEAM_B')
               .sort((a, b) => (b.elo_rating || 0) - (a.elo_rating || 0))[0];
 
       response.vetoState = {
@@ -294,7 +296,7 @@ export async function getQueueStatus(userId: string, knex: Knex): Promise<QueueS
 export async function balanceTeams(
   userIds: string[],
   knex: Knex,
-  config: { maxEloDiff: number }
+  config: { maxEloDiff: number },
 ): Promise<{ teamA: string[]; teamB: string[]; avgEloA: number; avgEloB: number }> {
   if (userIds.length !== 10) {
     throw new Error('balanceTeams requires exactly 10 players');
@@ -305,7 +307,7 @@ export async function balanceTeams(
     .whereIn('id', userIds)
     .select('id', 'elo_rating', 'displayName');
 
-  const userMap = new Map(users.map(u => [u.id, u]));
+  const userMap = new Map(users.map((u) => [u.id, u]));
 
   // Sort by ELO descending
   const sorted = userIds.sort((a, b) => {
@@ -319,9 +321,7 @@ export async function balanceTeams(
   const teamB: string[] = [];
 
   for (let i = 0; i < 10; i++) {
-    const _pattern = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const position = i % 10;
-    if ([0, 3, 4, 8].includes(position)) {
+    if ([0, 3, 4, 7, 8].includes(i)) {
       teamA.push(sorted[i]);
     } else {
       teamB.push(sorted[i]);
@@ -330,45 +330,37 @@ export async function balanceTeams(
 
   // Calculate average ELOs
   const avgEloA = Math.round(
-    teamA.reduce((sum, id) => sum + (userMap.get(id)?.elo_rating || 1000), 0) / 5
+    teamA.reduce((sum, id) => sum + (userMap.get(id)?.elo_rating || 1000), 0) / 5,
   );
   const avgEloB = Math.round(
-    teamB.reduce((sum, id) => sum + (userMap.get(id)?.elo_rating || 1000), 0) / 5
+    teamB.reduce((sum, id) => sum + (userMap.get(id)?.elo_rating || 1000), 0) / 5,
   );
 
   const eloDiff = Math.abs(avgEloA - avgEloB);
 
   if (eloDiff > config.maxEloDiff) {
     logger.warn(
-      `[QUEUE] Team balance warning: ELO diff ${eloDiff} > max ${config.maxEloDiff}; proceeding anyway`
+      `[QUEUE] Team balance warning: ELO diff ${eloDiff} > max ${config.maxEloDiff}; proceeding anyway`,
     );
   }
 
   // Update queue_players with team assignments
   await knex('queue_players')
     .where('queue_session_id', (qb: Knex.QueryBuilder) =>
-      qb
-        .select('queue_session_id')
-        .from('queue_players')
-        .whereIn('user_id', teamA)
-        .limit(1)
+      qb.select('queue_session_id').from('queue_players').whereIn('user_id', teamA).limit(1),
     )
     .whereIn('user_id', teamA)
     .update({ team_assignment: 'TEAM_A' });
 
   await knex('queue_players')
     .where('queue_session_id', (qb: Knex.QueryBuilder) =>
-      qb
-        .select('queue_session_id')
-        .from('queue_players')
-        .whereIn('user_id', teamB)
-        .limit(1)
+      qb.select('queue_session_id').from('queue_players').whereIn('user_id', teamB).limit(1),
     )
     .whereIn('user_id', teamB)
     .update({ team_assignment: 'TEAM_B' });
 
   logger.info(
-    `[QUEUE] Teams balanced: Team A avg ${avgEloA}, Team B avg ${avgEloB} (diff: ${eloDiff})`
+    `[QUEUE] Teams balanced: Team A avg ${avgEloA}, Team B avg ${avgEloB} (diff: ${eloDiff})`,
   );
 
   return { teamA, teamB, avgEloA, avgEloB };
@@ -383,7 +375,7 @@ export async function advanceQueueState(
   nextState: QueueState,
   queueSessionId: string,
   knex: Knex,
-  config: { maxEloDiff: number; mapPool: string[]; vetoTimeoutSeconds: number }
+  config: { maxEloDiff: number; mapPool: string[]; vetoTimeoutSeconds: number },
 ): Promise<void> {
   // Validate state transition
   const validTransitions: Record<QueueState, QueueState[]> = {
@@ -413,7 +405,7 @@ export async function advanceQueueState(
       .where('queue_session_id', queueSessionId)
       .select('user_id');
 
-    const userIds = players.map(p => p.user_id);
+    const userIds = players.map((p) => p.user_id);
     await balanceTeams(userIds, knex, config);
 
     // Advance to MAP_VOTE
@@ -422,7 +414,7 @@ export async function advanceQueueState(
       QueueState.MAP_VOTE,
       queueSessionId,
       knex,
-      config
+      config,
     );
   } else if (nextState === QueueState.MAP_VOTE) {
     // Initialize veto state
@@ -439,7 +431,9 @@ export async function advanceQueueState(
     const connectString = env.GAME_SERVER_CONNECT ?? 'connect <server-ip>:27015';
 
     // Persist connect_string so GET /queue/status can return it
-    await knex('queue_sessions').where('id', queueSessionId).update({ connect_string: connectString });
+    await knex('queue_sessions')
+      .where('id', queueSessionId)
+      .update({ connect_string: connectString });
 
     logger.info(`[QUEUE] Match ready: session ${queueSessionId}, map: ${session.map_selected}`);
 
@@ -452,11 +446,7 @@ export async function advanceQueueState(
     const teamA = allPlayers.filter((p: any) => p.team_assignment === 'TEAM_A');
     const teamB = allPlayers.filter((p: any) => p.team_assignment === 'TEAM_B');
 
-    notifyMatchReady(
-      { teamA, teamB },
-      session?.map_selected ?? 'unknown',
-      connectString,
-    );
+    notifyMatchReady({ teamA, teamB }, session?.map_selected ?? 'unknown', connectString);
   } else if (nextState === QueueState.FINISHED) {
     // Clean up veto state and queue_players
     vetoStates.delete(queueSessionId);
@@ -475,7 +465,7 @@ export async function voteMap(
   map: string,
   queueSessionId: string,
   knex: Knex,
-  _config: { vetoTimeoutSeconds: number }
+  _config: { vetoTimeoutSeconds: number },
 ): Promise<void> {
   const vetoState = vetoStates.get(queueSessionId);
   if (!vetoState) {
@@ -523,18 +513,16 @@ export async function voteMap(
     map,
   });
 
-  vetoState.remainingMaps = vetoState.remainingMaps.filter(m => m !== map);
+  vetoState.remainingMaps = vetoState.remainingMaps.filter((m) => m !== map);
 
   logger.info(
-    `[QUEUE] Session ${queueSessionId}: ${userTeam} banned ${map}. Remaining: ${vetoState.remainingMaps.join(', ')}`
+    `[QUEUE] Session ${queueSessionId}: ${userTeam} banned ${map}. Remaining: ${vetoState.remainingMaps.join(', ')}`,
   );
 
   // Check if veto is complete (1 map remaining)
   if (vetoState.remainingMaps.length === 1) {
     const selectedMap = vetoState.remainingMaps[0];
-    await knex('queue_sessions')
-      .where('id', queueSessionId)
-      .update({ map_selected: selectedMap });
+    await knex('queue_sessions').where('id', queueSessionId).update({ map_selected: selectedMap });
 
     // Auto-advance to IN_PROGRESS
     await advanceQueueState(
@@ -542,7 +530,7 @@ export async function voteMap(
       QueueState.IN_PROGRESS,
       queueSessionId,
       knex,
-      { maxEloDiff: 50, mapPool: [], vetoTimeoutSeconds: 0 } // dummy config
+      { maxEloDiff: 50, mapPool: [], vetoTimeoutSeconds: 0 }, // dummy config
     );
 
     logger.info(`[QUEUE] Veto complete: ${selectedMap} selected`);
@@ -556,10 +544,7 @@ export async function voteMap(
  * Check for inactive players and remove them from queue
  * QUEUE-REQ-005: Background task run every 60 seconds
  */
-export async function checkQueueTimeouts(
-  knex: Knex,
-  timeoutMinutes: number
-): Promise<void> {
+export async function checkQueueTimeouts(knex: Knex, timeoutMinutes: number): Promise<void> {
   const timeoutDate = new Date(Date.now() - timeoutMinutes * 60 * 1000);
 
   const timedOutPlayers = await knex('queue_players as qp')
@@ -570,7 +555,9 @@ export async function checkQueueTimeouts(
 
   for (const player of timedOutPlayers) {
     await knex('queue_players').where('id', player.id).delete();
-    logger.info(`[QUEUE] Removed timed-out player ${player.user_id} from session ${player.queue_session_id}`);
+    logger.info(
+      `[QUEUE] Removed timed-out player ${player.user_id} from session ${player.queue_session_id}`,
+    );
 
     // Check if queue is now empty
     const remainingCount = await knex('queue_players')

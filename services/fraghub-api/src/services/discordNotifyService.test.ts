@@ -61,7 +61,7 @@ describe('Discord Notify Service', () => {
         expect.objectContaining({
           name: 'Map',
           value: 'de_mirage',
-        })
+        }),
       );
     });
 
@@ -129,7 +129,7 @@ describe('Discord Notify Service', () => {
         expect.objectContaining({
           name: 'Score',
           value: 'Team A: 16 - Team B: 10',
-        })
+        }),
       );
     });
 

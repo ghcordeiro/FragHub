@@ -34,7 +34,10 @@ export async function findUserById(trx: Knex, id: number): Promise<UserRow | und
   return trx<UserRow>('users').where({ id }).first();
 }
 
-export async function findUserByGoogleId(trx: Knex, googleId: string): Promise<UserRow | undefined> {
+export async function findUserByGoogleId(
+  trx: Knex,
+  googleId: string,
+): Promise<UserRow | undefined> {
   return trx<UserRow>('users').where({ google_id: googleId }).first();
 }
 
@@ -58,8 +61,14 @@ export async function insertUser(
   return Number(insertId);
 }
 
-export async function updateUserGoogleId(trx: Knex, userId: number, googleId: string): Promise<void> {
-  await trx('users').where({ id: userId }).update({ google_id: googleId, updated_at: trx.fn.now() });
+export async function updateUserGoogleId(
+  trx: Knex,
+  userId: number,
+  googleId: string,
+): Promise<void> {
+  await trx('users')
+    .where({ id: userId })
+    .update({ google_id: googleId, updated_at: trx.fn.now() });
 }
 
 export async function findUserBySteamId(trx: Knex, steamId: string): Promise<UserRow | undefined> {
@@ -81,7 +90,10 @@ export type PlayerPublicRow = {
   elo_rating: number;
 };
 
-export async function findPlayerPublicBySteamId(trx: Knex, steamId: string): Promise<PlayerPublicRow | undefined> {
+export async function findPlayerPublicBySteamId(
+  trx: Knex,
+  steamId: string,
+): Promise<PlayerPublicRow | undefined> {
   return trx<PlayerPublicRow>('users')
     .select('steam_id', 'display_name', 'role', 'elo_rating')
     .where({ steam_id: steamId })
@@ -176,18 +188,31 @@ export async function findPublicProfileById(
       trx.raw('COUNT(DISTINCT match_id) as matches_played'),
     )
     .first();
-  const kills = Number((agg as { kills: string | number } | undefined)?.kills ?? 0);
-  const deaths = Number((agg as { deaths: string | number } | undefined)?.deaths ?? 0);
-  const assists = Number((agg as { assists: string | number } | undefined)?.assists ?? 0);
-  const matches_played = Number((agg as { matches_played: string | number } | undefined)?.matches_played ?? 0);
+  type StatsRow = {
+    kills: string | number;
+    deaths: string | number;
+    assists: string | number;
+    matches_played: string | number;
+  };
+  const row = agg as unknown as StatsRow | undefined;
+  const kills = Number(row?.kills ?? 0);
+  const deaths = Number(row?.deaths ?? 0);
+  const assists = Number(row?.assists ?? 0);
+  const matches_played = Number(row?.matches_played ?? 0);
   return {
     user,
     stats: { kills, deaths, assists, matches_played },
   };
 }
 
-export async function updateUserDisplayName(trx: Knex, userId: number, displayName: string): Promise<void> {
-  await trx('users').where({ id: userId }).update({ display_name: displayName, updated_at: trx.fn.now() });
+export async function updateUserDisplayName(
+  trx: Knex,
+  userId: number,
+  displayName: string,
+): Promise<void> {
+  await trx('users')
+    .where({ id: userId })
+    .update({ display_name: displayName, updated_at: trx.fn.now() });
 }
 
 export async function banUser(trx: Knex, userId: number, reason: string | null): Promise<void> {

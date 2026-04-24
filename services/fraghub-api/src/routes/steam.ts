@@ -8,7 +8,11 @@ import {
   steamId64FromClaimedId,
   verifySteamOpenIdAssertion,
 } from '../services/steamOpenIdService';
-import { newSteamLinkNonce, signSteamLinkState, verifySteamLinkState } from '../services/steamState';
+import {
+  newSteamLinkNonce,
+  signSteamLinkState,
+  verifySteamLinkState,
+} from '../services/steamState';
 import {
   clearUserSteamId,
   findUserById,
@@ -85,7 +89,7 @@ router.get('/steam/callback', async (req: Request, res: Response, next: NextFunc
 
   const openidParams = queryToUrlSearchParams(req.query);
   const validation = await verifySteamOpenIdAssertion(openidParams);
-  if (!validation.ok) {
+  if (validation.ok === false) {
     if (validation.kind === 'unavailable') {
       res.status(503).json({ error: 'Servico Steam temporariamente indisponivel' });
       return;
@@ -129,18 +133,22 @@ router.get('/steam/callback', async (req: Request, res: Response, next: NextFunc
   }
 });
 
-router.delete('/steam/link', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const user = await findUserById(db, req.user!.id);
-    if (!user?.steam_id) {
-      res.status(404).json({ error: 'Steam link not found' });
-      return;
+router.delete(
+  '/steam/link',
+  authMiddleware,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await findUserById(db, req.user!.id);
+      if (!user?.steam_id) {
+        res.status(404).json({ error: 'Steam link not found' });
+        return;
+      }
+      await clearUserSteamId(db, user.id);
+      res.status(204).send();
+    } catch (e) {
+      next(e);
     }
-    await clearUserSteamId(db, user.id);
-    res.status(204).send();
-  } catch (e) {
-    next(e);
-  }
-});
+  },
+);
 
 export default router;

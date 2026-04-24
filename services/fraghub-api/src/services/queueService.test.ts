@@ -1,69 +1,36 @@
 import { describe, it, expect, vi } from 'vitest';
 import { QueueState, balanceTeams, joinQueue } from './queueService';
 
-// Mock Knex for testing
+// Mock Knex for testing — knex() returns itself so method overrides take effect
 const createMockKnex = () => {
-  const data: any = {
-    users: [],
-    queue_sessions: [],
-    queue_players: [],
+  const knex: any = vi.fn();
+
+  const chain = {
+    where: vi.fn(() => knex),
+    join: vi.fn(() => knex),
+    select: vi.fn(() => Promise.resolve([])),
+    first: vi.fn(() => Promise.resolve(null)),
+    insert: vi.fn(() => Promise.resolve()),
+    delete: vi.fn(() => Promise.resolve()),
+    update: vi.fn(() => Promise.resolve()),
+    count: vi.fn(() => knex),
+    orderBy: vi.fn(() => knex),
+    limit: vi.fn(() => knex),
+    whereIn: vi.fn(() => knex),
   };
 
-  const chainable = {
-    async query() {
-      return this;
-    },
-    where() {
-      return this;
-    },
-    join() {
-      return this;
-    },
-    select() {
-      return this;
-    },
-    first() {
-      return null;
-    },
-    insert() {
-      return this;
-    },
-    delete() {
-      return this;
-    },
-    update() {
-      return this;
-    },
-    count() {
-      return this;
-    },
-    orderBy() {
-      return this;
-    },
-    limit() {
-      return this;
-    },
-    whereIn() {
-      return this;
-    },
-  };
+  Object.assign(knex, chain);
+  knex.mockReturnValue(knex);
+  knex.transaction = async (callback: (trx: unknown) => Promise<unknown>) => callback(knex);
 
-  // knex must be callable as a function AND have methods
-  const knex = vi.fn().mockReturnValue(chainable) as any;
-  Object.assign(knex, chainable);
-  knex.transaction = async (callback: (trx: unknown) => Promise<unknown>) => {
-    return callback(knex);
-  };
-
-  return { knex, data };
+  return knex;
 };
 
 describe('Queue Service', () => {
   describe('balanceTeams', () => {
     it('should balance 10 players into two teams of 5', async () => {
-      const { knex, data: _data } = createMockKnex();
+      const knex = createMockKnex();
 
-      // Mock users with varying ELO
       const mockUsers = [
         { id: 'user1', elo_rating: 1200, displayName: 'Alice' },
         { id: 'user2', elo_rating: 1150, displayName: 'Bob' },
@@ -77,9 +44,10 @@ describe('Queue Service', () => {
         { id: 'user10', elo_rating: 750, displayName: 'Jack' },
       ];
 
-      knex.whereIn = vi.fn(() => ({ select: vi.fn(() => Promise.resolve(mockUsers)) })) as any;
+      // whereIn → knex (chain), select → mockUsers on first call
+      knex.select = vi.fn(() => Promise.resolve(mockUsers));
 
-      const userIds = mockUsers.map(u => u.id);
+      const userIds = mockUsers.map((u) => u.id);
       const config = { maxEloDiff: 50 };
 
       const { teamA, teamB, avgEloA, avgEloB } = await balanceTeams(userIds, knex as any, config);
@@ -92,25 +60,20 @@ describe('Queue Service', () => {
     });
 
     it('should throw error if not exactly 10 players', async () => {
-      const { knex } = createMockKnex();
+      const knex = createMockKnex();
 
-      await expect(balanceTeams(['user1', 'user2'], knex as any, { maxEloDiff: 50 })).rejects.toThrow(
-        'balanceTeams requires exactly 10 players'
-      );
+      await expect(
+        balanceTeams(['user1', 'user2'], knex as any, { maxEloDiff: 50 }),
+      ).rejects.toThrow('balanceTeams requires exactly 10 players');
     });
   });
 
   describe('joinQueue', () => {
     it('should require Steam linked', async () => {
-      const { knex } = createMockKnex();
+      const knex = createMockKnex();
 
       const mockUser = { id: 'user1', steam_id: null };
-      // Override the chainable's where() to return a mock with first()
-      const chainableWithWhere = {
-        ...Object.getPrototypeOf(knex('users')),
-        first: vi.fn(() => Promise.resolve(mockUser)),
-      };
-      knex.where = vi.fn(() => chainableWithWhere) as any;
+      knex.first = vi.fn(() => Promise.resolve(mockUser));
 
       await expect(
         joinQueue('user1', knex as any, {
@@ -118,7 +81,7 @@ describe('Queue Service', () => {
           maxEloDiff: 50,
           mapPool: ['de_mirage'],
           vetoTimeoutSeconds: 60,
-        })
+        }),
       ).rejects.toMatchObject({
         code: 'NO_STEAM_LINKED',
         statusCode: 403,
@@ -126,31 +89,16 @@ describe('Queue Service', () => {
     });
 
     it('should prevent duplicate queue joins', async () => {
-      const { knex } = createMockKnex();
+      const knex = createMockKnex();
 
-      let callCount = 0;
-      knex.where = vi.fn(() => {
-        callCount++;
-        if (callCount === 1) {
-          // First call: check if user exists
-          return {
-            first: vi.fn(() => Promise.resolve({ id: 'user1', steam_id: 'steam123' })),
-          };
-        } else if (callCount === 2) {
-          // Second call: check if already in queue
-          return {
-            join: vi.fn(() => ({
-              first: vi.fn(() =>
-                Promise.resolve({
-                  id: 'qp1',
-                  user_id: 'user1',
-                  queue_session_id: 'qs1',
-                })
-              ),
-            })),
-          };
-        }
-      }) as any;
+      // first() call 1: user lookup → user with steam linked
+      // first() call 2: queue duplicate check → existing queue player
+      let firstCallCount = 0;
+      knex.first = vi.fn(() => {
+        firstCallCount++;
+        if (firstCallCount === 1) return Promise.resolve({ id: 'user1', steam_id: 'steam123' });
+        return Promise.resolve({ id: 'qp1', user_id: 'user1', queue_session_id: 'qs1' });
+      });
 
       await expect(
         joinQueue('user1', knex as any, {
@@ -158,7 +106,7 @@ describe('Queue Service', () => {
           maxEloDiff: 50,
           mapPool: ['de_mirage'],
           vetoTimeoutSeconds: 60,
-        })
+        }),
       ).rejects.toMatchObject({
         code: 'ALREADY_IN_QUEUE',
         statusCode: 409,

@@ -245,7 +245,9 @@ router.post('/players', requireAdmin(), async (req: Request, res: Response) => {
 router.get('/logs', requireAdmin(), async (req: Request, res: Response) => {
   try {
     const action_type = (req.query.action_type as string) || undefined;
-    const admin_id = req.query.admin_id ? Number.parseInt(req.query.admin_id as string, 10) : undefined;
+    const admin_id = req.query.admin_id
+      ? Number.parseInt(req.query.admin_id as string, 10)
+      : undefined;
     const date_from = req.query.date_from ? new Date(req.query.date_from as string) : undefined;
     const date_to = req.query.date_to ? new Date(req.query.date_to as string) : undefined;
     const page = Number.parseInt((req.query.page as string) || '1', 10);
@@ -256,7 +258,12 @@ router.get('/logs', requireAdmin(), async (req: Request, res: Response) => {
       return;
     }
 
-    const { logs, total, page: responsePage, limit: responseLimit } = await adminService.getAuditLogs(db, {
+    const {
+      logs,
+      total,
+      page: responsePage,
+      limit: responseLimit,
+    } = await adminService.getAuditLogs(db, {
       page,
       limit,
       action_type,
@@ -308,7 +315,13 @@ router.post('/servers/:id/:action', requireAdmin(), async (req: Request, res: Re
       return;
     }
 
-    const result = await serverService.controlServer(db, server_id, action, req.user!.id, captureIp(req));
+    const result = await serverService.controlServer(
+      db,
+      server_id,
+      action,
+      req.user!.id,
+      captureIp(req),
+    );
 
     res.status(200).json({ data: result });
   } catch (err: any) {
@@ -328,32 +341,43 @@ router.post('/servers/:id/:action', requireAdmin(), async (req: Request, res: Re
  * Body: { command }
  * Rate limited: 20 req/min per admin
  */
-router.post('/servers/:id/rcon', requireAdmin(), rconRateLimiter, async (req: Request, res: Response) => {
-  try {
-    const server_id = req.params.id;
-    const { command } = req.body;
+router.post(
+  '/servers/:id/rcon',
+  requireAdmin(),
+  rconRateLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const server_id = req.params.id;
+      const { command } = req.body;
 
-    if (!command || typeof command !== 'string' || command.length === 0) {
-      res.status(400).json({ error: 'Command is required' });
-      return;
-    }
+      if (!command || typeof command !== 'string' || command.length === 0) {
+        res.status(400).json({ error: 'Command is required' });
+        return;
+      }
 
-    const result = await serverService.executeRconCommand(db, server_id, command, req.user!.id, captureIp(req));
+      const result = await serverService.executeRconCommand(
+        db,
+        server_id,
+        command,
+        req.user!.id,
+        captureIp(req),
+      );
 
-    res.status(200).json({ data: result });
-  } catch (err: any) {
-    if (err.message === 'Server not found') {
-      res.status(404).json({ error: 'Server not found' });
-      return;
+      res.status(200).json({ data: result });
+    } catch (err: any) {
+      if (err.message === 'Server not found') {
+        res.status(404).json({ error: 'Server not found' });
+        return;
+      }
+      if (err.message?.includes('Command not allowed') || err.message?.includes('not allowed')) {
+        res.status(400).json({ error: 'Command not allowed' });
+        return;
+      }
+      logger.error('[ADMIN] executeRconCommand failed:', err);
+      res.status(503).json({ error: 'RCON service unavailable' });
     }
-    if (err.message?.includes('Command not allowed') || err.message?.includes('not allowed')) {
-      res.status(400).json({ error: 'Command not allowed' });
-      return;
-    }
-    logger.error('[ADMIN] executeRconCommand failed:', err);
-    res.status(503).json({ error: 'RCON service unavailable' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/admin/servers/:id/config

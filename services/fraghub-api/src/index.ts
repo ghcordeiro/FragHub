@@ -48,11 +48,12 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  // eslint-disable-next-line no-console -- central error sink
-  console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+app.use(
+  (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  },
+);
 
 async function main(): Promise<void> {
   await assertDatabaseConnection();
@@ -68,12 +69,17 @@ async function main(): Promise<void> {
 
   app.listen(env.PORT, () => {
     logger.info(`fraghub-api listening on port ${env.PORT}`);
-    logger.info('[CONFIG] Queue: MAX_ELO_DIFF=' + env.MAX_ELO_DIFF + ', TIMEOUT=' + env.QUEUE_TIMEOUT_MINUTES + 'min');
+    logger.info(
+      '[CONFIG] Queue: MAX_ELO_DIFF=' +
+        env.MAX_ELO_DIFF +
+        ', TIMEOUT=' +
+        env.QUEUE_TIMEOUT_MINUTES +
+        'min',
+    );
   });
 }
 
 void main().catch((err: unknown) => {
-  // eslint-disable-next-line no-console -- fatal startup
   console.error(err);
   process.exit(1);
 });

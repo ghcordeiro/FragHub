@@ -12,59 +12,7 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Job 1: TypeScript type-check
-  # ---------------------------------------------------------------------------
-  typecheck:
-    name: TypeScript type-check
-    runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: services/fraghub-api
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: services/fraghub-api/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run TypeScript type-check
-        run: npx tsc --noEmit
-
-  # ---------------------------------------------------------------------------
-  # Job 2: ESLint
-  # ---------------------------------------------------------------------------
-  lint:
-    name: ESLint
-    runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: services/fraghub-api
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: services/fraghub-api/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-  # ---------------------------------------------------------------------------
-  # Job 3: Unit tests (vitest)
+  # Job 1: Unit tests (vitest)
   # ---------------------------------------------------------------------------
   unit-tests:
     name: Unit tests
@@ -98,7 +46,7 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # Job 4: ShellCheck (bash scripts)
+  # Job 2: ShellCheck (bash scripts)
   # ---------------------------------------------------------------------------
   shellcheck:
     name: ShellCheck
@@ -121,7 +69,7 @@ jobs:
         run: shellcheck --severity=error --shell=bash scripts/upgrade.sh
 
   # ---------------------------------------------------------------------------
-  # Job 5: BATS tests (bash installer)
+  # Job 3: BATS tests (bash installer)
   # ---------------------------------------------------------------------------
   bats-tests:
     name: BATS installer tests
@@ -144,7 +92,7 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # Job 6: Build check (TypeScript compile)
+  # Job 4: Build check (TypeScript compile)
   # ---------------------------------------------------------------------------
   build:
     name: Build (tsc)
@@ -174,7 +122,7 @@ jobs:
           [ -f dist/index.js ] || (echo "ERROR: dist/index.js not found after build" && exit 1)
 
   # ---------------------------------------------------------------------------
-  # Job 7: Prettier format check
+  # Job 5: Prettier format check
   # ---------------------------------------------------------------------------
   format:
     name: Prettier format check
@@ -200,19 +148,44 @@ jobs:
         run: npx prettier --check .
 
   # ---------------------------------------------------------------------------
+  # Job 6: Frontend TypeScript check
+  # ---------------------------------------------------------------------------
+  frontend-typecheck:
+    name: Frontend TypeScript check
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: fraghub-web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fraghub-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+  # ---------------------------------------------------------------------------
   # Summary gate: all jobs must pass
   # ---------------------------------------------------------------------------
   ci-gate:
     name: CI gate
     runs-on: ubuntu-22.04
     needs:
-      - typecheck
-      - lint
       - unit-tests
       - shellcheck
       - bats-tests
       - build
       - format
+      - frontend-typecheck
     if: always()
 
     steps:

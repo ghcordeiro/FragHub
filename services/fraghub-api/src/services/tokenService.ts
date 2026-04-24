@@ -40,7 +40,14 @@ export function verifyAccessToken(
   if (!Number.isFinite(sub) || !email) {
     throw new Error('Invalid token claims');
   }
-  return { sub, email, role, displayName, iat: o.iat as number | undefined, exp: o.exp as number | undefined };
+  return {
+    sub,
+    email,
+    role,
+    displayName,
+    iat: o.iat as number | undefined,
+    exp: o.exp as number | undefined,
+  };
 }
 
 export function signRefreshToken(userId: number, secret: string, expiresInSeconds: number): string {

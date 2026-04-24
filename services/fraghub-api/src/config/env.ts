@@ -22,25 +22,39 @@ const envSchema = z.object({
   STEAM_RETURN_URL: z.string().url(),
   STEAM_STATE_SECRET: z.string().min(32),
   WEBHOOK_SECRET: z.string().min(32),
-  COOKIE_SECURE: z.preprocess(
-    (v) => String(v).toLowerCase() !== 'false',
-    z.boolean(),
-  ).default(true),
+  COOKIE_SECURE: z
+    .preprocess((v) => String(v).toLowerCase() !== 'false', z.boolean())
+    .default(true),
   DISCORD_WEBHOOK_URL: z.preprocess(
-    (v) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim()),
+    (v) =>
+      v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim(),
     z.string().url().optional(),
   ),
   GAME_SERVER_CONNECT: z.preprocess(
-    (v) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim()),
+    (v) =>
+      v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim(),
     z.string().optional(),
   ),
   // Phase 5: Matchmaking Queue Configuration
-  MAX_ELO_DIFF: z.coerce.number().default(50).describe('Maximum ELO difference between team averages'),
-  QUEUE_TIMEOUT_MINUTES: z.coerce.number().default(10).describe('Minutes of inactivity before removal from queue'),
-  QUEUE_MAP_POOL: z.string().default('de_dust2,de_mirage,de_inferno,de_nuke,de_overpass,de_ancient,de_anubis').describe('Comma-separated list of available maps'),
-  VETO_TIMEOUT_SECONDS: z.coerce.number().default(30).describe('Seconds per veto turn before auto-ban'),
+  MAX_ELO_DIFF: z.coerce
+    .number()
+    .default(50)
+    .describe('Maximum ELO difference between team averages'),
+  QUEUE_TIMEOUT_MINUTES: z.coerce
+    .number()
+    .default(10)
+    .describe('Minutes of inactivity before removal from queue'),
+  QUEUE_MAP_POOL: z
+    .string()
+    .default('de_dust2,de_mirage,de_inferno,de_nuke,de_overpass,de_ancient,de_anubis')
+    .describe('Comma-separated list of available maps'),
+  VETO_TIMEOUT_SECONDS: z.coerce
+    .number()
+    .default(30)
+    .describe('Seconds per veto turn before auto-ban'),
   MATCHZY_BACKUP_PATH: z.preprocess(
-    (v) => (v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim()),
+    (v) =>
+      v === undefined || v === null || String(v).trim() === '' ? undefined : String(v).trim(),
     z.string().optional(),
   ),
 });
@@ -55,7 +69,6 @@ export function loadEnv(): Env {
   }
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
-    // eslint-disable-next-line no-console -- startup failure before logger
     console.error('[FATAL] Invalid environment', parsed.error.flatten().fieldErrors);
     process.exit(1);
   }
