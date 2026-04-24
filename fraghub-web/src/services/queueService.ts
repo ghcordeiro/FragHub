@@ -39,18 +39,18 @@ export interface QueueStatus {
 
 export const queueService = {
   getStatus(): Promise<QueueStatus> {
-    return httpClient.get<QueueStatus>('/api/queue/status')
+    return httpClient.get<QueueStatus>('/queue/status')
   },
 
   join(): Promise<{ position: number; totalInQueue: number }> {
-    return httpClient.post('/api/queue/join')
+    return httpClient.post('/queue/join')
   },
 
   leave(): Promise<void> {
-    return httpClient.post('/api/queue/leave')
+    return httpClient.post('/queue/leave')
   },
 
   banMap(queueSessionId: string, map: string): Promise<void> {
-    return httpClient.post('/api/queue/vote-map', { action: 'ban', map, queueSessionId })
+    return httpClient.post('/queue/vote-map', { action: 'ban', map, queueSessionId })
   },
 }

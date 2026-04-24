@@ -96,22 +96,22 @@ function mapMatchApiToRecord(r: MatchRecordApi): MatchRecord {
 
 export const playerService = {
   async getPlayer(id: string): Promise<Player> {
-    const raw = await httpClient.get<PlayerProfileApi>(`/api/players/${id}`)
+    const raw = await httpClient.get<PlayerProfileApi>(`/players/${id}`)
     return mapProfileApiToPlayer(raw)
   },
 
   async getCurrentPlayer(): Promise<Player> {
-    const raw = await httpClient.get<PlayerProfileApi>('/api/players/me')
+    const raw = await httpClient.get<PlayerProfileApi>('/players/me')
     return mapProfileApiToPlayer(raw)
   },
 
   async updatePlayerName(name: string): Promise<Player> {
-    const raw = await httpClient.patch<PlayerProfileApi>('/api/players/me', { displayName: name })
+    const raw = await httpClient.patch<PlayerProfileApi>('/players/me', { displayName: name })
     return mapProfileApiToPlayer(raw)
   },
 
   async getPlayerStats(playerId: string): Promise<PlayerStatsApi> {
-    return httpClient.get<PlayerStatsApi>(`/api/players/${playerId}/stats`)
+    return httpClient.get<PlayerStatsApi>(`/players/${playerId}/stats`)
   },
 
   async getPlayerMatches(
@@ -120,7 +120,7 @@ export const playerService = {
     limit: number = 10,
   ): Promise<{ data: MatchRecord[]; totalPages: number; total: number }> {
     const response = await httpClient.get<PlayerMatchesApiResponse>(
-      `/api/players/${playerId}/matches?page=${page}&limit=${limit}`,
+      `/players/${playerId}/matches?page=${page}&limit=${limit}`,
     )
     return {
       data: response.data.map(mapMatchApiToRecord),

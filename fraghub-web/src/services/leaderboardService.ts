@@ -52,7 +52,7 @@ export const leaderboardService = {
       page: String(page),
       limit: String(limit),
     })
-    const raw = await httpClient.get<PlayersListApiResponse>(`/api/players?${params.toString()}`)
+    const raw = await httpClient.get<PlayersListApiResponse>(`/players?${params.toString()}`)
     return {
       players: (raw.data ?? []).map(mapListRowToPlayer),
       total: raw.meta?.total ?? 0,

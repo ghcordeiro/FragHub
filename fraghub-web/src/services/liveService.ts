@@ -35,5 +35,5 @@ export interface NoLiveMatch {
 export type LiveResponse = LiveMatch | NoLiveMatch
 
 export const liveService = {
-  get: () => httpClient.get<LiveResponse>('/api/live'),
+  get: () => httpClient.get<LiveResponse>('/live'),
 }

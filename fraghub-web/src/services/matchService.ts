@@ -16,7 +16,7 @@ export const matchService = {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) })
     if (game && game !== 'all') params.set('game', game)
     if (map) params.set('map', map)
-    const raw = await httpClient.get<MatchesApiResponse>(`/api/matches?${params.toString()}`)
+    const raw = await httpClient.get<MatchesApiResponse>(`/matches?${params.toString()}`)
     return {
       matches: raw.data ?? [],
       total: raw.meta?.total ?? 0,
@@ -25,6 +25,6 @@ export const matchService = {
   },
 
   async getMatch(id: string): Promise<MatchDetail> {
-    return httpClient.get<MatchDetail>(`/api/matches/${id}`)
+    return httpClient.get<MatchDetail>(`/matches/${id}`)
   },
 }
