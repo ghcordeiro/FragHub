@@ -147,6 +147,12 @@ router.post(
             };
           }),
         });
+        const winnerSide = String(b.winner_team ?? '');
+        const team1Side  = String(((b.team1 as Record<string, unknown>).side) ?? '');
+        const roundWinner: 'team1' | 'team2' | null =
+          winnerSide && team1Side
+            ? winnerSide === team1Side ? 'team1' : 'team2'
+            : null;
         setLiveState({
           matchId: Number(b.matchid),
           mapNumber: Number(b.map_number ?? 0),
@@ -155,7 +161,7 @@ router.post(
           team1: parseTeam(b.team1 as Record<string, unknown>),
           team2: parseTeam(b.team2 as Record<string, unknown>),
           updatedAt: new Date().toISOString(),
-        });
+        }, roundWinner);
       } catch {
         // non-blocking
       }

@@ -13,9 +13,9 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/test-env.ts',
-        'src/index.ts',        // Express app bootstrap — not unit testable
-        'src/db/index.ts',     // DB connection bootstrap
-        'src/types/**/*.ts',   // Type-only declaration files
+        'src/index.ts', // Express app bootstrap — not unit testable
+        'src/db/index.ts', // DB connection bootstrap
+        'src/types/**/*.ts', // Type-only declaration files
       ],
       thresholds: {
         // OAuth callback and Google service require live credentials — excluded from

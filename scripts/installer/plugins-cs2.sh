@@ -245,6 +245,52 @@ install_fraghub_tags_cs2() {
   install_plugin_marker "$plugin_name"
 }
 
+install_fraghub_x1draft_cs2() {
+  local plugin_name="fraghub-x1draft"
+  local marker_dir="${CS2_PLUGIN_ROOT}/${plugin_name}"
+  local src_dll="${REPO_ROOT}/plugins/cs2/fraghub-x1draft/bin/Release/net8.0/fraghub-x1draft.dll"
+  local dst plugin_dir duel_cfg
+
+  dst="$(fraghub_lgsm_game_csgo_dir)" || fail "game/csgo do LGSM nao encontrado."
+  plugin_dir="${dst}/addons/counterstrikesharp/plugins/${plugin_name}"
+  duel_cfg="${dst}/cfg/fraghub_x1draft_duel.cfg"
+
+  [[ -f "$src_dll" ]] || fail "DLL fraghub-x1draft em falta no repositorio: ${src_dll} (compile com dotnet build -c Release)."
+
+  mkdir -p "$plugin_dir"
+  cp -f "$src_dll" "${plugin_dir}/fraghub-x1draft.dll"
+  fraghub_log "INFO" "fraghub-x1draft.dll instalado em ${plugin_dir}/."
+
+  if [[ ! -f "$duel_cfg" ]]; then
+    cat >"$duel_cfg" <<'EOF'
+// FragHub X1 Draft — duel phase settings
+mp_roundtime 60
+mp_roundtime_defuse 60
+mp_startmoney 0
+mp_buytime 0
+mp_buy_anywhere 0
+sv_buy_status_override 3
+mp_freezetime 3
+mp_c4timer 999
+mp_give_player_c4 0
+mp_drop_knife_enable 0
+mp_death_drop_gun 0
+mp_maxrounds 30
+bot_quota 0
+bot_kick all
+EOF
+    chmod 644 "$duel_cfg" 2>/dev/null || true
+    fraghub_log "INFO" "Criado ${duel_cfg}."
+  else
+    fraghub_log "INFO" "Config existente preservada: ${duel_cfg}"
+  fi
+
+  fraghub_chown_game_subtree "$plugin_dir"
+
+  mkdir -p "$marker_dir"
+  install_plugin_marker "$plugin_name"
+}
+
 verify_base_installation() {
   local dst="$1"
   [[ -d "${dst}/addons/metamod" ]] || fail "Metamod nao encontrado em ${dst}/addons/metamod/."
@@ -280,6 +326,7 @@ run_plugins_cs2() {
 
   load_effective_env
   install_fraghub_tags_cs2
+  install_fraghub_x1draft_cs2
 
   verify_base_installation "$dst"
 

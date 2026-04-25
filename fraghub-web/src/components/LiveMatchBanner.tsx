@@ -68,9 +68,28 @@ export function LiveMatchBanner() {
         <TeamPanel team={match.team1} />
 
         <div className={styles.centerScore}>
-          <span className={styles.score}>{match.team1.score}</span>
-          <span className={styles.scoreSep}>—</span>
-          <span className={styles.score}>{match.team2.score}</span>
+          {match.roundHistory.length > 0 && (
+            <div className={styles.roundHistory}>
+              {match.roundHistory.slice(-15).map((winner, i) => (
+                <span
+                  key={i}
+                  className={`${styles.roundDot} ${winner === 'team1' ? styles.roundDotTeam1 : styles.roundDotTeam2}`}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className={styles.scoreRow}>
+            <span className={styles.score}>{match.team1.score}</span>
+            <span className={styles.scoreSep}>—</span>
+            <span className={styles.score}>{match.team2.score}</span>
+          </div>
+
+          <div className={styles.lossBonusRow}>
+            <span className={styles.lossBonus}>${match.team1.lossBonus.toLocaleString()}</span>
+            <span className={styles.lossBonusLabel}>loss</span>
+            <span className={styles.lossBonus}>${match.team2.lossBonus.toLocaleString()}</span>
+          </div>
         </div>
 
         <TeamPanel team={match.team2} />

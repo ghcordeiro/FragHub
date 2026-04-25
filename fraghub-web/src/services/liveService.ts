@@ -14,6 +14,7 @@ export interface LivePlayer {
 export interface LiveTeam {
   name: string
   score: number
+  lossBonus: number
   players: LivePlayer[]
 }
 
@@ -23,6 +24,7 @@ export interface LiveMatch {
   mapNumber: number
   mapName?: string
   round: number
+  roundHistory: Array<'team1' | 'team2'>
   team1: LiveTeam
   team2: LiveTeam
   updatedAt: string
