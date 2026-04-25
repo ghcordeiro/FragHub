@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { LevelBadge } from '@/components/LevelBadge'
 import { PlayerAvatar } from '@/components/PlayerAvatar'
+import { EloChart } from '@/components/EloChart'
 import { Button } from '@/components/ui'
 import { playerService } from '@/services/playerService'
+import type { EloHistoryEntry } from '@/services/playerService'
 import type { Player, MatchRecord } from '@/types/player'
 import styles from './PublicProfilePage.module.css'
 
@@ -17,6 +19,7 @@ export function PublicProfilePage() {
   const [isMatchesLoading, setIsMatchesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [eloHistory, setEloHistory] = useState<EloHistoryEntry[]>([])
 
   useEffect(() => {
     if (!id) return
@@ -33,6 +36,11 @@ export function PublicProfilePage() {
       }
     }
     void loadProfile()
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    playerService.getEloHistory(id).then(setEloHistory).catch(() => {})
   }, [id])
 
   useEffect(() => {
@@ -114,6 +122,13 @@ export function PublicProfilePage() {
         </div>
       </div>
 
+      {eloHistory.length > 0 && (
+        <div className={styles.statsSection}>
+          <h2 className={styles.sectionTitle}>Evolução ELO</h2>
+          <EloChart data={eloHistory} />
+        </div>
+      )}
+
       <div className={styles.matchSection}>
         <h2 className={styles.sectionTitle}>Histórico de Partidas</h2>
         {matches.length > 0 ? (
@@ -133,7 +148,11 @@ export function PublicProfilePage() {
                 </thead>
                 <tbody>
                   {matches.map((match) => (
-                    <tr key={match.id}>
+                    <tr
+                      key={match.id}
+                      onClick={() => navigate(`/matches/${match.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td>{new Date(match.date).toLocaleDateString()}</td>
                       <td>{match.map}</td>
                       <td className={resultClass(match.result)}>{resultLabel(match.result)}</td>

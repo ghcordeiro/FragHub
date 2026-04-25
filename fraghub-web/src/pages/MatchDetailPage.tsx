@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { matchService } from '@/services/matchService'
 import type { MatchDetail, MatchPlayer } from '@/types/match'
 import styles from './MatchDetailPage.module.css'
@@ -22,20 +22,36 @@ function TeamTable({ players }: { players: MatchPlayer[] }) {
           <th>D</th>
           <th>A</th>
           <th>K/D</th>
-          <th>HS</th>
+          <th>HS%</th>
+          <th>MVP</th>
+          <th>Score</th>
         </tr>
       </thead>
       <tbody>
-        {sorted.map((p) => (
-          <tr key={p.steamId}>
-            <td className={styles.playerName}>{p.displayName ?? p.steamId}</td>
-            <td>{p.kills}</td>
-            <td>{p.deaths}</td>
-            <td>{p.assists}</td>
-            <td>{p.kdr.toFixed(2)}</td>
-            <td>{p.headshots}</td>
-          </tr>
-        ))}
+        {sorted.map((p) => {
+          const hsPercent = p.kills > 0 ? Math.round((p.headshots / p.kills) * 100) : 0
+          const name = p.displayName ?? p.steamId
+          return (
+            <tr key={p.steamId}>
+              <td className={styles.playerName}>
+                {p.userId ? (
+                  <Link to={`/players/${p.userId}`} className={styles.playerLink}>
+                    {name}
+                  </Link>
+                ) : (
+                  name
+                )}
+              </td>
+              <td>{p.kills}</td>
+              <td>{p.deaths}</td>
+              <td>{p.assists}</td>
+              <td>{p.kdr.toFixed(2)}</td>
+              <td>{hsPercent}%</td>
+              <td>{p.mvps}</td>
+              <td>{p.score}</td>
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )

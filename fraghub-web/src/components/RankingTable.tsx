@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { LevelBadge } from './LevelBadge'
+import { PlayerAvatar } from './PlayerAvatar'
 import type { Player } from '@/types/player'
 import styles from './RankingTable.module.css'
 
@@ -51,7 +52,7 @@ export function RankingTable({
               <th>Jogador</th>
               <th className={styles.center}>Nível</th>
               <th className={styles.right}>ELO</th>
-              <th className={`${styles.right} ${styles.hideOnMobile}`}>W/L</th>
+              <th className={`${styles.right} ${styles.hideOnMobile}`}>K/D</th>
               <th className={`${styles.right} ${styles.hideOnMobile}`}>Win %</th>
             </tr>
           </thead>
@@ -68,6 +69,7 @@ export function RankingTable({
                   <td className={`${styles.center} ${styles.rank}`}>#{position}</td>
                   <td>
                     <Link to={`/players/${player.id}`} className={styles.playerLink}>
+                      <PlayerAvatar avatarUrl={player.avatarUrl} name={player.name} size={24} />
                       {player.name}
                     </Link>
                   </td>
@@ -76,7 +78,7 @@ export function RankingTable({
                   </td>
                   <td className={styles.right}>{player.elo}</td>
                   <td className={`${styles.right} ${styles.hideOnMobile}`}>
-                    {player.totalMatches}
+                    {player.kdRatio.toFixed(2)}
                   </td>
                   <td className={`${styles.right} ${styles.hideOnMobile}`}>
                     {player.winPercentage.toFixed(1)}%

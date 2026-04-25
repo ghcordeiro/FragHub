@@ -3,9 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LevelBadge } from '@/components/LevelBadge'
 import { PlayerAvatar } from '@/components/PlayerAvatar'
+import { EloChart } from '@/components/EloChart'
 import { Button } from '@/components/ui'
 import { ErrorAlert } from '@/components/ui'
 import { playerService } from '@/services/playerService'
+import type { EloHistoryEntry } from '@/services/playerService'
 import { adminService } from '@/services/adminService'
 import { useSessionStore } from '@/store'
 import type { Player, MatchRecord } from '@/types/player'
@@ -28,6 +30,7 @@ export function ProfilePage() {
   const [editedName, setEditedName] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [eloHistory, setEloHistory] = useState<EloHistoryEntry[]>([])
 
   // Load player profile and stats once
   useEffect(() => {
@@ -57,6 +60,11 @@ export function ProfilePage() {
     }
     loadProfile()
   }, [searchParams])
+
+  useEffect(() => {
+    if (!player) return
+    playerService.getEloHistory(player.id).then(setEloHistory).catch(() => {})
+  }, [player?.id])
 
   // Load matches separately, re-runs on page change
   useEffect(() => {
@@ -222,6 +230,13 @@ export function ProfilePage() {
               )}
             </div>
 
+            {eloHistory.length > 0 && (
+              <div className={styles.matchSection}>
+                <h2 className={styles.sectionTitle}>Evolução ELO</h2>
+                <EloChart data={eloHistory} />
+              </div>
+            )}
+
             <div className={styles.matchSection}>
               <h2 className={styles.sectionTitle}>Histórico de Partidas</h2>
               {matches.length > 0 ? (
@@ -241,7 +256,11 @@ export function ProfilePage() {
                       </thead>
                       <tbody>
                         {matches.map((match) => (
-                          <tr key={match.id}>
+                          <tr
+                            key={match.id}
+                            onClick={() => navigate(`/matches/${match.id}`)}
+                            style={{ cursor: 'pointer' }}
+                          >
                             <td>{new Date(match.date).toLocaleDateString()}</td>
                             <td>{match.map}</td>
                             <td className={resultClass(match.result)}>{resultLabel(match.result)}</td>

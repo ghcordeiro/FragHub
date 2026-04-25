@@ -252,6 +252,29 @@ router.delete(
   },
 );
 
+router.get('/players/:id/elo-history', async (req: Request, res: Response, next: NextFunction) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) {
+    res.status(404).json({ error: 'Player not found' });
+    return;
+  }
+  try {
+    const user = await db('users').select('id', 'banned_at').where({ id }).first();
+    if (!user || user.banned_at != null) {
+      res.status(404).json({ error: 'Player not found' });
+      return;
+    }
+    const rows = await db('elo_history')
+      .where({ user_id: id })
+      .select('match_id as matchId', 'elo_after as eloAfter', 'change', 'result', 'timestamp')
+      .orderBy('timestamp', 'asc')
+      .limit(50);
+    res.status(200).json({ history: rows });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.get(
   '/player/:steamid',
   playerPublicLimiter,

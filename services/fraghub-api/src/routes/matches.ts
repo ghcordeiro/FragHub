@@ -334,6 +334,7 @@ router.get('/matches/:id', async (req: Request, res: Response, next: NextFunctio
       .where('s.match_id', id)
       .select(
         's.steam_id as steamId',
+        's.user_id as userId',
         'u.display_name as displayName',
         's.team',
         's.kills',
@@ -349,6 +350,7 @@ router.get('/matches/:id', async (req: Request, res: Response, next: NextFunctio
       const kdr = deaths > 0 ? Math.round((kills / deaths) * 100) / 100 : kills;
       return {
         steamId: r.steamId,
+        userId: r.userId != null ? String(r.userId) : null,
         displayName: r.displayName ?? null,
         team: r.team,
         kills,

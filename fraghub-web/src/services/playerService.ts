@@ -94,6 +94,14 @@ function mapMatchApiToRecord(r: MatchRecordApi): MatchRecord {
   }
 }
 
+export interface EloHistoryEntry {
+  matchId: number
+  eloAfter: number
+  change: number
+  result: 'win' | 'loss'
+  timestamp: string
+}
+
 export const playerService = {
   async getPlayer(id: string): Promise<Player> {
     const raw = await httpClient.get<PlayerProfileApi>(`/players/${id}`)
@@ -112,6 +120,13 @@ export const playerService = {
 
   async getPlayerStats(playerId: string): Promise<PlayerStatsApi> {
     return httpClient.get<PlayerStatsApi>(`/players/${playerId}/stats`)
+  },
+
+  async getEloHistory(playerId: string): Promise<EloHistoryEntry[]> {
+    const response = await httpClient.get<{ history: EloHistoryEntry[] }>(
+      `/players/${playerId}/elo-history`,
+    )
+    return response.history ?? []
   },
 
   async getPlayerMatches(

@@ -1,0 +1,51 @@
+:root {
+  --color-win: #4ade80;
+  --color-loss: #f87171;
+}
+
+.wrapper {
+  background: var(--surface-container, #1e1e2e);
+  border-radius: var(--radius-lg, 8px);
+  padding: var(--sp-md, 16px) var(--sp-sm, 8px) var(--sp-sm, 8px);
+}
+
+.empty {
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: var(--sp-lg, 24px) 0;
+}
+
+.tooltip {
+  background: var(--surface, #13131f);
+  border: 1px solid var(--outline, #8c909f);
+  border-radius: var(--radius-md, 4px);
+  padding: var(--sp-sm, 8px) var(--sp-md, 16px);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.tooltipElo {
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0;
+}
+
+.tooltipChange {
+  font-weight: 700;
+  margin: 0;
+}
+
+.tooltipChange.win {
+  color: var(--color-win);
+}
+
+.tooltipChange.loss {
+  color: var(--color-loss);
+}
+
+.tooltipDate {
+  color: var(--on-surface-variant);
+  margin: 0;
+  font-size: 0.75rem;
+}

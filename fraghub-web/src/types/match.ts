@@ -12,6 +12,7 @@ export interface Match {
 
 export interface MatchPlayer {
   steamId: string
+  userId: string | null
   displayName: string | null
   team: 'team1' | 'team2'
   kills: number
