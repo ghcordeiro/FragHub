@@ -1,40 +1,94 @@
 .hero {
-  min-height: 60vh;
+  position: relative;
+  min-height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-container-low);
-  padding: var(--sp-2xl) var(--sp-lg);
-  text-align: center;
+  padding: var(--sp-3xl) var(--sp-lg);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* Subtle grid overlay */
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(232, 176, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 176, 0, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 100%);
+}
+
+/* Amber glow from center-bottom */
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, var(--primary-glow) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .inner {
-  max-width: 720px;
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
   gap: var(--sp-lg);
+  animation: fadeUp 0.6s var(--ease-out) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border: 1px solid rgba(232, 176, 0, 0.3);
+  border-radius: var(--radius-md);
+  background: var(--primary-dim);
+  animation: fadeUp 0.6s var(--ease-out) 0.1s both;
 }
 
 .headline {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 3.5rem;
-  line-height: 1.1;
+  font-weight: 800;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 1.05;
   color: var(--on-surface);
   margin: 0;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  animation: fadeUp 0.6s var(--ease-out) 0.2s both;
 }
 
-.headline span {
+.accent {
   color: var(--primary);
+  display: block;
 }
 
 .subtitle {
   font-family: var(--font-body);
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   color: var(--on-surface-variant);
   margin: 0;
-  max-width: 540px;
+  max-width: 480px;
+  line-height: 1.7;
+  animation: fadeUp 0.6s var(--ease-out) 0.3s both;
 }
 
 .ctas {
@@ -42,6 +96,7 @@
   gap: var(--sp-md);
   flex-wrap: wrap;
   justify-content: center;
+  animation: fadeUp 0.6s var(--ease-out) 0.4s both;
 }
 
 .ctaPrimary {
@@ -52,15 +107,17 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--on-primary);
-  background: linear-gradient(135deg, var(--primary), var(--primary-container));
+  background: var(--primary);
   border-radius: var(--radius-md);
-  padding: 10px 24px;
+  padding: 12px 28px;
   text-decoration: none;
-  transition: opacity 0.15s;
+  transition: opacity var(--t-fast), box-shadow var(--t-fast);
+  letter-spacing: 0.02em;
 }
 
 .ctaPrimary:hover {
   opacity: 0.88;
+  box-shadow: 0 0 32px var(--primary-glow);
 }
 
 .ctaGhost {
@@ -69,33 +126,25 @@
   justify-content: center;
   font-family: var(--font-body);
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--on-surface-variant);
-  background: rgba(66, 71, 84, 0.2);
-  border: 1px solid var(--outline-variant);
+  background: transparent;
+  border: 1px solid var(--outline);
   border-radius: var(--radius-md);
-  padding: 10px 24px;
+  padding: 12px 28px;
   text-decoration: none;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+  letter-spacing: 0.02em;
 }
 
 .ctaGhost:hover {
   color: var(--on-surface);
-  border-color: var(--outline);
+  border-color: var(--on-surface-dim);
+  background: var(--surface-container);
 }
 
 @media (max-width: 768px) {
-  .headline {
-    font-size: 2.25rem;
-  }
-
-  .ctas {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .ctas > * {
-    width: 100%;
-    justify-content: center;
-  }
+  .hero { min-height: 60vh; padding: var(--sp-2xl) var(--sp-md); }
+  .ctas { flex-direction: column; width: 100%; }
+  .ctas > * { width: 100%; }
 }

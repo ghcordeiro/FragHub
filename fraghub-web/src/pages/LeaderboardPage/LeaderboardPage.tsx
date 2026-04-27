@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { RankingTable } from '@/components/RankingTable'
-import { ErrorAlert } from '@/components/ui'
+import { ErrorAlert, LoadingSpinner } from '@/components/ui'
 import { leaderboardService } from '@/services/leaderboardService'
 import { useSession } from '@/hooks'
 import type { Player } from '@/types/player'
@@ -18,121 +18,59 @@ export function LeaderboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   const currentPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
-  const gameFilter = searchParams.get('game') || 'all'
-  const periodFilter = searchParams.get('period') || 'all'
-
   const PAGE_SIZE = 25
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   useEffect(() => {
-    const loadLeaderboard = async () => {
+    document.title = 'Ranking — FragHub'
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
       try {
         setIsLoading(true)
-        const response = await leaderboardService.getLeaderboard(currentPage, PAGE_SIZE, gameFilter, periodFilter)
-        setPlayers(response.players)
-        setTotal(response.total)
-        setError(null)
+        const response = await leaderboardService.getLeaderboard(currentPage, PAGE_SIZE)
+        if (!cancelled) {
+          setPlayers(response.players)
+          setTotal(response.total)
+          setError(null)
+        }
       } catch (err) {
-        setError('Não foi possível carregar o leaderboard')
-        console.error(err)
-        setPlayers([])
+        if (!cancelled) {
+          setError('Não foi possível carregar o ranking')
+          setPlayers([])
+        }
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
-
-    loadLeaderboard()
-  }, [currentPage, gameFilter, periodFilter])
+    load()
+    return () => { cancelled = true }
+  }, [currentPage])
 
   const handlePageChange = (page: number) => {
-    setSearchParams({ page: String(page), game: gameFilter, period: periodFilter })
+    setSearchParams({ page: String(page) })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleGameChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSearchParams({ game: e.target.value, period: periodFilter, page: '1' })
-  }
-
-  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSearchParams({ game: gameFilter, period: e.target.value, page: '1' })
-  }
-
-  const handleClearFilters = () => {
-    setSearchParams({ page: '1' })
-  }
-
-  useEffect(() => {
-    document.title = 'Ranking — FragHub'
-    const metas: { property: string; content: string }[] = [
-      { property: 'og:title', content: 'Ranking FragHub — CS2/CS:GO' },
-      { property: 'og:description', content: 'Veja o ranking de jogadores da comunidade FragHub' },
-      { property: 'og:url', content: window.location.href },
-      { property: 'og:type', content: 'website' },
-    ]
-
-    metas.forEach(({ property, content }) => {
-      let meta = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`)
-      if (!meta) {
-        meta = document.createElement('meta')
-        meta.setAttribute('property', property)
-        document.head.appendChild(meta)
-      }
-      meta.content = content
-    })
-  }, [])
-
-  const hasActiveFilters = gameFilter !== 'all' || periodFilter !== 'all'
-
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Ranking da Comunidade</h1>
-
-      {error && <ErrorAlert>{error}</ErrorAlert>}
-
-      <div className={styles.filters}>
-        <div className={styles.filterGroup}>
-          <label htmlFor="game-filter" className={styles.filterLabel}>
-            Jogo
-          </label>
-          <select
-            id="game-filter"
-            className={styles.select}
-            value={gameFilter}
-            onChange={handleGameChange}
-          >
-            <option value="all">Todos</option>
-            <option value="cs2">CS2</option>
-            <option value="csgo">CS:GO</option>
-          </select>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label htmlFor="period-filter" className={styles.filterLabel}>
-            Período
-          </label>
-          <select
-            id="period-filter"
-            className={styles.select}
-            value={periodFilter}
-            onChange={handlePeriodChange}
-          >
-            <option value="all">Todo o tempo</option>
-            <option value="month">Último mês</option>
-            <option value="week">Última semana</option>
-          </select>
-        </div>
-
-        {hasActiveFilters && (
-          <div className={styles.filterActions}>
-            <button className={styles.clearBtn} onClick={handleClearFilters}>
-              Limpar Filtros
-            </button>
-          </div>
+      <div className={styles.pageHeader}>
+        <p className={styles.pageTag}>Global</p>
+        <h1 className={styles.title}>Ranking</h1>
+        {total > 0 && (
+          <p className={styles.meta}>{total.toLocaleString('pt-BR')} jogadores classificados</p>
         )}
       </div>
 
+      {error && <ErrorAlert>{error}</ErrorAlert>}
+
       {isLoading ? (
-        <p className={styles.loading}>Carregando leaderboard…</p>
+        <div className={styles.loadingState}>
+          <LoadingSpinner size="lg" />
+          <p className={styles.loadingText}>Carregando ranking…</p>
+        </div>
       ) : players.length > 0 ? (
         <>
           {currentPage === 1 && <PodiumSection players={players} />}
@@ -147,12 +85,7 @@ export function LeaderboardPage() {
         </>
       ) : (
         <div className={styles.empty}>
-          <p className={styles.emptyText}>Nenhum jogador encontrado para os filtros selecionados.</p>
-          {hasActiveFilters && (
-            <button className={styles.clearBtn} onClick={handleClearFilters}>
-              Limpar Filtros
-            </button>
-          )}
+          <p className={styles.emptyText}>Nenhum jogador registrado ainda.</p>
         </div>
       )}
     </div>

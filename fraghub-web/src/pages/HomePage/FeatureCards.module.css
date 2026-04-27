@@ -1,66 +1,101 @@
 .section {
-  padding: var(--sp-2xl) var(--sp-lg);
-  background: var(--background);
+  padding: var(--sp-3xl) var(--sp-lg);
+  background: var(--surface);
 }
 
 .inner {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--sp-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.sectionTag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin: 0;
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: 1.75rem;
   font-weight: 700;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   color: var(--on-surface);
-  text-align: center;
-  margin: 0 0 var(--sp-xl);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--sp-md);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--outline);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .card {
-  background: var(--surface-container-low);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-xl);
   display: flex;
   flex-direction: column;
   gap: var(--sp-md);
-  transition: background 0.15s;
-  cursor: default;
+  padding: var(--sp-xl) var(--sp-lg);
+  background: var(--surface-container-low);
+  transition: background var(--t-base);
+  animation: fadeUp 0.5s var(--ease-out) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .card:hover {
-  background: var(--surface-container-high);
+  background: var(--surface-container);
 }
 
-.icon {
-  font-size: 1.75rem;
-  line-height: 1;
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: 0.1em;
+  margin: 0;
 }
 
 .cardTitle {
   font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.25rem;
   color: var(--on-surface);
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .cardDesc {
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: var(--on-surface-variant);
   margin: 0;
   line-height: 1.6;
+  flex: 1;
 }
 
-@media (max-width: 768px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
 }

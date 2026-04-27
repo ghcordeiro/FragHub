@@ -2,24 +2,24 @@ import styles from './FeatureCards.module.css'
 
 const CARDS = [
   {
-    icon: '🏆',
-    title: 'ELO System',
-    desc: 'Glicko-2 based ranking with 10 skill levels',
+    tag: '01',
+    title: 'Sistema ELO',
+    desc: 'Ranking Glicko-2 com 10 níveis de habilidade. Cada partida conta.',
   },
   {
-    icon: '🎯',
+    tag: '02',
     title: 'Matchmaking',
-    desc: '5v5 balanced queue with map veto',
+    desc: 'Fila 5v5 balanceada por ELO com veto de mapa integrado.',
   },
   {
-    icon: '🏷️',
-    title: 'In-Game Tags',
-    desc: 'Real-time CS2/CS:GO level tags via plugin',
+    tag: '03',
+    title: 'Tags In-Game',
+    desc: 'Plugin CS2/CS:GO exibe seu nível em tempo real no servidor.',
   },
   {
-    icon: '⚙️',
-    title: 'Admin Panel',
-    desc: 'Full server management and audit trail',
+    tag: '04',
+    title: 'Painel Admin',
+    desc: 'Gestão de jogadores, servidores RCON e trilha de auditoria.',
   },
 ]
 
@@ -27,14 +27,21 @@ export function FeatureCards() {
   return (
     <section className={styles.section}>
       <div className={styles.inner}>
-        <h2 className={styles.title}>Everything you need to compete</h2>
+        <header className={styles.header}>
+          <p className={styles.sectionTag}>Plataforma</p>
+          <h2 className={styles.title}>Tudo para competir</h2>
+        </header>
         <div className={styles.grid}>
-          {CARDS.map(({ icon, title, desc }) => (
-            <div key={title} className={styles.card}>
-              <span className={styles.icon} aria-hidden="true">{icon}</span>
+          {CARDS.map(({ tag, title, desc }, i) => (
+            <article
+              key={tag}
+              className={styles.card}
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <p className={styles.tag}>{tag}</p>
               <h3 className={styles.cardTitle}>{title}</h3>
               <p className={styles.cardDesc}>{desc}</p>
-            </div>
+            </article>
           ))}
         </div>
       </div>

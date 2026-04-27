@@ -1,89 +1,59 @@
 .page {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: var(--sp-xl) var(--sp-lg);
 }
 
-.title {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--on-surface);
-  margin: 0 0 var(--sp-xl);
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--sp-md);
+.pageHeader {
   margin-bottom: var(--sp-xl);
 }
 
-.filterGroup {
+.pageTag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin: 0 0 var(--sp-xs);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  margin: var(--sp-xs) 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.loadingState {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-xs);
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-3xl);
 }
 
-.filterLabel {
-  font-family: var(--font-body);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--on-surface-variant);
-}
-
-.select {
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  color: var(--on-surface);
-  background: var(--surface-container);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
-  appearance: none;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.select:focus {
-  border-color: var(--primary);
-}
-
-.filterActions {
-  display: flex;
-  align-items: flex-end;
-}
-
-.clearBtn {
+.loadingText {
   font-family: var(--font-body);
   font-size: 0.875rem;
-  font-weight: 500;
   color: var(--on-surface-variant);
-  background: var(--surface-container);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-md);
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-  width: 100%;
-}
-
-.clearBtn:hover {
-  color: var(--on-surface);
-  background: var(--surface-container-high);
-}
-
-.loading {
-  text-align: center;
-  padding: var(--sp-2xl);
-  color: var(--on-surface-variant);
-  font-family: var(--font-body);
+  margin: 0;
 }
 
 .empty {
   text-align: center;
-  padding: var(--sp-2xl);
+  padding: var(--sp-3xl);
   display: flex;
   flex-direction: column;
   align-items: center;

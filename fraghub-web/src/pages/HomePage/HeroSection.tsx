@@ -4,19 +4,24 @@ import styles from './HeroSection.module.css'
 export function HeroSection() {
   return (
     <section className={styles.hero}>
+      <div className={styles.grid} aria-hidden="true" />
       <div className={styles.inner}>
+        <p className={styles.eyebrow}>CS2 / CS:GO · Servidores Comunitários</p>
         <h1 className={styles.headline}>
-          Compete. <span>Rank Up.</span> Dominate.
+          Compita.<br />
+          <span className={styles.accent}>Suba de nível.</span><br />
+          Domine.
         </h1>
         <p className={styles.subtitle}>
-          The all-in-one matchmaking hub for CS2/CS:GO community servers.
+          Matchmaking 5v5, ranking ELO e painel completo para
+          seu servidor CS2/CS:GO.
         </p>
         <div className={styles.ctas}>
           <Link to="/register" className={styles.ctaPrimary}>
-            Get Started
+            Começar agora
           </Link>
           <Link to="/leaderboard" className={styles.ctaGhost}>
-            View Leaderboard
+            Ver ranking
           </Link>
         </div>
       </div>

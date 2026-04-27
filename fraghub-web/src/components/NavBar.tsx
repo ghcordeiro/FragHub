@@ -24,7 +24,7 @@ export function NavBar() {
     <nav className={styles.nav}>
       <div className={styles.inner}>
         <Link to="/" className={styles.logo}>
-          FRAGHUB
+          FRAGHUB<span className={styles.logoDot} aria-hidden="true" />
         </Link>
 
         <div className={styles.links}>
@@ -47,10 +47,11 @@ export function NavBar() {
               <NavLink
                 to="/players/me"
                 className={({ isActive }) =>
-                  `${styles.link}${isActive ? ` ${styles.active}` : ''}`
+                  `${styles.btnGhost}${isActive ? ` ${styles.active}` : ''}`
                 }
+                title={user.name}
               >
-                {user.name}
+                {user.name.length > 18 ? `${user.name.slice(0, 16)}…` : user.name}
               </NavLink>
               {user.role === 'admin' && (
                 <NavLink

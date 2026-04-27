@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useSessionStore } from '@/store'
+import { LoadingSpinner } from './ui'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -11,7 +12,18 @@ export function ProtectedRoute({ children, redirectPath = '/login' }: ProtectedR
   const isAuthenticated = !!accessToken && !!user
   const location = useLocation()
 
-  if (isLoading) return null
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: 'calc(100vh - 56px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     const redirect = `${redirectPath}?redirect=${encodeURIComponent(location.pathname)}`
