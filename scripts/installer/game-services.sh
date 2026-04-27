@@ -47,6 +47,7 @@ csgo_enabled() {
 write_monitor_units() {
   local monitor_service="${SYSTEMD_DIR}/fraghub-cs2-monitor.service"
   local monitor_timer="${SYSTEMD_DIR}/fraghub-cs2-monitor.timer"
+  local interval_min="${FRAGHUB_CS2_MONITOR_INTERVAL:-2}"
 
   sudo tee "$monitor_service" >/dev/null <<EOF
 [Unit]
@@ -67,14 +68,14 @@ Description=FragHub CS2 Plugin Update Monitor Timer
 Requires=fraghub-cs2-monitor.service
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=10min
-AccuracySec=1min
+OnBootSec=3min
+OnUnitActiveSec=${interval_min}min
+AccuracySec=30s
 
 [Install]
 WantedBy=timers.target
 EOF
-  fraghub_log "INFO" "Monitor units criados: fraghub-cs2-monitor.service + fraghub-cs2-monitor.timer"
+  fraghub_log "INFO" "Monitor units criados: fraghub-cs2-monitor.service + fraghub-cs2-monitor.timer (intervalo: ${interval_min}min)"
 }
 
 write_unit_file() {

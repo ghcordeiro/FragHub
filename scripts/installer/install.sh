@@ -6,6 +6,41 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ---------------------------------------------------------------------------
+# Flag parsing: --config <file>  --non-interactive
+# ---------------------------------------------------------------------------
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)
+      if [[ -z "${2:-}" ]]; then
+        echo "ERROR: --config requires a file path." >&2
+        exit 1
+      fi
+      if [[ ! -f "$2" ]]; then
+        echo "ERROR: config file not found: $2" >&2
+        exit 1
+      fi
+      # shellcheck source=/dev/null
+      source "$2"
+      export FRAGHUB_NON_INTERACTIVE="${FRAGHUB_NON_INTERACTIVE:-1}"
+      shift 2
+      ;;
+    --non-interactive)
+      export FRAGHUB_NON_INTERACTIVE=1
+      shift
+      ;;
+    --dry-run)
+      export FRAGHUB_DRY_RUN=1
+      shift
+      ;;
+    *)
+      echo "ERROR: Unknown flag: $1" >&2
+      echo "Usage: bash install.sh [--config <file>] [--non-interactive] [--dry-run]" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # shellcheck source=state.sh
 source "${SCRIPT_DIR}/state.sh"
 

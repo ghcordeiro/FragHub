@@ -7,7 +7,9 @@ INSTALL_DIR="${FRAGHUB_SYSADMIN_DIR:-/opt/fraghub/sysadmin}"
 SYSADMIN_PORT="${FRAGHUB_SYSADMIN_PORT:-8081}"   # internal Node port
 SYSADMIN_PUBLIC_PORT="${FRAGHUB_SYSADMIN_PUBLIC_PORT:-8080}"  # Nginx public port
 FRAGHUB_USER="${FRAGHUB_USER:-fraghub}"
-SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/services/fraghub-sysadmin"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+SOURCE_DIR="${REPO_ROOT}/services/fraghub-sysadmin"
 
 ALLOWED_SERVICES=(fraghub-api mariadb nginx fraghub-cs2 fraghub-csgo fraghub-sysadmin)
 ALLOWED_ACTIONS=(start stop restart)
@@ -53,6 +55,8 @@ DB_PORT=${DB_PORT}
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
+FRAGHUB_REPO_ROOT=${REPO_ROOT}
+FRAGHUB_STATE_DIR=${FRAGHUB_STATE_DIR:-/opt/fraghub/state}
 EOF
 chown "root:${FRAGHUB_USER}" "$INSTALL_DIR/.env"
 chmod 640 "$INSTALL_DIR/.env"
@@ -79,8 +83,11 @@ SUDOERS_FILE="/etc/sudoers.d/fraghub-sysadmin"
   echo ""
   # LinuxGSM update runners
   for game in cs2 csgo; do
-    echo "${FRAGHUB_USER} ALL=(fraghub) NOPASSWD: /home/${FRAGHUB_USER}/lgsm/${game}server update"
+    echo "${FRAGHUB_USER} ALL=(${FRAGHUB_USER}) NOPASSWD: /home/${FRAGHUB_USER}/lgsm/${game}server update"
   done
+  echo ""
+  # Full update pipeline (plugin reinstall)
+  echo "${FRAGHUB_USER} ALL=(root) NOPASSWD: /bin/bash ${REPO_ROOT}/scripts/plugin-update-cs2.sh"
 } > "$SUDOERS_FILE"
 chmod 440 "$SUDOERS_FILE"
 visudo -c -f "$SUDOERS_FILE" || { rm -f "$SUDOERS_FILE"; err "sudoers syntax error"; }

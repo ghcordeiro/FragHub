@@ -239,6 +239,67 @@ collect_inputs() {
   log "INFO" "Wizard de configuracao concluido."
 }
 
+# ---------------------------------------------------------------------------
+# Non-interactive mode: skip wizard when all required vars are pre-set
+# ---------------------------------------------------------------------------
+validate_non_interactive() {
+  local ok=1
+
+  if is_blank "${FRAGHUB_SERVER_HOSTNAME:-}"; then
+    log "ERROR" "FRAGHUB_SERVER_HOSTNAME e obrigatorio no modo nao-interativo."
+    ok=0
+  fi
+  if is_blank "${FRAGHUB_STEAM_WEB_API_KEY:-}" || ! min_len "${FRAGHUB_STEAM_WEB_API_KEY:-}" 8; then
+    log "ERROR" "FRAGHUB_STEAM_WEB_API_KEY e obrigatorio (minimo 8 caracteres)."
+    ok=0
+  fi
+  if ! is_valid_email "${FRAGHUB_ADMIN_EMAIL:-}"; then
+    log "ERROR" "FRAGHUB_ADMIN_EMAIL invalido ou ausente."
+    ok=0
+  fi
+  if ! min_len "${FRAGHUB_ADMIN_PASSWORD:-}" 8; then
+    log "ERROR" "FRAGHUB_ADMIN_PASSWORD obrigatorio (minimo 8 caracteres)."
+    ok=0
+  fi
+  if [[ ! "${FRAGHUB_ADMIN_PASSWORD:-}" =~ [a-z] ]] || \
+     [[ ! "${FRAGHUB_ADMIN_PASSWORD:-}" =~ [A-Z] ]] || \
+     [[ ! "${FRAGHUB_ADMIN_PASSWORD:-}" =~ [0-9] ]]; then
+    log "ERROR" "FRAGHUB_ADMIN_PASSWORD: inclua maiuscula, minuscula e digito."
+    ok=0
+  fi
+  if ! is_valid_optional_domain "${FRAGHUB_DOMAIN:-}"; then
+    log "ERROR" "FRAGHUB_DOMAIN invalido: '${FRAGHUB_DOMAIN:-}'."
+    ok=0
+  fi
+  if ! is_valid_discord_webhook "${FRAGHUB_DISCORD_WEBHOOK:-}"; then
+    log "ERROR" "FRAGHUB_DISCORD_WEBHOOK invalido: '${FRAGHUB_DISCORD_WEBHOOK:-}'."
+    ok=0
+  fi
+
+  [[ "$ok" == "1" ]] || fail "Validacao no modo nao-interativo falhou. Corrija as variaveis acima."
+}
+
+run_non_interactive() {
+  log "INFO" "Modo nao-interativo: lendo configuracao do ambiente."
+  validate_non_interactive
+  write_input_file \
+    "${FRAGHUB_SERVER_HOSTNAME}" \
+    "${FRAGHUB_STEAM_WEB_API_KEY}" \
+    "${FRAGHUB_DB_PASSWORD:-}" \
+    "${FRAGHUB_RCON_PASSWORD:-}" \
+    "${FRAGHUB_ADMIN_EMAIL}" \
+    "${FRAGHUB_ADMIN_PASSWORD}" \
+    "${FRAGHUB_DOMAIN:-}" \
+    "${FRAGHUB_DISCORD_WEBHOOK:-}" \
+    "${FRAGHUB_GOOGLE_CLIENT_ID:-}" \
+    "${FRAGHUB_GOOGLE_CLIENT_SECRET:-}"
+  log "INFO" "Configuracao nao-interativa aplicada."
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  collect_inputs
+  if [[ "${FRAGHUB_NON_INTERACTIVE:-0}" == "1" ]]; then
+    run_non_interactive
+  else
+    collect_inputs
+  fi
 fi

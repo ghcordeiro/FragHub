@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # CS2 update monitor: detects CS2 game updates via buildid and triggers
-# automatic plugin reinstall. Called by fraghub-cs2-monitor.timer every 10min.
+# automatic LinuxGSM update + plugin reinstall. Called by fraghub-cs2-monitor.timer.
 #
 # State files (all in FRAGHUB_STATE_DIR):
 #   cs2-buildid.last         — last known good buildid
-#   cs2-monitor.state        — WAITING_UPSTREAM / RETRY_COUNT tracking
+#   cs2-monitor.state        — WAITING_UPSTREAM / RETRY_COUNT / NEXT_WAIT tracking
+#   cs2-update.log           — rolling structured log (last 200 lines)
 
 set -o errexit
 set -o nounset
@@ -18,9 +19,15 @@ source "${SCRIPT_DIR}/lib/cs2-buildid.sh"
 
 INPUT_DIR="${FRAGHUB_INPUT_DIR:-${HOME}/.fraghub/installer}"
 EFFECTIVE_FILE="${FRAGHUB_EFFECTIVE_ENV:-${INPUT_DIR}/effective.env}"
-MONITOR_STATE_FILE="${FRAGHUB_STATE_DIR:-/opt/fraghub/state}/cs2-monitor.state"
-# Alert after this many failed retries (~2h at 10min interval)
-MAX_RETRIES="${FRAGHUB_CS2_MONITOR_MAX_RETRIES:-12}"
+STATE_DIR="${FRAGHUB_STATE_DIR:-/opt/fraghub/state}"
+MONITOR_STATE_FILE="${STATE_DIR}/cs2-monitor.state"
+UPDATE_LOG="${STATE_DIR}/cs2-update.log"
+LGSM_DIR="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}"
+CS2_INSTANCE="${FRAGHUB_CS2_INSTANCE:-cs2server}"
+# Alert after this many failed retries
+MAX_RETRIES="${FRAGHUB_CS2_MONITOR_MAX_RETRIES:-20}"
+# Exponential backoff caps (minutes): 2, 4, 8, 16, 30, 30, 30...
+BACKOFF_CAPS=(2 4 8 16 30)
 
 # Load effective.env for DISCORD_WEBHOOK_URL
 if [[ -f "$EFFECTIVE_FILE" ]]; then
@@ -29,6 +36,30 @@ if [[ -f "$EFFECTIVE_FILE" ]]; then
   source "$EFFECTIVE_FILE"
   set +a
 fi
+
+# ---------------------------------------------------------------------------
+# Structured update log (rolling, last 200 lines)
+# ---------------------------------------------------------------------------
+ulog() {
+  local level="$1"
+  local message="$2"
+  local ts
+  ts="$(date -Iseconds)"
+  mkdir -p "$STATE_DIR"
+  printf '[%s] [%s] %s\n' "$ts" "$level" "$message" >>"$UPDATE_LOG"
+  # Keep last 200 lines
+  if [[ -f "$UPDATE_LOG" ]]; then
+    local lines
+    lines="$(wc -l <"$UPDATE_LOG")"
+    if (( lines > 200 )); then
+      local tmp
+      tmp="$(mktemp)"
+      tail -n 200 "$UPDATE_LOG" >"$tmp"
+      mv "$tmp" "$UPDATE_LOG"
+    fi
+  fi
+  fraghub_log "$level" "$message"
+}
 
 # ---------------------------------------------------------------------------
 # Discord notification (best-effort)
@@ -72,21 +103,55 @@ monitor_state_clear() {
   return 0
 }
 
+# Exponential backoff: returns cap in minutes for given retry count
+backoff_minutes() {
+  local retry="$1"
+  local idx=$(( retry - 1 ))
+  local max_idx=$(( ${#BACKOFF_CAPS[@]} - 1 ))
+  [[ $idx -gt $max_idx ]] && idx=$max_idx
+  echo "${BACKOFF_CAPS[$idx]}"
+}
+
+# ---------------------------------------------------------------------------
+# LinuxGSM binary update
+# ---------------------------------------------------------------------------
+run_lgsm_update() {
+  local lgsm_script="${LGSM_DIR}/${CS2_INSTANCE}"
+  if [[ ! -x "$lgsm_script" ]]; then
+    ulog "WARN" "[cs2-monitor] LinuxGSM script nao encontrado em ${lgsm_script}; skip LGSM update."
+    return 0
+  fi
+  ulog "INFO" "[cs2-monitor] Executando LinuxGSM update (download binario CS2)..."
+  if bash "$lgsm_script" update; then
+    ulog "INFO" "[cs2-monitor] LinuxGSM update concluido."
+  else
+    ulog "WARN" "[cs2-monitor] LinuxGSM update retornou erro (pode ser normal se server ainda online)."
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Full update pipeline: LGSM binary update + plugin reinstall
+# ---------------------------------------------------------------------------
+run_full_update() {
+  run_lgsm_update
+  bash "${SCRIPT_DIR}/plugin-update-cs2.sh"
+}
+
 # ---------------------------------------------------------------------------
 # Main monitor logic
 # ---------------------------------------------------------------------------
 main() {
-  fraghub_log "INFO" "[cs2-monitor] Verificando buildid CS2..."
+  ulog "INFO" "[cs2-monitor] Verificando buildid CS2..."
 
   # Check if appmanifest exists (server may not be installed)
   if ! cs2_appmanifest_path >/dev/null 2>&1; then
-    fraghub_log "INFO" "[cs2-monitor] appmanifest_730.acf nao encontrado; servidor CS2 pode nao estar instalado."
+    ulog "INFO" "[cs2-monitor] appmanifest_730.acf nao encontrado; servidor CS2 pode nao estar instalado."
     return 0
   fi
 
   local current_buildid saved_buildid
   current_buildid="$(cs2_read_buildid)" || {
-    fraghub_log "WARN" "[cs2-monitor] Nao foi possivel ler buildid do appmanifest."
+    ulog "WARN" "[cs2-monitor] Nao foi possivel ler buildid do appmanifest."
     return 0
   }
   saved_buildid="$(cs2_saved_buildid)"
@@ -98,55 +163,62 @@ main() {
   retry_count="${retry_count:-0}"
 
   if [[ "$waiting" == "1" ]]; then
-    fraghub_log "INFO" "[cs2-monitor] WAITING_UPSTREAM ativo (tentativa ${retry_count}/${MAX_RETRIES}). A tentar plugin recovery..."
     local new_count=$(( retry_count + 1 ))
+    local wait_min
+    wait_min="$(backoff_minutes "$new_count")"
+    ulog "INFO" "[cs2-monitor] WAITING_UPSTREAM ativo (tentativa ${new_count}/${MAX_RETRIES}, backoff atual: ${wait_min}min)."
     monitor_state_set RETRY_COUNT "$new_count"
+    monitor_state_set LAST_ATTEMPT "$(date -Iseconds)"
 
     if (( new_count > MAX_RETRIES )); then
-      fraghub_log "ERROR" "[cs2-monitor] ${MAX_RETRIES} tentativas sem sucesso. Intervencao manual necessaria."
-      discord_notify "🚨 FragHub CS2 — plugins ainda quebrados após ${MAX_RETRIES} tentativas (buildid: ${current_buildid}). Intervencao manual necessária."
-      # Reset counter to avoid spam; keep WAITING_UPSTREAM=1 so retries continue
+      ulog "ERROR" "[cs2-monitor] ${MAX_RETRIES} tentativas sem sucesso. Intervencao manual necessaria."
+      discord_notify "🚨 FragHub CS2 — plugins ainda quebrados após ${MAX_RETRIES} tentativas (buildid: ${current_buildid}). Intervenção manual necessária."
       monitor_state_set RETRY_COUNT "0"
       return 0
     fi
 
-    if bash "${SCRIPT_DIR}/plugin-update-cs2.sh"; then
-      fraghub_log "INFO" "[cs2-monitor] Recovery bem-sucedido apos ${new_count} tentativas."
+    local exit_code=0
+    run_full_update || exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+      ulog "INFO" "[cs2-monitor] Recovery bem-sucedido apos ${new_count} tentativas."
+      discord_notify "✅ FragHub CS2 — recovery completo após ${new_count} tentativa(s) (buildid: ${current_buildid})."
       cs2_save_buildid "$current_buildid"
       monitor_state_clear
     else
-      fraghub_log "WARN" "[cs2-monitor] Recovery falhou (tentativa ${new_count}). Proxima em 10min."
+      ulog "WARN" "[cs2-monitor] Recovery falhou (tentativa ${new_count}). Proxima em ${wait_min}min."
     fi
     return 0
   fi
 
   # Normal check: has buildid changed?
   if [[ -n "$saved_buildid" && "$current_buildid" == "$saved_buildid" ]]; then
-    fraghub_log "INFO" "[cs2-monitor] Buildid inalterado (${current_buildid}). Nenhuma acao necessaria."
+    ulog "INFO" "[cs2-monitor] Buildid inalterado (${current_buildid}). Nenhuma acao necessaria."
     return 0
   fi
 
   # Buildid changed (or first run)
   if [[ -n "$saved_buildid" ]]; then
-    fraghub_log "INFO" "[cs2-monitor] CS2 UPDATE DETECTADO: ${saved_buildid} -> ${current_buildid}"
-    discord_notify "🔄 FragHub CS2 — update detectado (buildid ${saved_buildid} → ${current_buildid}). A reinstalar plugins..."
+    ulog "INFO" "[cs2-monitor] CS2 UPDATE DETECTADO: ${saved_buildid} -> ${current_buildid}"
+    discord_notify "🔄 FragHub CS2 — update detectado (buildid ${saved_buildid} → ${current_buildid}). A executar update completo (binário + plugins)..."
   else
-    fraghub_log "INFO" "[cs2-monitor] Primeiro registo de buildid: ${current_buildid}"
-    # On first run, just save buildid without reinstalling
+    ulog "INFO" "[cs2-monitor] Primeiro registo de buildid: ${current_buildid}"
     cs2_save_buildid "$current_buildid"
     return 0
   fi
 
-  if bash "${SCRIPT_DIR}/plugin-update-cs2.sh"; then
-    fraghub_log "INFO" "[cs2-monitor] Plugin recovery bem-sucedido."
+  local exit_code=0
+  run_full_update || exit_code=$?
+  if [[ $exit_code -eq 0 ]]; then
+    ulog "INFO" "[cs2-monitor] Update completo bem-sucedido (binario + plugins)."
     cs2_save_buildid "$current_buildid"
     monitor_state_clear
   else
-    fraghub_log "WARN" "[cs2-monitor] Plugin recovery falhou. Upstream pode nao ter atualizado ainda. Ativando WAITING_UPSTREAM."
+    ulog "WARN" "[cs2-monitor] Update falhou na primeira tentativa. Upstream pode nao ter atualizado ainda. Ativando WAITING_UPSTREAM."
     monitor_state_set WAITING_UPSTREAM "1"
     monitor_state_set RETRY_COUNT "1"
     monitor_state_set PENDING_BUILDID "$current_buildid"
-    discord_notify "⏳ FragHub CS2 — recovery falhou na primeira tentativa (buildid: ${current_buildid}). Retentando a cada 10min (max ${MAX_RETRIES}x)."
+    monitor_state_set LAST_ATTEMPT "$(date -Iseconds)"
+    discord_notify "⏳ FragHub CS2 — update falhou na 1ª tentativa (buildid: ${current_buildid}). Retentando com backoff exponencial (max ${MAX_RETRIES}x)."
   fi
 }
 

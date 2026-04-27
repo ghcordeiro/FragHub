@@ -76,6 +76,45 @@ server_health_check() {
   return 1
 }
 
+# Check CS2 server log for plugin load failures.
+# Returns 0 if clean, 2 if warnings found.
+check_plugin_load_errors() {
+  [[ "$NO_SERVER_RESTART" == "1" ]] && return 0
+  local game_root="${FRAGHUB_GAME_ROOT:-${HOME}/fraghub/games}"
+  local cs2_instance="${FRAGHUB_CS2_INSTANCE:-cs2server}"
+  local log_file="${FRAGHUB_LINUXGSM_DIR:-${HOME}/fraghub/linuxgsm}/log/server/${cs2_instance}-server.log"
+
+  if [[ ! -f "$log_file" ]]; then
+    fraghub_log "INFO" "Log do servidor nao encontrado em ${log_file}; skip verificacao de plugins."
+    return 0
+  fi
+
+  # Look at last 100 lines (recent startup)
+  local recent
+  recent="$(tail -n 100 "$log_file" 2>/dev/null || true)"
+
+  local error_patterns=(
+    "Failed to load plugin"
+    "plugin_load.*failed"
+    "CounterStrikeSharp.*error"
+    "Metamod.*could not load"
+    "Unable to load"
+  )
+
+  local found_errors=0
+  for pattern in "${error_patterns[@]}"; do
+    if echo "$recent" | grep -qi "$pattern"; then
+      fraghub_log "WARN" "Plugin load warning detectado no log: '${pattern}'"
+      found_errors=1
+    fi
+  done
+
+  if [[ "$found_errors" == "1" ]]; then
+    return 2
+  fi
+  return 0
+}
+
 # ---------------------------------------------------------------------------
 # Save installed versions snapshot
 # ---------------------------------------------------------------------------
@@ -150,14 +189,24 @@ main() {
 
   # Restart server and check health
   server_start
-  if server_health_check; then
-    fraghub_log "INFO" "=== CS2 Plugin Recovery concluido com sucesso ==="
-    discord_notify "✅ FragHub CS2 — plugins restaurados com sucesso (Metamod + CounterStrikeSharp + MatchZy + WeaponPaints + SimpleAdmin)"
-  else
+  if ! server_health_check; then
     fraghub_log "WARN" "Plugins instalados mas servidor nao ficou ativo — pode ser incompatibilidade de versao."
-    discord_notify "⚠️ FragHub CS2 — plugins instalados mas servidor nao iniciou. Verifique logs: journalctl -u ${FRAGHUB_CS2_SERVICE}"
+    discord_notify "⚠️ FragHub CS2 — plugins instalados mas servidor nao iniciou. Verifique: journalctl -u ${FRAGHUB_CS2_SERVICE}"
     exit 1
   fi
+
+  # Secondary check: scan server log for plugin load errors (exit 2 = warning, not hard failure)
+  local load_check_rc=0
+  check_plugin_load_errors || load_check_rc=$?
+
+  if [[ $load_check_rc -eq 2 ]]; then
+    fraghub_log "WARN" "=== CS2 Plugin Recovery concluido com avisos (plugins carregados com erros) ==="
+    discord_notify "⚠️ FragHub CS2 — plugins instalados mas com erros de carregamento. Servidor ativo mas verifique o painel SysAdmin."
+    exit 2
+  fi
+
+  fraghub_log "INFO" "=== CS2 Plugin Recovery concluido com sucesso ==="
+  discord_notify "✅ FragHub CS2 — plugins restaurados com sucesso (Metamod + CounterStrikeSharp + MatchZy + WeaponPaints + SimpleAdmin)"
 }
 
 main "$@"
