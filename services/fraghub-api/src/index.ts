@@ -33,8 +33,8 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.use('/auth', authRouter);
-app.use('/auth', steamRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/auth', steamRouter);
 app.use('/api', liveRouter);
 app.use('/api', matchesRouter);
 app.use('/api', playersRouter);
